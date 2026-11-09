@@ -81,7 +81,7 @@ body {
   height: calc(32px * var(--scale));
   padding: 0;
   border: 0;
-  background: url("assets/pot-template.png") center / contain no-repeat;
+  background: url("assets/pot-template.png") bottom center / contain no-repeat;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
@@ -769,7 +769,7 @@ body {
 
 .pot-plant {
   position: absolute;
-  bottom: calc(-3.5px * var(--scale));
+  bottom: calc(-4.5px * var(--scale));
   left: 0;
   width: 100%;
   height: auto;
@@ -781,15 +781,21 @@ body {
   transition: filter 0.2s ease, opacity 0.2s ease;
 }
 
-/* Cactus is 32x32 (instead of 32x48) so its vertical offset aligns with the rim */
+/* Cactus is 32x32 so its bottom offset aligns with the pot rim */
 .pot-plant[src*="cactus"] {
-  bottom: calc(-2px * var(--scale));
+  bottom: calc(-2.5px * var(--scale));
+}
+
+/* Lavender and Tree have stems that extend slightly lower */
+.pot-plant[src*="lavender"],
+.pot-plant[src*="white-flowered-tree"] {
+  bottom: calc(-3.5px * var(--scale));
 }
 
 .pot-plant.is-dead,
 .pot-plant[src*="dead-plant"],
 .pot-plant[src*="dead-bud"] {
-  bottom: calc(-3.5px * var(--scale));
+  bottom: calc(-4.5px * var(--scale));
 }
 
 @keyframes plant-grow {
