@@ -106,75 +106,42 @@
           </div>
         </div>
 
-        <!-- Choose (pot / plant) stepper -->
-        <div class="ap-choose-row">
-          <span class="ap-label ap-label--choose" id="choose-label">Choose</span>
-          <div class="ap-choose-control">
-            <button class="ap-step ap-step--prev ap-step--choose" id="ap-choose-prev" type="button" aria-label="Previous choice type"></button>
-            <span class="ap-choose-value" id="ap-choose-val" aria-labelledby="choose-label">pot</span>
-            <button class="ap-step ap-step--next ap-step--choose" id="ap-choose-next" type="button" aria-label="Next choice type"></button>
+        <!-- Customize plant -->
+        <p class="ap-label ap-label--choose">Customize plant</p>
+        <button class="ap-arrow ap-arrow--prev" id="ap-plant-prev" type="button" aria-label="Previous plants"></button>
+        <div class="ap-carousel-viewport">
+          <div class="ap-carousel-track" id="ap-carousel-track">
+            <button class="ap-plant ap-plant--cactus" type="button" aria-label="Cactus" data-plant="cactus">
+              <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lavender" type="button" aria-label="Lavender" data-plant="lavender">
+              <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--tree" type="button" aria-label="White flowered tree" data-plant="tree">
+              <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lily" type="button" aria-label="Peace lily" data-plant="lily">
+              <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--daisy" type="button" aria-label="Daisy" data-plant="daisy">
+              <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--droopy" type="button" aria-label="White droopy flower" data-plant="droopy">
+              <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
           </div>
         </div>
+        <button class="ap-arrow ap-arrow--next" id="ap-plant-next" type="button" aria-label="Next plants"></button>
 
-        <!-- Pot picker section (Add Plant 2) -->
-        <div class="ap-section ap-section--pot" id="ap-section-pot">
-          <button class="ap-arrow ap-arrow--prev" id="ap-pot-prev" type="button" aria-label="Previous pots"></button>
-          <div class="ap-pots-row">
-            <button class="ap-pot ap-pot--1 is-selected" type="button" aria-label="Clay pot" data-pot="clay">
-              <img src="assets/pot-template.png" alt="">
-            </button>
-            <button class="ap-pot ap-pot--2 ap-pot--white" type="button" aria-label="White pot" data-pot="white">
-              <img src="assets/white-pot.png" alt="">
-            </button>
-            <button class="ap-pot ap-pot--3" type="button" aria-label="Clay pot" data-pot="clay">
-              <img src="assets/pot-template.png" alt="">
-            </button>
-            <button class="ap-pot ap-pot--4" type="button" aria-label="Clay pot" data-pot="clay">
-              <img src="assets/pot-template.png" alt="">
-            </button>
-          </div>
-          <button class="ap-arrow ap-arrow--next ap-arrow--pots" id="ap-pot-next" type="button" aria-label="Next pots"></button>
-
-          <!-- Preview of chosen plant in chosen pot (bottom right) -->
-          <div class="ap-preview" id="ap-preview" aria-hidden="true">
-            <img class="ap-preview-plant" id="ap-preview-plant" src="assets/white-flowered-tree-2.png" alt="Preview: chosen plant">
-            <img class="ap-preview-pot" id="ap-preview-pot" src="assets/pot-template.png" alt="">
-          </div>
-        </div>
-
-        <!-- Plant picker section (Add Plant 1 carousel) -->
-        <div class="ap-section ap-section--plant" id="ap-section-plant" hidden>
-          <button class="ap-arrow ap-arrow--prev" id="ap-plant-prev" type="button" aria-label="Previous plants"></button>
-          <div class="ap-carousel-viewport">
-            <div class="ap-carousel-track" id="ap-carousel-track">
-              <button class="ap-plant ap-plant--cactus" type="button" aria-label="Cactus" data-plant="cactus">
-                <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-              <button class="ap-plant ap-plant--lavender" type="button" aria-label="Lavender" data-plant="lavender">
-                <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-              <button class="ap-plant ap-plant--tree" type="button" aria-label="White flowered tree" data-plant="tree">
-                <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-              <button class="ap-plant ap-plant--lily" type="button" aria-label="Peace lily" data-plant="lily">
-                <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-              <button class="ap-plant ap-plant--daisy" type="button" aria-label="Daisy" data-plant="daisy">
-                <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-              <button class="ap-plant ap-plant--droopy" type="button" aria-label="White droopy flower" data-plant="droopy">
-                <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
-                <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
-              </button>
-            </div>
-          </div>
-          <button class="ap-arrow ap-arrow--next" id="ap-plant-next" type="button" aria-label="Next plants"></button>
-        </div>
+        <!-- Mini steppers for pot style (Add Plant 3) -->
+        <button class="ap-mini ap-mini--prev" id="ap-pot-prev" type="button" aria-label="Previous pot style"></button>
+        <button class="ap-mini ap-mini--next" id="ap-pot-next" type="button" aria-label="Next pot style"></button>
 
         <!-- Commit button -->
         <button class="ap-commit" id="ap-commit" type="button" disabled>COMMIT</button>
@@ -248,97 +215,27 @@
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
-    const chooseVal = document.getElementById('ap-choose-val');
-    const choosePrevBtn = document.getElementById('ap-choose-prev');
-    const chooseNextBtn = document.getElementById('ap-choose-next');
-    const sectionPot = document.getElementById('ap-section-pot');
-    const sectionPlant = document.getElementById('ap-section-plant');
-    const previewPlant = document.getElementById('ap-preview-plant');
-    const previewPot = document.getElementById('ap-preview-pot');
-    const previewBox = document.getElementById('ap-preview');
-    const potBtns = document.querySelectorAll('.ap-pot');
-
-    const chooseOptions = ['pot', 'plant'];
-    let chooseIndex = 0; // default to 'pot' (Add Plant 2)
-
     const potOptions = [
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false },
       { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true },
-      { id: 'clay-3', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false },
-      { id: 'clay-4', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false },
     ];
     let selectedPotIndex = 0; // clay pot by default
-
-    function updateChooseView() {
-      const mode = chooseOptions[chooseIndex];
-      if (chooseVal) chooseVal.textContent = mode;
-
-      if (mode === 'pot') {
-        if (sectionPot) sectionPot.hidden = false;
-        if (sectionPlant) sectionPlant.hidden = true;
-      } else {
-        if (sectionPot) sectionPot.hidden = true;
-        if (sectionPlant) sectionPlant.hidden = false;
-        updatePlantCarousel();
-      }
-    }
 
     function setSelectedPot(index) {
       if (index < 0 || index >= potOptions.length) return;
       selectedPotIndex = index;
       const potData = potOptions[selectedPotIndex];
 
-      // Update pot buttons selection
-      potBtns.forEach((btn, idx) => {
-        btn.classList.toggle('is-selected', idx === selectedPotIndex);
-      });
-
-      // Update bottom-right preview pot
-      if (previewPot) {
-        previewPot.src = potData.src;
-      }
-      if (previewBox) {
-        previewBox.classList.toggle('is-white-pot', potData.isWhite);
-      }
-
-      // Update the pots on the choose plant page
+      // Update the pots on all plant options in the carousel
       const carouselPots = document.querySelectorAll('.ap-plant-pot');
       carouselPots.forEach(p => {
         p.src = potData.src;
       });
+      const carouselTrack = document.getElementById('ap-carousel-track');
       if (carouselTrack) {
         carouselTrack.classList.toggle('is-white-pot', potData.isWhite);
       }
     }
-
-    function updatePreviewPlant() {
-      if (!previewPlant) return;
-      const selectedPlant = document.querySelector('.ap-plant.is-selected');
-      if (selectedPlant) {
-        const sprite = selectedPlant.querySelector('.ap-plant-sprite') || selectedPlant.querySelector('img');
-        if (sprite) {
-          previewPlant.src = sprite.src;
-          return;
-        }
-      }
-      previewPlant.src = 'assets/white-flowered-tree-2.png';
-    }
-
-    choosePrevBtn?.addEventListener('click', () => {
-      chooseIndex = (chooseIndex - 1 + chooseOptions.length) % chooseOptions.length;
-      updateChooseView();
-    });
-
-    chooseNextBtn?.addEventListener('click', () => {
-      chooseIndex = (chooseIndex + 1) % chooseOptions.length;
-      updateChooseView();
-    });
-
-    potBtns.forEach((btn, idx) => {
-      btn.addEventListener('click', () => {
-        setSelectedPot(idx);
-      });
-    });
 
     const potPrevBtn = document.getElementById('ap-pot-prev');
     const potNextBtn = document.getElementById('ap-pot-next');
@@ -489,11 +386,7 @@
       plantBtns.forEach(btn => btn.classList.remove('is-selected'));
       plantCarouselOffset = 0;
       updatePlantCarousel();
-
-      chooseIndex = 0; // 'pot' view
-      updateChooseView();
-      setSelectedPot(0); // Clay pot
-      updatePreviewPlant();
+      setSelectedPot(0); // Clay pot by default
       checkCommitReady();
     }
 
@@ -602,7 +495,7 @@
             updatePlantCarousel();
           }
         }
-        updatePreviewPlant();
+
         checkCommitReady();
       } else {
         if (apTitle) apTitle.textContent = 'Add Plant';
@@ -1377,7 +1270,6 @@
         if (!wasSelected) {
           btn.classList.add('is-selected');
         }
-        updatePreviewPlant();
         checkCommitReady();
       });
     });

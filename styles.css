@@ -398,6 +398,11 @@ body {
   top: calc(32px * var(--scale));
 }
 
+.ap-label--choose {
+  left: calc(23px * var(--scale));
+  top: calc(56px * var(--scale));
+}
+
 .ap-input {
   left: calc(var(--stage-w) * 0.2 + 10.8px * var(--scale));
   top: calc(32px * var(--scale) - 2px);
@@ -632,198 +637,42 @@ body {
 /* Carousel arrows (11 × 11) */
 .ap-arrow {
   position: absolute;
-  top: calc(95px * var(--scale));
+  top: calc(86px * var(--scale));
   width: calc(11px * var(--scale));
   height: calc(11px * var(--scale));
   background: url("assets/ui-tiny-arrow-1.png") center / contain no-repeat !important;
 }
 
 .ap-arrow--prev {
-  left: calc(22px * var(--scale));
+  left: calc(24px * var(--scale));
   transform: scaleX(-1);
 }
 
 .ap-arrow--next {
-  left: calc(var(--stage-w) * 0.8 + 15.2px * var(--scale));
+  left: calc(var(--stage-w) * 0.8 + 14.2px * var(--scale));
 }
 
-/* ---------- Choose (pot / plant) Row (Figma node 204:29) ---------- */
-.ap-choose-row {
+/* Mini steppers for pot style (7 × 7) */
+.ap-mini {
   position: absolute;
-  left: calc(23px * var(--scale));
-  top: calc(56px * var(--scale));
+  width: calc(7px * var(--scale));
   height: calc(7px * var(--scale));
-  display: flex;
-  align-items: center;
+  background: url("assets/ui-tiny-button-1.png") center / contain no-repeat !important;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
   z-index: 2;
 }
 
-.ap-choose-row .ap-label--choose {
-  position: static;
-  font-family: "Tiny5", monospace;
-  font-weight: 400;
-  font-size: calc(7px * var(--scale));
-  line-height: normal;
-  white-space: nowrap;
-  color: #000;
-  min-width: calc(21px * var(--scale));
-}
-
-.ap-choose-control {
-  display: inline-flex;
-  align-items: center;
-  height: calc(7px * var(--scale));
-  gap: calc(3px * var(--scale));
-  margin-left: calc(5px * var(--scale));
-}
-
-.ap-choose-control .ap-step {
-  position: static;
-  width: calc(7px * var(--scale));
-  height: calc(7px * var(--scale));
-  flex-shrink: 0;
-  background: url("assets/ui-tiny-button-1.png") center / contain no-repeat !important;
-  cursor: pointer;
-}
-
-.ap-choose-control .ap-step--prev {
+.ap-mini--prev {
+  left: calc(26.98px * var(--scale));
+  top: calc(103.06px * var(--scale));
   transform: scaleX(-1);
 }
 
-.ap-choose-control .ap-choose-value {
-  position: static;
-  display: inline-block;
-  width: calc(28px * var(--scale));
-  text-align: center;
-  font-family: "Tiny5", monospace;
-  font-size: calc(7px * var(--scale));
-  line-height: normal;
-  color: #000;
-  white-space: nowrap;
-  user-select: none;
-}
-
-/* ---------- Sections: Pot & Plant Pickers ---------- */
-.ap-section {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.ap-section>* {
-  pointer-events: auto;
-}
-
-.ap-section[hidden] {
-  display: none !important;
-}
-
-/* Pot Picker Section */
-.ap-pots-row {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.ap-pots-row>* {
-  pointer-events: auto;
-}
-
-.ap-pot {
-  position: absolute;
-  top: calc(94px * var(--scale));
-  width: calc(32px * var(--scale));
-  height: calc(13px * var(--scale));
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ap-pot img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.ap-pot--white {
-  top: calc(96px * var(--scale));
-  height: calc(11px * var(--scale));
-}
-
-.ap-pot--1 {
-  left: calc(35.18px * var(--scale));
-}
-
-.ap-pot--2 {
-  left: calc(var(--stage-w) * 0.2 + 11.8px * var(--scale));
-}
-
-.ap-pot--3 {
-  left: calc(var(--stage-w) * 0.2 + 39.93px * var(--scale));
-}
-
-.ap-pot--4 {
-  left: calc(var(--stage-w) * 0.4 + 17.74px * var(--scale));
-}
-
-.ap-pot.is-selected {
-  outline: none;
-  transform: translateY(calc(-4px * var(--scale)));
-}
-
-.ap-arrow--pots {
-  left: calc(var(--stage-w) * 0.6 + 0.72px * var(--scale)) !important;
-  top: calc(94px * var(--scale)) !important;
-}
-
-/* Bottom-right Preview in Add Plant 2 */
-.ap-preview {
-  position: absolute;
-  left: calc(var(--stage-w) * 0.6 + 31.73px * var(--scale));
-  top: calc(62px * var(--scale));
-  width: calc(32px * var(--scale));
-  height: calc(48px * var(--scale));
-  pointer-events: none;
-}
-
-.ap-preview-plant,
-.ap-preview-pot {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  pointer-events: none;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.ap-preview-plant {
-  bottom: calc(11px * var(--scale));
-  height: auto;
-}
-
-.ap-preview.is-white-pot .ap-preview-plant {
-  bottom: calc(9px * var(--scale));
-}
-
-.ap-preview-pot {
-  bottom: 0;
-  height: calc(13px * var(--scale));
-}
-
-.ap-preview.is-white-pot .ap-preview-pot {
-  height: calc(11px * var(--scale));
+.ap-mini--next {
+  left: calc(var(--stage-w) * 0.8 + 15.19px * var(--scale));
+  top: calc(102.91px * var(--scale));
 }
 
 /* Plant carousel viewport & track */
@@ -858,12 +707,15 @@ body {
   width: calc(32px * var(--scale));
   border-radius: 4px;
   cursor: pointer;
-  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: none;
+  border: 0;
+  padding: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ap-plant.is-selected {
   outline: none;
-  transform: translateY(calc(-5px * var(--scale)));
+  transform: translateY(calc(-4px * var(--scale)));
 }
 
 .ap-plant img {
@@ -884,7 +736,7 @@ body {
 }
 
 .ap-carousel-track.is-white-pot .ap-plant-sprite {
-  bottom: calc(9px * var(--scale));
+  bottom: calc(9.5px * var(--scale));
 }
 
 .ap-plant-pot {
@@ -982,6 +834,10 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.pot.pot--white .pot-plant {
+  bottom: calc(11px * var(--scale));
 }
 
 
