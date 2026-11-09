@@ -9,6 +9,7 @@
   --stage-h: calc(144px * var(--scale));
 
   /* column x-positions (Home Screen 2 / Figma node 184:110: 67 / 96.94 / 127.17 / 157) */
+  /* POT TOP AND BOTTOM*/
   --col-1: calc(67px * var(--scale));
   --col-2: calc(96.94px * var(--scale));
   --col-3: calc(127.17px * var(--scale));
@@ -81,6 +82,7 @@ body {
   height: calc(32px * var(--scale));
   padding: 0;
   border: 0;
+  background-color: transparent;
   background-image: url("assets/pot-template.png");
   background-position: bottom center;
   background-size: contain;
@@ -821,6 +823,7 @@ body {
 
 /* Planted pot preview on shelf */
 /* Keep the default pot-template.png background visible under the plant sprite */
+/* PLANT BOTTOM*/
 
 .pot-plant {
   position: absolute;
