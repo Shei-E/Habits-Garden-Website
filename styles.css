@@ -765,9 +765,7 @@ body {
 }
 
 /* Planted pot preview on shelf */
-.pot.has-plant {
-  background: none !important;
-}
+/* Keep the default pot-template.png background visible under the plant sprite */
 
 .pot-plant {
   position: absolute;
