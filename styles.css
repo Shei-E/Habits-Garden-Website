@@ -105,6 +105,25 @@ body {
   background-image: url("assets/yellow-pot.png");
 }
 
+/* Drag-and-drop pots: Pointer Events drive the move (see index.html),
+   so touch must not scroll and text must not select mid-drag. */
+.pot {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.pot.is-dragging {
+  z-index: 50;
+  cursor: grabbing;
+}
+
+.pot.is-dragging.is-blocked {
+  outline: 2px dashed #e05656;
+  outline-offset: 2px;
+}
+
 .pot:focus-visible {
   outline: 2px dashed #000;
   outline-offset: 2px;
@@ -768,6 +787,14 @@ body {
   height: calc(11px * var(--scale));
 }
 
+/* Centre the peace lily in the plant picker: its mass centroid sits
+   0.4 units right of the pot rim centre (16.4 vs 16.0); the space
+   renders it centred at a 0.5 shift left, so match that. Sprite file
+   unchanged. */
+.ap-plant--lily .ap-plant-sprite {
+  left: calc(-0.5px * var(--scale));
+}
+
 .ap-plant--cactus {
   left: 0;
   top: calc(71px * var(--scale));
@@ -861,6 +888,21 @@ body {
 .pot.pot--blue .pot-plant,
 .pot.pot--yellow .pot-plant {
   bottom: calc(11px * var(--scale));
+}
+
+/* Centre bud / dead-bud / peace-lily sprites over the pot rim.
+   Pot rim centre is 16.0 of the 32-wide pot box; bud and dead-bud
+   artwork centres are 15.5 (shift right 0.5); the peace lily's mass
+   centroid is 16.4, and the space renders it centred at a 0.5 shift
+   left, so match that. CSS offsets only — the sprite files are
+   unchanged. */
+.pot-plant[src*="bud-4.png"],
+.pot-plant[src*="dead-bud.png"] {
+  left: calc(0.5px * var(--scale));
+}
+
+.pot-plant[src*="peace-lily"] {
+  left: calc(-0.5px * var(--scale));
 }
 
 
