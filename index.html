@@ -1295,9 +1295,36 @@
       }
     });
 
-    // Secret code listener: type 'devdate' anywhere outside text inputs to toggle dev date popup
+    // Secret dev commands listener:
+    // - type 'devdate' to toggle dev date popup
+    // - type 'devgrow' to instantly grow all plants
     let secretBuffer = '';
-    const SECRET_CODE = 'devdate';
+    const MAX_BUFFER_LEN = 10;
+
+    function devGrowAllPlants() {
+      const pots = document.querySelectorAll('.pot.has-plant');
+      pots.forEach(pot => {
+        pot.dataset.stage = 'grown';
+        pot.dataset.plantState = 'healthy';
+        delete pot.dataset.deadPlantImg;
+        if (pot.dataset.growThreshold) {
+          pot.dataset.waterCount = pot.dataset.growThreshold;
+        }
+        const potPlant = pot.querySelector('.pot-plant');
+        if (potPlant && pot.dataset.grownPlantImg) {
+          potPlant.src = pot.dataset.grownPlantImg;
+          potPlant.alt = pot.dataset.plantName || '';
+          potPlant.classList.remove('is-dead');
+          potPlant.classList.remove('plant-growing');
+          void potPlant.offsetWidth;
+          potPlant.classList.add('plant-growing');
+        }
+        playSparkleAnimation(pot);
+      });
+      if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
+        openPlantDetailsModal(currentDetailsPot);
+      }
+    }
 
     document.addEventListener('keydown', (e) => {
       const tag = e.target?.tagName?.toLowerCase();
@@ -1307,10 +1334,11 @@
 
       if (e.key && e.key.length === 1) {
         secretBuffer += e.key.toLowerCase();
-        if (secretBuffer.length > SECRET_CODE.length) {
-          secretBuffer = secretBuffer.slice(-SECRET_CODE.length);
+        if (secretBuffer.length > MAX_BUFFER_LEN) {
+          secretBuffer = secretBuffer.slice(-MAX_BUFFER_LEN);
         }
-        if (secretBuffer === SECRET_CODE) {
+
+        if (secretBuffer.endsWith('devdate')) {
           secretBuffer = '';
           const devContainer = document.getElementById('dev-date-container');
           if (devContainer) {
@@ -1323,6 +1351,9 @@
               devContainer.style.display = 'none';
             }
           }
+        } else if (secretBuffer.endsWith('devgrow')) {
+          secretBuffer = '';
+          devGrowAllPlants();
         }
       }
     });
