@@ -332,12 +332,15 @@
 
     // ---------- Intro hint flow ----------
     // Starts as "click to add a plant!". After the first plant is planted
-    // it becomes "drag to move!" (arrow stays). After the first pot move
-    // the hint and arrow go away for good (for the session).
+    // it becomes "water your plant to track your progress!" (arrow stays).
+    // After the first watering it becomes "drag to move!" (arrow stays).
+    // After the first pot move the hint and arrow go away for good
+    // (for the session).
     // A move before anything is planted doesn't count: the hint stays
-    // as "click to add a plant!", so the "drag to move!" prompt still
-    // appears after the first plant and the next move then dismisses it.
+    // as "click to add a plant!", so the prompts above still appear in
+    // order after the first plant and the next move then dismisses them.
     let hasPlantedFirstPlant = false;
+    let hasWateredFirstPlant = false;
     let hasMovedFirstPot = false;
 
     function updateHint() {
@@ -348,15 +351,23 @@
         if (hintArrow) hintArrow.remove();
         return;
       }
-      if (hasPlantedFirstPlant && hint) {
+      if (hasWateredFirstPlant && hint) {
         hint.textContent = 'drag to move!';
+      } else if (hasPlantedFirstPlant && hint) {
+        hint.textContent = 'water your plant to track your progress!';
       }
+    }
+
+    function noteFirstWatered() {
+      if (hasWateredFirstPlant) return;
+      hasWateredFirstPlant = true;
+      updateHint();
     }
 
     function noteFirstPotMoved() {
       if (hasMovedFirstPot) return;
       // Don't dismiss the hint for a move made before planting: the
-      // "drag to move!" prompt still needs to appear after the first plant.
+      // prompts above still need to appear after the first plant.
       if (!hasPlantedFirstPlant) return;
       hasMovedFirstPot = true;
       updateHint();
@@ -1346,8 +1357,10 @@
           updatePotVisuals(activePot);
         }
 
-        // First plant planted: hint switches to "drag to move!" (arrow stays).
-        // It only disappears for good after the first pot move (see noteFirstPotMoved).
+        // First plant planted: hint switches to
+        // "water your plant to track your progress!" (arrow stays).
+        // It becomes "drag to move!" after the first watering, and only
+        // disappears for good after the first pot move (see noteFirstPotMoved).
         if (isNewPlant && !hasPlantedFirstPlant) {
           hasPlantedFirstPlant = true;
           updateHint();
@@ -1370,6 +1383,9 @@
 
       pot.dataset.wateredToday = 'true';
       pot.dataset.lastWateredDate = todayStr;
+
+      // First watering: the hint moves on to "drag to move!".
+      noteFirstWatered();
 
       const todayIso = getLocalDateStr(getCurrentDate());
       let history = [];
