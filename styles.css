@@ -769,7 +769,7 @@ body {
 
 .pot-plant {
   position: absolute;
-  bottom: 0;
+  bottom: calc(-3.5px * var(--scale));
   left: 0;
   width: 100%;
   height: auto;
@@ -781,10 +781,15 @@ body {
   transition: filter 0.2s ease, opacity 0.2s ease;
 }
 
+/* Cactus is 32x32 (instead of 32x48) so its vertical offset aligns with the rim */
+.pot-plant[src*="cactus"] {
+  bottom: calc(-2px * var(--scale));
+}
+
 .pot-plant.is-dead,
 .pot-plant[src*="dead-plant"],
 .pot-plant[src*="dead-bud"] {
-  bottom: calc(-2px * var(--scale));
+  bottom: calc(-3.5px * var(--scale));
 }
 
 @keyframes plant-grow {
