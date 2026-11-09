@@ -1,0 +1,1151 @@
+/* Habits Garden — Home Screen (Figma node 1:14), scaled 1.25x for desktop (1600 × 900) */
+
+:root {
+  --bg: #e1bf89;
+  --scale: 6.25;
+  /* 1.25x larger (1600 × 900) */
+
+  --stage-w: calc(256px * var(--scale));
+  --stage-h: calc(144px * var(--scale));
+
+  /* column x-positions (Home Screen 2 / Figma node 184:110: 67 / 96.94 / 127.17 / 157) */
+  --col-1: calc(67px * var(--scale));
+  --col-2: calc(96.94px * var(--scale));
+  --col-3: calc(127.17px * var(--scale));
+  --col-4: calc(157px * var(--scale));
+  --row-top: calc(22px * var(--scale));
+  --row-bottom: calc(82px * var(--scale));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  min-height: 100vh;
+  overflow: auto;
+}
+
+.home-screen {
+  position: relative;
+  top: -30px;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  overflow: hidden;
+  background: var(--bg);
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  flex-shrink: 0;
+}
+
+.home-screen img {
+  display: block;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.shelf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Pots */
+.pot {
+  position: absolute;
+  width: calc(32px * var(--scale));
+  height: calc(32px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: url("assets/pot-template.png") center / contain no-repeat;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+}
+
+.pot:focus-visible {
+  outline: 2px dashed #000;
+  outline-offset: 2px;
+}
+
+.pot--top {
+  top: var(--row-top);
+}
+
+.pot--bottom {
+  top: var(--row-bottom);
+}
+
+.pot--c1,
+.pot--h1 {
+  left: var(--col-1);
+}
+
+.pot--c2,
+.pot--h2 {
+  left: var(--col-2);
+}
+
+.pot--c3,
+.pot--h3 {
+  left: var(--col-3);
+}
+
+.pot--c4,
+.pot--h4 {
+  left: var(--col-4);
+}
+
+/* Plant slots (48 × 32, sit above the bottom-row pots) */
+.plant {
+  position: absolute;
+  top: calc(68px * var(--scale));
+  width: calc(32px * var(--scale));
+  height: calc(48px * var(--scale));
+  pointer-events: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.plant--daisy {
+  left: calc(35px * var(--scale));
+}
+
+.plant--peace-lily {
+  left: calc(189px * var(--scale));
+}
+
+/* Hint */
+.hint {
+  position: absolute;
+  left: calc(54.68px * var(--scale));
+  top: calc(21px * var(--scale));
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hint-bob 2s steps(1) infinite;
+}
+
+.hint-arrow {
+  position: absolute;
+  left: calc(79.18px * var(--scale));
+  top: calc(29px * var(--scale));
+  width: calc(9px * var(--scale));
+  height: calc(9px * var(--scale));
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ---------- Home Screen 2 (Figma node 184:110) ----------
+   Narrower shelf, pots re-spaced and shifted toward the centre. */
+.home-2 .pot--h1,
+.home-2 .pot--c1 {
+  left: calc(67px * var(--scale));
+}
+
+.home-2 .pot--h2,
+.home-2 .pot--c2 {
+  left: calc(96.94px * var(--scale));
+}
+
+.home-2 .pot--h3,
+.home-2 .pot--c3 {
+  left: calc(127.17px * var(--scale));
+}
+
+.home-2 .pot--h4,
+.home-2 .pot--c4 {
+  left: calc(157px * var(--scale));
+}
+
+.home-2 .plant--daisy {
+  left: calc(35px * var(--scale));
+}
+
+.home-2 .plant--peace-lily {
+  left: calc(189px * var(--scale));
+}
+
+.home-2 .hint {
+  left: calc(54.68px * var(--scale));
+}
+
+.home-2 .hint-arrow {
+  left: calc(79.18px * var(--scale));
+}
+
+@keyframes hint-bob {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(calc(-1px * var(--scale)));
+  }
+}
+
+/* ---------- Add Plant Popup Modal (Figma node 71:38) ---------- */
+
+@keyframes ap-rise-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ap-fall-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.ap-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.ap-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  animation: ap-rise-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ap-modal.is-closing,
+.ap-modal.is-closing * {
+  pointer-events: none !important;
+}
+
+.ap-modal.is-closing {
+  visibility: visible;
+  animation: ap-fall-fade-out 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ap-container {
+  position: absolute;
+  inset: 0;
+}
+
+.ap-container button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ap-container button:focus-visible,
+.ap-input:focus-visible {
+  outline: 2px dashed #000;
+  outline-offset: 2px;
+}
+
+.ap-panel {
+  position: absolute;
+  left: calc(10px * var(--scale));
+  top: calc(10px * var(--scale));
+  width: calc(236px * var(--scale));
+  height: calc(124px * var(--scale));
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: auto;
+}
+
+.ap-header {
+  position: absolute;
+  left: calc(21px * var(--scale));
+  top: calc(17px * var(--scale));
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+  z-index: 2;
+  font-family: "Tiny5", monospace;
+  font-size: calc(10px * var(--scale));
+}
+
+.ap-title {
+  position: static;
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(10px * var(--scale));
+  line-height: normal;
+  white-space: nowrap;
+  color: #000;
+}
+
+.ap-remove {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-size: calc(5px * var(--scale));
+  line-height: normal;
+  color: #bda499;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.ap-remove:hover {
+  color: #000;
+}
+
+.ap-remove.is-confirming,
+.ap-remove.is-confirming:hover {
+  color: #e05656;
+}
+
+.ap-remove:focus-visible {
+  outline: 1px dashed #e05656;
+  outline-offset: 1px;
+}
+
+.ap-remove[hidden] {
+  display: none !important;
+}
+
+.ap-label,
+.ap-input {
+  position: absolute;
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  color: #000;
+}
+
+.ap-label {
+  font-size: calc(7px * var(--scale));
+}
+
+.ap-label--name {
+  left: calc(23px * var(--scale));
+  top: calc(32px * var(--scale));
+}
+
+.ap-label--choose {
+  left: calc(23px * var(--scale));
+  top: calc(56px * var(--scale));
+}
+
+.ap-input {
+  left: calc(var(--stage-w) * 0.2 + 10.8px * var(--scale));
+  top: calc(32px * var(--scale) - 2px);
+  width: calc(120px * var(--scale));
+  height: calc(9px * var(--scale));
+  line-height: normal;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: calc(7px * var(--scale));
+}
+
+.ap-input::placeholder {
+  color: #bda499;
+  opacity: 1;
+}
+
+.ap-input:focus {
+  outline: none;
+}
+
+/* Repeat row with auto-adjusting right arrow & custom days selector */
+.ap-repeat-row {
+  position: absolute;
+  left: calc(23px * var(--scale));
+  top: calc(44px * var(--scale));
+  height: calc(7px * var(--scale));
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.ap-repeat-row .ap-label--repeat {
+  position: static;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  white-space: nowrap;
+  color: #000;
+  min-width: calc(21px * var(--scale));
+}
+
+.ap-repeat-control {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(3px * var(--scale));
+  margin-left: calc(5px * var(--scale));
+}
+
+.ap-repeat-control .ap-step,
+.ap-month-control .ap-step {
+  position: static;
+  width: calc(7px * var(--scale));
+  height: calc(7px * var(--scale));
+  flex-shrink: 0;
+  background: url("assets/ui-tiny-button-1.png") center / contain no-repeat !important;
+  cursor: pointer;
+}
+
+.ap-repeat-control .ap-step--prev,
+.ap-month-control .ap-step--prev {
+  transform: scaleX(-1);
+}
+
+.ap-repeat-control .ap-repeat-value {
+  position: static;
+  display: inline-block;
+  width: calc(33px * var(--scale));
+  text-align: center;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Custom days of the week picker (matching screenshot) */
+.ap-days-picker {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(4px * var(--scale));
+  margin-left: calc(8px * var(--scale));
+  user-select: none;
+}
+
+.ap-days-picker[hidden] {
+  display: none !important;
+}
+
+.ap-day-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #bda499;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s ease;
+}
+
+.ap-day-btn:hover {
+  color: #8b7367;
+}
+
+.ap-day-btn.is-active {
+  color: #000;
+}
+
+.ap-day-btn.is-active:hover {
+  color: #222;
+}
+
+.ap-day-btn:focus-visible {
+  outline: 1px dashed #000;
+  outline-offset: 1px;
+}
+
+/* Monthly day of month picker */
+.ap-monthly-picker {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(2px * var(--scale));
+  margin-left: calc(8px * var(--scale));
+  user-select: none;
+}
+
+.ap-monthly-picker[hidden] {
+  display: none !important;
+}
+
+.ap-monthly-text,
+.ap-ordinal-suffix {
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+}
+
+.ap-day-num-input {
+  width: calc(14px * var(--scale));
+  height: calc(7px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  text-align: center;
+}
+
+.ap-day-num-input::placeholder {
+  color: #bda499;
+  opacity: 1;
+}
+
+.ap-day-num-input:focus {
+  outline: none;
+}
+
+.ap-day-num-input:focus-visible {
+  outline: 1px dashed #bda499;
+  outline-offset: 1px;
+}
+
+/* Yearly date picker */
+.ap-yearly-picker {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(2px * var(--scale));
+  margin-left: calc(8px * var(--scale));
+  user-select: none;
+}
+
+.ap-yearly-picker[hidden] {
+  display: none !important;
+}
+
+.ap-yearly-text {
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+}
+
+.ap-month-control {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(2px * var(--scale));
+}
+
+.ap-month-value {
+  display: inline-block;
+  min-width: calc(18px * var(--scale));
+  text-align: center;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Close button (11 × 11) */
+.ap-close {
+  position: absolute;
+  left: calc(var(--stage-w) * 0.8 + 23.42px * var(--scale));
+  top: calc(16.53px * var(--scale));
+  width: calc(11px * var(--scale));
+  height: calc(11px * var(--scale));
+  background: url("assets/ui-tiny-x.png") center / contain no-repeat !important;
+}
+
+/* Carousel arrows (11 × 11) */
+.ap-arrow {
+  position: absolute;
+  top: calc(95px * var(--scale));
+  width: calc(11px * var(--scale));
+  height: calc(11px * var(--scale));
+  background: url("assets/ui-tiny-arrow-1.png") center / contain no-repeat !important;
+}
+
+.ap-arrow--prev {
+  left: calc(22px * var(--scale));
+  transform: scaleX(-1);
+}
+
+.ap-arrow--next {
+  left: calc(var(--stage-w) * 0.8 + 15.2px * var(--scale));
+}
+
+/* Plant carousel viewport & track */
+.ap-carousel-viewport {
+  position: absolute;
+  left: calc(39px * var(--scale));
+  top: 0;
+  width: calc(176px * var(--scale));
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ap-carousel-track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.ap-carousel-track>* {
+  pointer-events: auto;
+}
+
+/* Plant choices */
+.ap-plant {
+  position: absolute;
+  width: calc(32px * var(--scale));
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ap-plant.is-selected {
+  outline: none;
+  transform: translateY(calc(-5px * var(--scale)));
+}
+
+.ap-plant img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ap-plant--cactus {
+  left: 0;
+  top: calc(85px * var(--scale));
+  height: calc(32px * var(--scale));
+}
+
+.ap-plant--lavender {
+  left: calc(36px * var(--scale));
+  top: calc(69px * var(--scale));
+  height: calc(48px * var(--scale));
+}
+
+.ap-plant--tree {
+  left: calc(72px * var(--scale));
+  top: calc(69px * var(--scale));
+  height: calc(48px * var(--scale));
+}
+
+.ap-plant--lily {
+  left: calc(108px * var(--scale));
+  top: calc(69px * var(--scale));
+  height: calc(48px * var(--scale));
+}
+
+.ap-plant--daisy {
+  left: calc(144px * var(--scale));
+  top: calc(69px * var(--scale));
+  height: calc(48px * var(--scale));
+}
+
+.ap-plant--droopy {
+  left: calc(180px * var(--scale));
+  top: calc(69px * var(--scale));
+  height: calc(48px * var(--scale));
+}
+
+/* Commit button */
+.ap-commit {
+  position: absolute;
+  left: calc(var(--stage-w) * 0.4 + 13.1px * var(--scale));
+  top: calc(120.63px * var(--scale));
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  white-space: nowrap;
+  color: #bda499;
+  /* greyed out like the x button */
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: not-allowed;
+  user-select: none;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+
+.ap-commit.is-ready {
+  color: #000;
+  /* black like the design provided */
+  cursor: pointer;
+}
+
+.ap-commit:focus-visible {
+  outline: 1px dashed #000;
+  outline-offset: 2px;
+}
+
+/* Planted pot preview on shelf */
+.pot.has-plant {
+  background: none !important;
+}
+
+.pot-plant {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.pot-plant.is-dead,
+.pot-plant[src*="dead-plant"],
+.pot-plant[src*="dead-bud"] {
+  bottom: calc(-2px * var(--scale));
+}
+
+@keyframes plant-grow {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.plant-growing {
+  animation: plant-grow 0.45s ease-out forwards;
+  transform-origin: bottom center;
+}
+
+/* ---------- Plant Details Popup Modal ---------- */
+.pd-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pd-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.pd-dialog {
+  position: absolute;
+  width: calc(236px * var(--scale));
+  height: calc(124px * var(--scale));
+  pointer-events: none;
+}
+
+.pd-dialog>* {
+  pointer-events: auto;
+}
+
+.pd-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.pd-content {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pd-content>* {
+  pointer-events: auto;
+}
+
+.pd-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.pd-title,
+.pd-repeat,
+.pd-today {
+  position: absolute;
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.pd-title {
+  left: calc(61px * var(--scale));
+  top: calc(42px * var(--scale));
+  font-size: calc(10px * var(--scale));
+  color: #000;
+}
+
+.pd-title-status {
+  font-size: 0.5em;
+  vertical-align: baseline;
+  color: inherit;
+  margin-left: calc(2px * var(--scale));
+}
+
+.pd-repeat {
+  left: calc(61px * var(--scale));
+  top: calc(53px * var(--scale));
+  font-size: calc(7px * var(--scale));
+  color: #000;
+}
+
+.pd-today {
+  left: calc(156px * var(--scale));
+  top: calc(63px * var(--scale));
+  font-size: calc(5px * var(--scale));
+  color: #bda499;
+}
+
+.pd-streak {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pd-streak-day {
+  position: absolute;
+  top: calc(70px * var(--scale));
+  width: calc(11px * var(--scale));
+  height: calc(11px * var(--scale));
+}
+
+.pd-streak-day img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.pd-streak-day--1 {
+  left: calc(72px * var(--scale));
+}
+
+.pd-streak-day--2 {
+  left: calc(84px * var(--scale));
+}
+
+.pd-streak-day--3 {
+  left: calc(96px * var(--scale));
+}
+
+.pd-streak-day--4 {
+  left: calc(108px * var(--scale));
+}
+
+.pd-streak-day--5 {
+  left: calc(120px * var(--scale));
+}
+
+.pd-streak-day--6 {
+  left: calc(132px * var(--scale));
+}
+
+.pd-streak-day--7 {
+  left: calc(144px * var(--scale));
+}
+
+.pd-streak-day--8 {
+  left: calc(156px * var(--scale));
+}
+
+.pd-water {
+  position: absolute;
+  left: calc(90px * var(--scale));
+  top: calc(80px * var(--scale));
+  width: calc(56px * var(--scale));
+  height: calc(32px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: url("assets/water-button.png") center / contain no-repeat !important;
+  cursor: pointer;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+.pd-water:hover {
+  transform: scale(1.04);
+}
+
+.pd-water:active {
+  transform: scale(0.96);
+}
+
+.pd-water:focus-visible {
+  outline: 1px dashed #000;
+  outline-offset: 1px;
+}
+
+.pd-water.is-watered {
+  filter: grayscale(0.35) opacity(0.75);
+}
+
+.pd-actions {
+  position: absolute;
+  left: calc(146px * var(--scale));
+  top: calc(98px * var(--scale));
+  white-space: pre;
+  font-family: "Tiny5", monospace;
+  font-size: calc(5px * var(--scale));
+  line-height: normal;
+  color: #bda499;
+}
+
+.pd-edit,
+.pd-remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+  line-height: inherit;
+  white-space: nowrap;
+  transition: color 0.12s ease;
+}
+
+.pd-edit:hover {
+  color: #000;
+}
+
+.pd-edit:focus-visible {
+  outline: 1px dashed #000;
+  outline-offset: 1px;
+}
+
+.pd-remove:hover {
+  color: #000;
+}
+
+.pd-remove.is-confirming,
+.pd-remove.is-confirming:hover {
+  color: #e05656;
+}
+
+.pd-remove:focus-visible {
+  outline: 1px dashed #e05656;
+  outline-offset: 1px;
+}
+
+/* Watering Animation */
+.watering-anim {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.water-drop {
+  position: absolute;
+  top: calc(-16px * var(--scale));
+  width: calc(1px * var(--scale));
+  height: calc(2.5px * var(--scale));
+  background: #5caef8;
+  border-radius: 1px;
+  opacity: 0;
+  animation: water-fall 0.65s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+@keyframes water-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  25% {
+    opacity: 0.95;
+  }
+
+  85% {
+    opacity: 0.95;
+    transform: translateY(calc(30px * var(--scale)));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(calc(34px * var(--scale))) scaleX(2) scaleY(0.4);
+  }
+}
+
+/* Sparkle Animation */
+.sparkle-anim {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 35;
+}
+
+.sparkle {
+  position: absolute;
+  width: calc(32px * var(--scale));
+  height: calc(32px * var(--scale));
+  margin-left: calc(-16px * var(--scale));
+  margin-top: calc(-16px * var(--scale));
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: sparkle-fade-shift 1.35s ease-out forwards;
+}
+
+@keyframes sparkle-fade-shift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+
+  33.33% {
+    opacity: 1;
+  }
+
+  57.33% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), var(--dy, 0px));
+  }
+}
+
+/* Responsive adjustments for smaller desktop / laptop viewports */
+@media (max-width: 1280px),
+(max-height: 720px) {
+  :root {
+    --scale: 5;
+    /* Scales to 1280 × 720 on compact desktop screens */
+  }
+}
+
+@media (max-width: 1024px),
+(max-height: 580px) {
+  :root {
+    --scale: 4;
+    /* Fits small windows (1024 × 576) */
+  }
+}

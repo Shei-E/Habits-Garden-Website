@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habits Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdate' to show) -->
+  <div id="dev-date-container" hidden
+    style="display: none; position: fixed; top: 12px; right: 12px; z-index: 9999; background: rgba(0, 0, 0, 0.75); padding: 6px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #fff; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+    <label for="dev-date-input" style="font-size: 11px; opacity: 0.85; user-select: none;">dev date:</label>
+    <input id="dev-date-input" type="date"
+      style="background: #222; border: 1px solid #555; color: #fff; padding: 2px 6px; border-radius: 4px; font-family: inherit; font-size: 12px; cursor: pointer;">
+    <button id="dev-date-reset" type="button" title="Reset to today"
+      style="background: #444; border: 0; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 11px; cursor: pointer;">reset</button>
+    <button id="dev-date-close" type="button" title="Hide dev date"
+      style="background: none; border: 0; color: #aaa; padding: 0 4px; font-size: 14px; line-height: 1; cursor: pointer;">&times;</button>
+  </div>
+  <!-- /DEV OPTION: Date Setter -->
+
+  <main class="home-screen home-2" aria-label="Habits Garden">
+    <img class="shelf" src="assets/shelf-2-1.png" alt="">
+
+    <!-- Plant slots (empty in the design: peace-lily / daisy) -->
+    <div class="plant plant--daisy" aria-hidden="true"></div>
+    <div class="plant plant--peace-lily" aria-hidden="true"></div>
+
+    <!-- Top shelf -->
+    <button class="pot pot--h1 pot--c1 pot--top" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h2 pot--c2 pot--top" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h3 pot--c3 pot--top" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h4 pot--c4 pot--top" type="button" aria-label="Add a plant"></button>
+
+    <!-- Bottom shelf -->
+    <button class="pot pot--h1 pot--c1 pot--bottom" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h2 pot--c2 pot--bottom" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h3 pot--c3 pot--bottom" type="button" aria-label="Add a plant"></button>
+    <button class="pot pot--h4 pot--c4 pot--bottom" type="button" aria-label="Add a plant"></button>
+
+    <p class="hint">click to add a plant!</p>
+    <img class="hint-arrow" src="assets/ui-arrow-down.png" alt="">
+
+    <!-- Add Plant Popup Modal -->
+    <div class="ap-modal" id="add-plant-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="ap-title">
+      <div class="ap-container">
+        <img class="ap-panel" src="assets/ui-plant-1.png" alt="">
+
+        <div class="ap-header">
+          <h2 class="ap-title" id="ap-title">Add Plant</h2>
+          <button class="ap-remove" id="ap-remove" type="button" hidden>remove</button>
+        </div>
+        <button class="ap-close" id="ap-close" type="button" aria-label="Close"></button>
+
+        <!-- Plant name -->
+        <label class="ap-label ap-label--name" for="plant-name">Plant Name:</label>
+        <input class="ap-input" id="plant-name" type="text" placeholder="type here..." autocomplete="off">
+
+        <!-- Repeat row -->
+        <div class="ap-repeat-row">
+          <span class="ap-label ap-label--repeat" id="repeat-label">Repeat</span>
+          <div class="ap-repeat-control">
+            <button class="ap-step ap-step--prev" id="ap-repeat-prev" type="button"
+              aria-label="Previous repeat option"></button>
+            <span class="ap-repeat-value" id="ap-repeat-val" aria-labelledby="repeat-label">daily</span>
+            <button class="ap-step ap-step--next" id="ap-repeat-next" type="button"
+              aria-label="Next repeat option"></button>
+          </div>
+          <!-- Weekly days picker -->
+          <div class="ap-days-picker" id="ap-days-picker" aria-label="Choose days of week" hidden>
+            <button type="button" class="ap-day-btn is-active" aria-label="Sunday" aria-pressed="true">sun</button>
+            <button type="button" class="ap-day-btn is-active" aria-label="Monday" aria-pressed="true">mon</button>
+            <button type="button" class="ap-day-btn" aria-label="Tuesday" aria-pressed="false">tue</button>
+            <button type="button" class="ap-day-btn" aria-label="Wednesday" aria-pressed="false">wed</button>
+            <button type="button" class="ap-day-btn" aria-label="Thursday" aria-pressed="false">thu</button>
+            <button type="button" class="ap-day-btn" aria-label="Friday" aria-pressed="false">fri</button>
+            <button type="button" class="ap-day-btn" aria-label="Saturday" aria-pressed="false">sat</button>
+          </div>
+          <!-- Monthly day of month picker -->
+          <div class="ap-monthly-picker" id="ap-monthly-picker" aria-label="Choose day of month" hidden>
+            <span class="ap-monthly-text">on the</span>
+            <input class="ap-day-num-input" id="ap-day-num" type="text" inputmode="numeric" maxlength="2"
+              placeholder="__" value="" aria-label="Day of month">
+            <span class="ap-ordinal-suffix" id="ap-ordinal-suffix">th</span>
+          </div>
+          <!-- Yearly date picker -->
+          <div class="ap-yearly-picker" id="ap-yearly-picker" aria-label="Choose date of year" hidden>
+            <span class="ap-yearly-text">on</span>
+            <div class="ap-month-control">
+              <button class="ap-step ap-step--prev" id="ap-year-month-prev" type="button"
+                aria-label="Previous month"></button>
+              <span class="ap-month-value" id="ap-year-month-val">Jan</span>
+              <button class="ap-step ap-step--next" id="ap-year-month-next" type="button"
+                aria-label="Next month"></button>
+            </div>
+            <input class="ap-day-num-input" id="ap-year-day-num" type="text" inputmode="numeric" maxlength="2"
+              placeholder="__" value="" aria-label="Day of month">
+            <span class="ap-ordinal-suffix" id="ap-year-ordinal-suffix">th</span>
+          </div>
+        </div>
+
+        <!-- Plant picker -->
+        <p class="ap-label ap-label--choose">Choose a plant</p>
+        <button class="ap-arrow ap-arrow--prev" id="ap-plant-prev" type="button" aria-label="Previous plants"></button>
+        <div class="ap-carousel-viewport">
+          <div class="ap-carousel-track" id="ap-carousel-track">
+            <button class="ap-plant ap-plant--cactus" type="button" aria-label="Cactus" data-plant="cactus"><img
+                src="assets/cactus-1.png" alt=""></button>
+            <button class="ap-plant ap-plant--lavender" type="button" aria-label="Lavender" data-plant="lavender"><img
+                src="assets/lavender-3.png" alt=""></button>
+            <button class="ap-plant ap-plant--tree" type="button" aria-label="White flowered tree"
+              data-plant="tree"><img src="assets/white-flowered-tree-2.png" alt=""></button>
+            <button class="ap-plant ap-plant--lily" type="button" aria-label="Peace lily" data-plant="lily"><img
+                src="assets/peace-lily-3-2.png" alt=""></button>
+            <button class="ap-plant ap-plant--daisy" type="button" aria-label="Daisy" data-plant="daisy"><img
+                src="assets/daisy-2-1.png" alt=""></button>
+            <button class="ap-plant ap-plant--droopy" type="button" aria-label="White droopy flower"
+              data-plant="droopy"><img src="assets/white-droopy-flower.png" alt=""></button>
+          </div>
+        </div>
+        <button class="ap-arrow ap-arrow--next" id="ap-plant-next" type="button" aria-label="Next plants"></button>
+
+        <!-- Commit button -->
+        <button class="ap-commit" id="ap-commit" type="button" disabled>COMMIT</button>
+      </div>
+    </div>
+
+    <!-- Plant Details Popup Modal -->
+    <div class="pd-modal" id="plant-details-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="pd-title">
+      <div class="pd-dialog" id="pd-dialog">
+        <img class="pd-bg" id="pd-bg" src="assets/ui-popup-left.png" alt="">
+        <div class="pd-content" id="pd-content">
+          <img class="pd-bar" src="assets/ui-streak-bar.png" alt="">
+
+          <h2 class="pd-title" id="pd-title">Plant Name</h2>
+          <p class="pd-repeat" id="pd-repeat">Repeat</p>
+
+          <p class="pd-today">today</p>
+          <ul class="pd-streak" id="pd-streak">
+            <!-- 8 days rendered dynamically -->
+          </ul>
+
+          <button class="pd-water" id="pd-water" type="button" aria-label="Water plant"></button>
+          <div class="pd-actions"><button class="pd-edit" id="pd-edit" type="button">edit</button>&nbsp;&nbsp;<button
+              class="pd-remove" id="pd-remove" type="button">remove</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // DEV OPTION: Date Setter helper (Remove anytime)
+    function getCurrentDate() {
+      if (window.__DEV_DATE__) {
+        return new Date(window.__DEV_DATE__);
+      }
+      return new Date();
+    }
+    // /DEV OPTION
+
+    const modal = document.getElementById('add-plant-modal');
+    const closeBtn = document.getElementById('ap-close');
+    const apTitle = document.getElementById('ap-title');
+    const apRemove = document.getElementById('ap-remove');
+    const plantInput = document.getElementById('plant-name');
+    const commitBtn = document.getElementById('ap-commit');
+    const pots = document.querySelectorAll('.pot');
+    const repeatVal = document.getElementById('ap-repeat-val');
+    const daysPicker = document.getElementById('ap-days-picker');
+    const monthlyPicker = document.getElementById('ap-monthly-picker');
+    const dayNumInput = document.getElementById('ap-day-num');
+    const ordinalSuffix = document.getElementById('ap-ordinal-suffix');
+    const yearlyPicker = document.getElementById('ap-yearly-picker');
+    const yearMonthPrev = document.getElementById('ap-year-month-prev');
+    const yearMonthNext = document.getElementById('ap-year-month-next');
+    const yearMonthVal = document.getElementById('ap-year-month-val');
+    const yearDayNumInput = document.getElementById('ap-year-day-num');
+    const yearOrdinalSuffix = document.getElementById('ap-year-ordinal-suffix');
+    const dayBtns = document.querySelectorAll('.ap-day-btn');
+    const plantBtns = document.querySelectorAll('.ap-plant');
+
+    // Plant details modal elements
+    const pdModal = document.getElementById('plant-details-modal');
+    const pdDialog = document.getElementById('pd-dialog');
+    const pdBg = document.getElementById('pd-bg');
+    const pdContent = document.getElementById('pd-content');
+    const pdTitle = document.getElementById('pd-title');
+    const pdRepeat = document.getElementById('pd-repeat');
+    const pdStreak = document.getElementById('pd-streak');
+    const pdWater = document.getElementById('pd-water');
+    const pdEdit = document.getElementById('pd-edit');
+    const pdRemove = document.getElementById('pd-remove');
+
+    const repeatOptions = ['daily', 'weekly', 'monthly', 'yearly'];
+    let repeatIndex = 0;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthDays = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let yearMonthIndex = 0;
+    let activePot = null;
+    let currentDetailsPot = null;
+
+    const potConfigs = {
+      'c1-top': { bg: 'assets/ui-popup-left.png', left: 9, top: 28, flipX: false, flipY: false },
+      'c2-top': { bg: 'assets/ui-popup-mid.png', left: -6, top: 28, flipX: false, flipY: false },
+      'c3-top': { bg: 'assets/ui-popup-mid.png', left: 24, top: 28, flipX: false, flipY: false },
+      'c4-top': { bg: 'assets/ui-popup-left.png', left: 11, top: 28, flipX: true, flipY: false },
+      'c1-bottom': { bg: 'assets/ui-popup-left.png', left: 10, top: -5, flipX: false, flipY: true },
+      'c2-bottom': { bg: 'assets/ui-popup-mid.png', left: -6, top: -5, flipX: false, flipY: true },
+      'c3-bottom': { bg: 'assets/ui-popup-mid.png', left: 24, top: -5, flipX: false, flipY: true },
+      'c4-bottom': { bg: 'assets/ui-popup-left.png', left: 11, top: -5, flipX: true, flipY: true },
+    };
+
+    // Ordinal suffix calculation (1st, 2nd, 3rd, 4th... 11th, 21st, 22nd...)
+    function getOrdinalSuffix(val) {
+      const num = parseInt(val, 10);
+      if (isNaN(num) || num <= 0) return 'th';
+      const j = num % 10;
+      const k = num % 100;
+      if (j === 1 && k !== 11) return 'st';
+      if (j === 2 && k !== 12) return 'nd';
+      if (j === 3 && k !== 13) return 'rd';
+      return 'th';
+    }
+
+    function updateOrdinal() {
+      if (!dayNumInput || !ordinalSuffix) return;
+      let raw = dayNumInput.value.replace(/\D/g, '');
+      if (raw !== '') {
+        let num = parseInt(raw, 10);
+        if (num > 31) num = 31;
+        if (num < 1) num = 1;
+        dayNumInput.value = num;
+        ordinalSuffix.textContent = getOrdinalSuffix(num);
+      } else {
+        ordinalSuffix.textContent = 'th';
+      }
+      checkCommitReady();
+    }
+
+    function updateYearMonth() {
+      if (yearMonthVal) yearMonthVal.textContent = monthNames[yearMonthIndex];
+      if (yearDayNumInput && yearDayNumInput.value !== '') {
+        updateYearOrdinal();
+      } else {
+        checkCommitReady();
+      }
+    }
+
+    function updateYearOrdinal() {
+      if (!yearDayNumInput || !yearOrdinalSuffix) return;
+      let raw = yearDayNumInput.value.replace(/\D/g, '');
+      if (raw !== '') {
+        let num = parseInt(raw, 10);
+        const maxDays = monthDays[yearMonthIndex] || 31;
+        if (num > maxDays) num = maxDays;
+        if (num < 1) num = 1;
+        yearDayNumInput.value = num;
+        yearOrdinalSuffix.textContent = getOrdinalSuffix(num);
+      } else {
+        yearOrdinalSuffix.textContent = 'th';
+      }
+      checkCommitReady();
+    }
+
+    function updateRepeat() {
+      const current = repeatOptions[repeatIndex];
+      if (repeatVal) repeatVal.textContent = current;
+      if (daysPicker) {
+        daysPicker.hidden = (current !== 'weekly');
+      }
+      if (monthlyPicker) {
+        monthlyPicker.hidden = (current !== 'monthly');
+      }
+      if (yearlyPicker) {
+        yearlyPicker.hidden = (current !== 'yearly');
+      }
+      checkCommitReady();
+    }
+
+    function checkCommitReady() {
+      const hasName = plantInput && plantInput.value.trim().length > 0;
+      const hasPlant = document.querySelector('.ap-plant.is-selected') !== null;
+
+      let repeatValid = true;
+      const currentRepeat = repeatOptions[repeatIndex];
+      if (currentRepeat === 'weekly') {
+        repeatValid = document.querySelectorAll('.ap-day-btn.is-active').length > 0;
+      } else if (currentRepeat === 'monthly') {
+        const val = parseInt(dayNumInput?.value, 10);
+        repeatValid = !isNaN(val) && val >= 1 && val <= 31;
+      } else if (currentRepeat === 'yearly') {
+        const val = parseInt(yearDayNumInput?.value, 10);
+        const maxDays = monthDays[yearMonthIndex] || 31;
+        repeatValid = !isNaN(val) && val >= 1 && val <= maxDays;
+      }
+
+      const isReady = Boolean(hasName && hasPlant && repeatValid);
+      if (commitBtn) {
+        if (isReady) {
+          commitBtn.classList.add('is-ready');
+          commitBtn.removeAttribute('disabled');
+        } else {
+          commitBtn.classList.remove('is-ready');
+          commitBtn.setAttribute('disabled', 'true');
+        }
+      }
+      return isReady;
+    }
+
+    function resetModal() {
+      if (plantInput) plantInput.value = '';
+      repeatIndex = 0;
+      updateRepeat();
+
+      if (dayNumInput) dayNumInput.value = '';
+      if (ordinalSuffix) ordinalSuffix.textContent = 'th';
+
+      yearMonthIndex = getCurrentDate().getMonth();
+      updateYearMonth();
+      if (yearDayNumInput) yearDayNumInput.value = '';
+      if (yearOrdinalSuffix) yearOrdinalSuffix.textContent = 'th';
+
+      dayBtns.forEach((btn, idx) => {
+        const isActive = idx < 2; // Sunday and Monday active by default
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+
+      plantBtns.forEach(btn => btn.classList.remove('is-selected'));
+      plantCarouselOffset = 0;
+      updatePlantCarousel();
+      checkCommitReady();
+    }
+
+    function openModal(pot, isEdit = false) {
+      activePot = pot || null;
+      if (isEdit && activePot) {
+        if (apTitle) apTitle.textContent = 'Edit Plant';
+        if (apRemove) apRemove.hidden = false;
+
+        if (plantInput) plantInput.value = activePot.dataset.plantName || '';
+
+        let rType = activePot.dataset.repeatType;
+        if (!rType) {
+          const rep = activePot.dataset.repeat || '';
+          if (rep === 'daily' || rep === 'weekly' || rep === 'monthly' || rep === 'yearly') {
+            rType = rep;
+          } else if (rep.startsWith('on the ')) {
+            rType = 'monthly';
+          } else if (rep.startsWith('on ')) {
+            rType = 'yearly';
+          } else if (rep.length > 0) {
+            rType = 'weekly';
+          } else {
+            rType = 'daily';
+          }
+        }
+        repeatIndex = repeatOptions.indexOf(rType);
+        if (repeatIndex === -1) repeatIndex = 0;
+        updateRepeat();
+
+        if (rType === 'weekly') {
+          let savedDays = [];
+          try {
+            if (activePot.dataset.repeatDays) savedDays = JSON.parse(activePot.dataset.repeatDays);
+          } catch (e) { }
+          if (!savedDays.length && activePot.dataset.repeat) {
+            savedDays = activePot.dataset.repeat.split(/\s+/).filter(Boolean);
+          }
+          dayBtns.forEach(btn => {
+            const active = savedDays.includes(btn.textContent.trim().toLowerCase());
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+        } else if (rType === 'monthly') {
+          if (dayNumInput) {
+            let num = activePot.dataset.repeatDayNum;
+            if (!num && activePot.dataset.repeat) {
+              const match = activePot.dataset.repeat.match(/\d+/);
+              if (match) num = match[0];
+            }
+            dayNumInput.value = num || '';
+            updateOrdinal();
+          }
+        } else if (rType === 'yearly') {
+          if (activePot.dataset.repeatMonth !== undefined) {
+            yearMonthIndex = parseInt(activePot.dataset.repeatMonth, 10);
+            if (isNaN(yearMonthIndex) || yearMonthIndex < 0 || yearMonthIndex > 11) {
+              yearMonthIndex = 0;
+            }
+          } else if (activePot.dataset.repeat) {
+            const matchMonth = activePot.dataset.repeat.match(/on\s+([A-Za-z]+)/);
+            if (matchMonth) {
+              const idx = monthNames.findIndex(m => m.toLowerCase() === matchMonth[1].toLowerCase());
+              if (idx !== -1) yearMonthIndex = idx;
+            }
+          }
+          if (yearDayNumInput) {
+            let num = activePot.dataset.repeatDayNum;
+            if (!num && activePot.dataset.repeat) {
+              const match = activePot.dataset.repeat.match(/\d+/);
+              if (match) num = match[0];
+            }
+            yearDayNumInput.value = num || '';
+            updateYearOrdinal();
+          }
+          updateYearMonth();
+        }
+
+        // Match plant
+        plantBtns.forEach(b => b.classList.remove('is-selected'));
+        let plantType = activePot.dataset.plantType;
+        if (!plantType) {
+          const img = activePot.querySelector('.pot-plant');
+          if (img) {
+            const src = img.getAttribute('src') || '';
+            if (src.includes('cactus')) plantType = 'cactus';
+            else if (src.includes('lavender')) plantType = 'lavender';
+            else if (src.includes('white-flowered-tree')) plantType = 'tree';
+            else if (src.includes('peace-lily')) plantType = 'lily';
+            else if (src.includes('daisy')) plantType = 'daisy';
+            else if (src.includes('droopy')) plantType = 'droopy';
+          }
+        }
+        if (plantType) {
+          const targetBtn = document.querySelector(`.ap-plant[data-plant="${plantType}"]`);
+          if (targetBtn) {
+            targetBtn.classList.add('is-selected');
+            const allPlants = Array.from(document.querySelectorAll('.ap-plant'));
+            const idx = allPlants.indexOf(targetBtn);
+            plantCarouselOffset = idx >= 5 ? 1 : 0;
+            updatePlantCarousel();
+          }
+        }
+
+        checkCommitReady();
+      } else {
+        if (apTitle) apTitle.textContent = 'Add Plant';
+        if (apRemove) apRemove.hidden = true;
+        resetModal();
+      }
+
+      modal.classList.remove('is-closing');
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => plantInput && plantInput.focus(), 300);
+    }
+
+    function closeModal() {
+      if (!modal.classList.contains('is-open') || modal.classList.contains('is-closing')) return;
+      modal.classList.remove('is-open');
+      modal.classList.add('is-closing');
+      modal.setAttribute('aria-hidden', 'true');
+
+      // Reset remove button confirm state
+      if (apRemove) {
+        apRemove.classList.remove('is-confirming');
+        apRemove.textContent = 'remove';
+      }
+
+      function onAnimationEnd(e) {
+        if (e.animationName === 'ap-fall-fade-out') {
+          modal.classList.remove('is-closing');
+          modal.removeEventListener('animationend', onAnimationEnd);
+        }
+      }
+      modal.addEventListener('animationend', onAnimationEnd);
+    }
+
+    function getLocalDateStr(date = getCurrentDate()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function calculateStreak(pot) {
+      if (!pot) return ['-', '-', '-', '-', '-', '-', '-', '-'];
+      const today = getCurrentDate();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayStr = getLocalDateStr(todayStart);
+
+      let createdDateStr = pot.dataset.createdDate;
+      if (!createdDateStr) {
+        if (pot.dataset.lastWateredDate) {
+          createdDateStr = getLocalDateStr(new Date(pot.dataset.lastWateredDate));
+        } else {
+          createdDateStr = todayStr;
+        }
+      }
+
+      let history = [];
+      try {
+        if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
+      } catch (e) { }
+
+      if (pot.dataset.wateredToday === 'true' && !history.includes(todayStr)) {
+        history.push(todayStr);
+      }
+      if (pot.dataset.lastWateredDate) {
+        const lastIso = getLocalDateStr(new Date(pot.dataset.lastWateredDate));
+        if (lastIso && !history.includes(lastIso)) {
+          history.push(lastIso);
+        }
+      }
+
+      const repeatType = pot.dataset.repeatType || 'daily';
+      let oppDates = [];
+
+      if (repeatType === 'daily') {
+        for (let i = 7; i >= 0; i--) {
+          const d = new Date(todayStart);
+          d.setDate(todayStart.getDate() - i);
+          oppDates.push(d);
+        }
+        pot.dataset.streakLastOppLabel = 'today';
+      } else if (repeatType === 'weekly') {
+        let repeatDays = [];
+        try {
+          if (pot.dataset.repeatDays) repeatDays = JSON.parse(pot.dataset.repeatDays);
+        } catch (e) { }
+        if (!repeatDays.length && pot.dataset.repeat) {
+          repeatDays = pot.dataset.repeat.split(/\s+/).filter(Boolean);
+        }
+        const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        let activeIndices = repeatDays.map(d => dayNames.indexOf(d.toLowerCase())).filter(idx => idx !== -1);
+        if (!activeIndices.length) {
+          activeIndices = [0, 1, 2, 3, 4, 5, 6];
+        }
+
+        let cur = new Date(todayStart);
+        let found = [];
+        while (found.length < 8) {
+          if (activeIndices.includes(cur.getDay())) {
+            found.push(new Date(cur));
+          }
+          cur.setDate(cur.getDate() - 1);
+        }
+        oppDates = found.reverse();
+
+        const lastOpp = oppDates[7];
+        const lastOppStr = getLocalDateStr(lastOpp);
+        if (lastOppStr === todayStr) {
+          pot.dataset.streakLastOppLabel = 'today';
+        } else {
+          const diffDays = Math.round((todayStart - lastOpp) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            pot.dataset.streakLastOppLabel = 'yesterday';
+          } else {
+            pot.dataset.streakLastOppLabel = dayNames[lastOpp.getDay()];
+          }
+        }
+      } else if (repeatType === 'monthly') {
+        let dayNum = parseInt(pot.dataset.repeatDayNum, 10);
+        if (isNaN(dayNum) || dayNum < 1) dayNum = 1;
+        if (dayNum > 31) dayNum = 31;
+
+        let curYear = todayStart.getFullYear();
+        let curMonth = todayStart.getMonth();
+        let mOffset = (todayStart.getDate() >= dayNum) ? 0 : 1;
+        for (let i = 7; i >= 0; i--) {
+          const targetM = curMonth - (i + mOffset);
+          const tempDate = new Date(curYear, targetM + 1, 0);
+          const maxD = tempDate.getDate();
+          const d = new Date(curYear, targetM, Math.min(dayNum, maxD));
+          oppDates.push(d);
+        }
+
+        const lastOpp = oppDates[7];
+        const lastOppStr = getLocalDateStr(lastOpp);
+        if (lastOppStr === todayStr) {
+          pot.dataset.streakLastOppLabel = 'today';
+        } else {
+          pot.dataset.streakLastOppLabel = `${lastOpp.getDate()}${getOrdinalSuffix(lastOpp.getDate())}`;
+        }
+      } else if (repeatType === 'yearly') {
+        let monthIdx = parseInt(pot.dataset.repeatMonth, 10);
+        if (isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) monthIdx = 0;
+        let dayNum = parseInt(pot.dataset.repeatDayNum, 10);
+        if (isNaN(dayNum) || dayNum < 1) dayNum = 1;
+        if (dayNum > 31) dayNum = 31;
+
+        let curYear = todayStart.getFullYear();
+        const thisYearOpp = new Date(curYear, monthIdx, dayNum);
+        let yOffset = (todayStart >= thisYearOpp) ? 0 : 1;
+        for (let i = 7; i >= 0; i--) {
+          const d = new Date(curYear - (i + yOffset), monthIdx, dayNum);
+          oppDates.push(d);
+        }
+
+        const lastOpp = oppDates[7];
+        const lastOppStr = getLocalDateStr(lastOpp);
+        if (lastOppStr === todayStr) {
+          pot.dataset.streakLastOppLabel = 'today';
+        } else {
+          pot.dataset.streakLastOppLabel = `${monthNames[lastOpp.getMonth()]} ${lastOpp.getDate()}`;
+        }
+      }
+
+      const streak = [];
+      for (let i = 0; i < 8; i++) {
+        const oppD = oppDates[i];
+        if (!oppD) {
+          streak.push('-');
+          continue;
+        }
+        const oppStr = getLocalDateStr(oppD);
+
+        if (oppStr < createdDateStr) {
+          streak.push('-');
+          continue;
+        }
+
+        let isWatered = false;
+        if (repeatType === 'daily') {
+          isWatered = history.includes(oppStr);
+        } else if (repeatType === 'weekly') {
+          const prevD = i > 0 ? oppDates[i - 1] : null;
+          const prevStr = prevD ? getLocalDateStr(prevD) : null;
+          isWatered = history.some(h => {
+            if (prevStr && h <= prevStr) return false;
+            if (i === 7 && oppStr < todayStr) {
+              return h >= oppStr && h <= todayStr;
+            }
+            return h >= (prevStr ? prevStr : oppStr) && h <= oppStr;
+          });
+          if (!isWatered) isWatered = history.includes(oppStr);
+        } else if (repeatType === 'monthly') {
+          const y = oppD.getFullYear();
+          const m = oppD.getMonth();
+          isWatered = history.some(h => {
+            const [hy, hm] = h.split('-').map(Number);
+            return hy === y && (hm - 1) === m;
+          });
+        } else if (repeatType === 'yearly') {
+          const y = oppD.getFullYear();
+          isWatered = history.some(h => {
+            const [hy] = h.split('-').map(Number);
+            return hy === y;
+          });
+        }
+
+        if (isWatered) {
+          streak.push('check');
+        } else {
+          streak.push('x');
+        }
+      }
+
+      return streak;
+    }
+
+    function getMissedOpportunitiesCount(pot) {
+      if (!pot || !pot.classList.contains('has-plant')) return 0;
+      const todayStr = getCurrentDate().toDateString();
+      if (pot.dataset.wateredToday === 'true' && pot.dataset.lastWateredDate === todayStr) {
+        return 0;
+      }
+
+      const streak = calculateStreak(pot);
+      let startIndex = 6;
+      if (pot.dataset.streakLastOppLabel && pot.dataset.streakLastOppLabel !== 'today') {
+        startIndex = 7;
+      }
+
+      let missed = 0;
+      for (let i = startIndex; i >= 0; i--) {
+        if (streak[i] === 'x') {
+          missed++;
+        } else {
+          break;
+        }
+      }
+      return missed;
+    }
+
+    function updatePotVisuals(pot) {
+      if (!pot || !pot.classList.contains('has-plant')) return;
+      const potPlant = pot.querySelector('.pot-plant');
+      if (!potPlant) return;
+
+      const todayStr = getCurrentDate().toDateString();
+      const isWateredToday = (pot.dataset.wateredToday === 'true') && (pot.dataset.lastWateredDate === todayStr);
+
+      const missedCount = isWateredToday ? 0 : getMissedOpportunitiesCount(pot);
+
+      if (missedCount >= 1) {
+        // Missing watering resets the growth counter
+        pot.dataset.waterCount = '0';
+      }
+
+      const isGrown = pot.dataset.stage === 'grown';
+      const normalImg = isGrown ? (pot.dataset.grownPlantImg || 'assets/bud-4.png') : 'assets/bud-4.png';
+
+      if (missedCount >= 2) {
+        // Missed twice -> dead
+        if (isGrown) {
+          // Dead grown plant (pick random from the 4 dead plants if not already assigned)
+          if (!pot.dataset.deadPlantImg || pot.dataset.deadPlantImg === 'assets/dead-bud.png') {
+            const deadPlantOptions = [
+              'assets/dead-plant-1.png',
+              'assets/dead-plant-3.png',
+              'assets/dead-plant-4.png',
+              'assets/dead-plant-5.png'
+            ];
+            pot.dataset.deadPlantImg = deadPlantOptions[Math.floor(Math.random() * deadPlantOptions.length)];
+          }
+        } else {
+          // Dead bud
+          pot.dataset.deadPlantImg = 'assets/dead-bud.png';
+        }
+        potPlant.src = pot.dataset.deadPlantImg;
+        potPlant.alt = `${pot.dataset.plantName || 'Plant'} (dead)`;
+        potPlant.classList.add('is-dead');
+        pot.dataset.plantState = 'dead';
+      } else {
+        // Healthy, missed once, or revived
+        delete pot.dataset.deadPlantImg;
+        potPlant.src = normalImg;
+        potPlant.alt = isGrown ? (pot.dataset.plantName || '') : `${pot.dataset.plantName || ''} (bud)`;
+        potPlant.classList.remove('is-dead');
+        pot.dataset.plantState = 'healthy';
+      }
+    }
+
+    function updateAllPotVisuals() {
+      pots.forEach(pot => {
+        if (pot.classList.contains('has-plant')) {
+          updatePotVisuals(pot);
+        }
+      });
+    }
+
+    function openPlantDetailsModal(pot) {
+      currentDetailsPot = pot;
+
+      let col = 'c1';
+      if (pot.classList.contains('pot--c2') || pot.classList.contains('pot--h2')) col = 'c2';
+      else if (pot.classList.contains('pot--c3') || pot.classList.contains('pot--h3')) col = 'c3';
+      else if (pot.classList.contains('pot--c4') || pot.classList.contains('pot--h4')) col = 'c4';
+
+      const row = pot.classList.contains('pot--top') ? 'top' : 'bottom';
+      const cfg = potConfigs[`${col}-${row}`] || potConfigs['c1-top'];
+
+      pdBg.src = cfg.bg;
+      let transforms = [];
+      if (cfg.flipX) transforms.push('scaleX(-1)');
+      if (cfg.flipY) transforms.push('scaleY(-1)');
+      pdBg.style.transform = transforms.length ? transforms.join(' ') : 'none';
+
+      pdDialog.style.left = `calc(${cfg.left}px * var(--scale))`;
+      pdDialog.style.top = `calc(${cfg.top}px * var(--scale))`;
+      pdContent.style.transform = cfg.flipY ? 'translateY(calc(-20px * var(--scale)))' : 'none';
+
+      pdRepeat.textContent = pot.dataset.repeat || 'daily';
+
+      const todayStr = getCurrentDate().toDateString();
+      if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== todayStr) {
+        pot.dataset.wateredToday = 'false';
+      }
+
+      const isWatered = pot.dataset.wateredToday === 'true';
+      pdWater.classList.toggle('is-watered', isWatered);
+
+      // Render 8 streak opportunities
+      const streakData = calculateStreak(pot);
+      pot.dataset.streak = JSON.stringify(streakData);
+      updatePotVisuals(pot);
+
+      const plantName = pot.dataset.plantName || 'Plant Name';
+      const isDead = pot.dataset.plantState === 'dead';
+      const isBud = pot.dataset.stage !== 'grown';
+
+      pdTitle.textContent = '';
+      pdTitle.appendChild(document.createTextNode(plantName));
+      if (isDead) {
+        const span = document.createElement('span');
+        span.className = 'pd-title-status pd-title-status--dead';
+        span.textContent = '(dead)';
+        pdTitle.appendChild(span);
+      } else if (isBud) {
+        const span = document.createElement('span');
+        span.className = 'pd-title-status pd-title-status--bud';
+        span.textContent = '(bud)';
+        pdTitle.appendChild(span);
+      }
+
+      pdStreak.innerHTML = '';
+      for (let i = 0; i < 8; i++) {
+        const li = document.createElement('li');
+        li.className = `pd-streak-day pd-streak-day--${i + 1}`;
+        const val = streakData[i] || '-';
+        let iconSrc = 'assets/ui-strek-blank.png';
+        let alt = 'n/a';
+        if (val === 'check') {
+          iconSrc = 'assets/ui-strek-check.png';
+          alt = 'watered';
+        } else if (val === 'x') {
+          iconSrc = 'assets/ui-strek-x.png';
+          alt = 'not watered';
+        }
+        li.innerHTML = `<img src="${iconSrc}" alt="${alt}">`;
+        pdStreak.appendChild(li);
+      }
+
+      const pdToday = document.querySelector('.pd-today');
+      if (pdToday && pot.dataset.streakLastOppLabel) {
+        pdToday.textContent = pot.dataset.streakLastOppLabel;
+      }
+
+      pdModal.classList.add('is-open');
+      pdModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closePlantDetailsModal() {
+      if (!pdModal.classList.contains('is-open')) return;
+      pdModal.classList.remove('is-open');
+      pdModal.setAttribute('aria-hidden', 'true');
+
+      // Reset remove button confirm state
+      if (pdRemove) {
+        pdRemove.classList.remove('is-confirming');
+        pdRemove.textContent = 'remove';
+      }
+    }
+
+    function playWateringAnimation(pot) {
+      const anim = document.createElement('div');
+      anim.className = 'watering-anim';
+      const dropCount = 13; // 8 + 5 more drops = 13
+      for (let i = 0; i < dropCount; i++) {
+        const drop = document.createElement('span');
+        drop.className = 'water-drop';
+        drop.style.left = `${5 + Math.random() * 90}%`;
+        drop.style.animationDelay = `${Math.random() * 0.55}s`;
+        anim.appendChild(drop);
+      }
+      pot.appendChild(anim);
+
+      setTimeout(() => anim.remove(), 1400);
+    }
+
+    function playSparkleAnimation(pot) {
+      const anim = document.createElement('div');
+      anim.className = 'sparkle-anim';
+
+      const isBud = pot.dataset.stage === 'bud';
+      const yBase = isBud ? 4 : -6;
+      const ySpan = isBud ? 14 : 24;
+
+      const sparkleDefs = [
+        { type: 1, x: 8, y: yBase },
+        { type: 2, x: 16, y: yBase - 4 },
+        { type: 1, x: 24, y: yBase + 2 },
+        { type: 2, x: 5, y: yBase + ySpan * 0.38 },
+        { type: 1, x: 16, y: yBase + ySpan * 0.45 },
+        { type: 2, x: 27, y: yBase + ySpan * 0.4 },
+        { type: 1, x: 10, y: yBase + ySpan * 0.85 },
+        { type: 2, x: 22, y: yBase + ySpan * 0.85 },
+      ];
+
+      sparkleDefs.forEach(def => {
+        const sparkle = document.createElement('img');
+        sparkle.className = `sparkle sparkle--${def.type}`;
+        sparkle.src = def.type === 1 ? 'assets/sparkle1.png' : 'assets/sparkle2.png';
+        sparkle.alt = '';
+
+        const posX = def.x + (Math.random() * 4 - 2);
+        const posY = def.y + (Math.random() * 4 - 2);
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 3 + Math.random() * 4;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+
+        sparkle.style.left = `calc(${posX.toFixed(2)}px * var(--scale))`;
+        sparkle.style.top = `calc(${posY.toFixed(2)}px * var(--scale))`;
+        sparkle.style.setProperty('--dx', `calc(${dx.toFixed(2)}px * var(--scale))`);
+        sparkle.style.setProperty('--dy', `calc(${dy.toFixed(2)}px * var(--scale))`);
+
+        anim.appendChild(sparkle);
+      });
+
+      pot.appendChild(anim);
+
+      setTimeout(() => anim.remove(), 1500);
+    }
+
+    function calculateGrowThreshold(repeatType, repeatDays) {
+      if (repeatType === 'daily') {
+        // daily -> after watering for 5-7 times
+        return Math.floor(Math.random() * 3) + 5; // 5, 6, or 7
+      }
+      if (repeatType === 'weekly') {
+        let count = 2;
+        if (Array.isArray(repeatDays)) {
+          count = repeatDays.length;
+        } else if (typeof repeatDays === 'number') {
+          count = repeatDays;
+        }
+        if (count <= 0) count = 1;
+        if (count > 7) count = 7;
+
+        if (count <= 3) {
+          // weekly, less than or equal to 3 times a week -> anytime on the third week of watering
+          const minWaters = 2 * count + 1;
+          const maxWaters = 3 * count;
+          return Math.floor(Math.random() * (maxWaters - minWaters + 1)) + minWaters;
+        } else {
+          // weekly, more than 3 times a week -> anytime on the second week of watering
+          const minWaters = count + 1;
+          const maxWaters = 2 * count;
+          return Math.floor(Math.random() * (maxWaters - minWaters + 1)) + minWaters;
+        }
+      }
+      if (repeatType === 'monthly') {
+        // monthly -> on the first water
+        return 1;
+      }
+      if (repeatType === 'yearly') {
+        // yearly -> on the first water
+        return 1;
+      }
+      return 5;
+    }
+
+    pots.forEach(pot => {
+      pot.addEventListener('click', () => {
+        if (pot.classList.contains('has-plant')) {
+          openPlantDetailsModal(pot);
+        } else {
+          openModal(pot);
+        }
+      });
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+
+    function removePlant(pot) {
+      if (!pot) return;
+      pot.classList.remove('has-plant');
+      const potPlant = pot.querySelector('.pot-plant');
+      if (potPlant) potPlant.remove();
+
+      delete pot.dataset.plantName;
+      delete pot.dataset.repeat;
+      delete pot.dataset.repeatType;
+      delete pot.dataset.repeatDays;
+      delete pot.dataset.repeatDayNum;
+      delete pot.dataset.repeatMonth;
+      delete pot.dataset.plantType;
+      delete pot.dataset.grownPlantImg;
+      delete pot.dataset.stage;
+      delete pot.dataset.waterCount;
+      delete pot.dataset.growThreshold;
+      delete pot.dataset.wateredToday;
+      delete pot.dataset.lastWateredDate;
+      delete pot.dataset.streak;
+      delete pot.dataset.createdDate;
+      delete pot.dataset.waterHistory;
+      delete pot.dataset.streakLastOppLabel;
+      delete pot.dataset.plantState;
+      delete pot.dataset.deadPlantImg;
+
+      pot.setAttribute('aria-label', 'Add a plant');
+    }
+
+    apRemove?.addEventListener('click', () => {
+      if (!activePot) return;
+      if (!apRemove.classList.contains('is-confirming')) {
+        apRemove.classList.add('is-confirming');
+        apRemove.textContent = 'confirm';
+        return;
+      }
+      removePlant(activePot);
+      closeModal();
+    });
+
+    commitBtn?.addEventListener('click', () => {
+      if (!checkCommitReady()) return;
+      const selectedPlantBtn = document.querySelector('.ap-plant.is-selected');
+      if (activePot && selectedPlantBtn) {
+        const plantImg = selectedPlantBtn.querySelector('img');
+        if (plantImg) {
+          activePot.classList.add('has-plant');
+          let potPlant = activePot.querySelector('.pot-plant');
+          if (!potPlant) {
+            potPlant = document.createElement('img');
+            potPlant.className = 'pot-plant';
+            activePot.appendChild(potPlant);
+          }
+
+          // Options chosen
+          const currentRepeat = repeatOptions[repeatIndex];
+          activePot.dataset.repeatType = currentRepeat;
+          activePot.dataset.plantName = plantInput.value.trim();
+          activePot.dataset.plantType = selectedPlantBtn.dataset.plant || '';
+          activePot.dataset.grownPlantImg = plantImg.src;
+
+          let repeatSummary = currentRepeat;
+          let parsedDays = [];
+          if (currentRepeat === 'weekly') {
+            parsedDays = Array.from(document.querySelectorAll('.ap-day-btn.is-active')).map(b => b.textContent.trim());
+            activePot.dataset.repeatDays = JSON.stringify(parsedDays);
+            repeatSummary = parsedDays.join(' ') || 'weekly';
+          } else if (currentRepeat === 'monthly') {
+            activePot.dataset.repeatDayNum = dayNumInput.value.trim();
+            repeatSummary = `on the ${dayNumInput.value || '1'}${ordinalSuffix.textContent}`;
+          } else if (currentRepeat === 'yearly') {
+            activePot.dataset.repeatMonth = yearMonthIndex;
+            activePot.dataset.repeatDayNum = yearDayNumInput.value.trim();
+            repeatSummary = `on ${monthNames[yearMonthIndex]} ${yearDayNumInput.value || '1'}${yearOrdinalSuffix.textContent}`;
+          }
+          activePot.dataset.repeat = repeatSummary;
+
+          // Check if already grown or new bud
+          const alreadyGrown = activePot.dataset.stage === 'grown';
+          if (alreadyGrown) {
+            potPlant.src = plantImg.src;
+            potPlant.alt = plantInput.value.trim();
+          } else {
+            activePot.dataset.stage = 'bud';
+            activePot.dataset.growThreshold = calculateGrowThreshold(currentRepeat, parsedDays).toString();
+            if (!activePot.dataset.waterCount) {
+              activePot.dataset.waterCount = '0';
+            }
+            potPlant.src = 'assets/bud-4.png';
+            potPlant.alt = `${plantInput.value.trim()} (bud)`;
+          }
+
+          activePot.setAttribute('aria-label', `${plantInput.value.trim()} plant`);
+
+          if (!activePot.dataset.wateredToday) {
+            activePot.dataset.wateredToday = 'false';
+          }
+          if (!activePot.dataset.createdDate) {
+            activePot.dataset.createdDate = getLocalDateStr(getCurrentDate());
+          }
+          if (!activePot.dataset.waterHistory) {
+            activePot.dataset.waterHistory = JSON.stringify([]);
+          }
+          activePot.dataset.streak = JSON.stringify(calculateStreak(activePot));
+          updatePotVisuals(activePot);
+        }
+
+        // Remove the hint and arrow after adding the first plant
+        const hint = document.querySelector('.hint');
+        const hintArrow = document.querySelector('.hint-arrow');
+        if (hint) hint.remove();
+        if (hintArrow) hintArrow.remove();
+      }
+      closeModal();
+    });
+
+    pdWater?.addEventListener('click', () => {
+      if (!currentDetailsPot) return;
+      const pot = currentDetailsPot;
+
+      const todayStr = getCurrentDate().toDateString();
+      const isFirstWaterToday = (pot.dataset.wateredToday !== 'true') || (pot.dataset.lastWateredDate !== todayStr);
+
+      // If missed watering opportunities occurred, reset growth counter
+      if (getMissedOpportunitiesCount(pot) >= 1) {
+        pot.dataset.waterCount = '0';
+      }
+
+      pot.dataset.wateredToday = 'true';
+      pot.dataset.lastWateredDate = todayStr;
+
+      const todayIso = getLocalDateStr(getCurrentDate());
+      let history = [];
+      try {
+        if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
+      } catch (e) { }
+      if (!history.includes(todayIso)) {
+        history.push(todayIso);
+        pot.dataset.waterHistory = JSON.stringify(history);
+      }
+
+      const streakData = calculateStreak(pot);
+      pot.dataset.streak = JSON.stringify(streakData);
+      updatePotVisuals(pot);
+
+      // Only the first water each day counts towards growing the plant
+      let shouldGrow = false;
+      if (isFirstWaterToday) {
+        let waterCount = parseInt(pot.dataset.waterCount || '0', 10);
+        waterCount++;
+        pot.dataset.waterCount = waterCount.toString();
+
+        const growThreshold = parseInt(pot.dataset.growThreshold || '5', 10);
+        const isBud = pot.dataset.stage === 'bud';
+        shouldGrow = isBud && (waterCount >= growThreshold);
+      }
+
+      closePlantDetailsModal();
+      playWateringAnimation(pot);
+
+      if (isFirstWaterToday) {
+        setTimeout(() => {
+          playSparkleAnimation(pot);
+        }, 700);
+      }
+
+      if (shouldGrow) {
+        pot.dataset.stage = 'grown';
+        setTimeout(() => {
+          const potPlant = pot.querySelector('.pot-plant');
+          if (potPlant && pot.dataset.grownPlantImg) {
+            potPlant.src = pot.dataset.grownPlantImg;
+            potPlant.alt = pot.dataset.plantName || '';
+            potPlant.classList.remove('plant-growing');
+            void potPlant.offsetWidth;
+            potPlant.classList.add('plant-growing');
+          }
+        }, 450);
+      }
+    });
+
+    pdEdit?.addEventListener('click', () => {
+      if (!currentDetailsPot) return;
+      const pot = currentDetailsPot;
+      closePlantDetailsModal();
+      openModal(pot, true);
+    });
+
+    pdRemove?.addEventListener('click', () => {
+      if (!currentDetailsPot) return;
+      if (!pdRemove.classList.contains('is-confirming')) {
+        pdRemove.classList.add('is-confirming');
+        pdRemove.textContent = 'confirm';
+        return;
+      }
+      removePlant(currentDetailsPot);
+      closePlantDetailsModal();
+    });
+
+    plantInput?.addEventListener('input', checkCommitReady);
+
+    // Close when clicking outside modal dialogs
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    pdModal.addEventListener('click', (e) => {
+      if (e.target === pdModal) {
+        closePlantDetailsModal();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closePlantDetailsModal();
+      }
+    });
+
+    // Repeat option buttons
+    document.getElementById('ap-repeat-prev')?.addEventListener('click', () => {
+      repeatIndex = (repeatIndex - 1 + repeatOptions.length) % repeatOptions.length;
+      updateRepeat();
+    });
+    document.getElementById('ap-repeat-next')?.addEventListener('click', () => {
+      repeatIndex = (repeatIndex + 1) % repeatOptions.length;
+      updateRepeat();
+    });
+
+    dayNumInput?.addEventListener('input', updateOrdinal);
+    yearDayNumInput?.addEventListener('input', updateYearOrdinal);
+
+    yearMonthPrev?.addEventListener('click', () => {
+      yearMonthIndex = (yearMonthIndex - 1 + 12) % 12;
+      updateYearMonth();
+    });
+    yearMonthNext?.addEventListener('click', () => {
+      yearMonthIndex = (yearMonthIndex + 1) % 12;
+      updateYearMonth();
+    });
+    yearMonthVal?.addEventListener('click', () => {
+      yearMonthIndex = (yearMonthIndex + 1) % 12;
+      updateYearMonth();
+    });
+
+    // Day of week toggles
+    dayBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('is-active');
+        btn.setAttribute('aria-pressed', btn.classList.contains('is-active'));
+        checkCommitReady();
+      });
+    });
+
+    // Plant choices selection
+    plantBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wasSelected = btn.classList.contains('is-selected');
+        plantBtns.forEach(b => b.classList.remove('is-selected'));
+        if (!wasSelected) {
+          btn.classList.add('is-selected');
+        }
+        checkCommitReady();
+      });
+    });
+
+    // Plant choices carousel navigation
+    let plantCarouselOffset = 0;
+    const carouselTrack = document.getElementById('ap-carousel-track');
+
+    function updatePlantCarousel() {
+      if (carouselTrack) {
+        carouselTrack.style.transform = `translateX(calc(${-plantCarouselOffset * 36}px * var(--scale)))`;
+      }
+    }
+
+    document.getElementById('ap-plant-prev')?.addEventListener('click', () => {
+      const allPlants = document.querySelectorAll('.ap-plant');
+      const maxOffset = Math.max(0, allPlants.length - 5);
+      if (plantCarouselOffset > 0) {
+        plantCarouselOffset--;
+      } else {
+        plantCarouselOffset = maxOffset;
+      }
+      updatePlantCarousel();
+    });
+
+    document.getElementById('ap-plant-next')?.addEventListener('click', () => {
+      const allPlants = document.querySelectorAll('.ap-plant');
+      const maxOffset = Math.max(0, allPlants.length - 5);
+      if (plantCarouselOffset < maxOffset) {
+        plantCarouselOffset++;
+      } else {
+        plantCarouselOffset = 0;
+      }
+      updatePlantCarousel();
+    });
+
+    updatePlantCarousel();
+
+    // DEV OPTION: Date Setter (Remove anytime)
+    const devDateInput = document.getElementById('dev-date-input');
+    const devDateReset = document.getElementById('dev-date-reset');
+
+    function syncDevDateInput() {
+      if (devDateInput) {
+        devDateInput.value = getLocalDateStr(getCurrentDate());
+      }
+    }
+    syncDevDateInput();
+
+    devDateInput?.addEventListener('change', () => {
+      if (devDateInput.value) {
+        window.__DEV_DATE__ = new Date(devDateInput.value + 'T12:00:00');
+      } else {
+        window.__DEV_DATE__ = null;
+      }
+      pots.forEach(pot => {
+        if (pot.classList.contains('has-plant')) {
+          const tStr = getCurrentDate().toDateString();
+          if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== tStr) {
+            pot.dataset.wateredToday = 'false';
+          }
+          updatePotVisuals(pot);
+        }
+      });
+      if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
+        openPlantDetailsModal(currentDetailsPot);
+      }
+    });
+
+    devDateReset?.addEventListener('click', () => {
+      window.__DEV_DATE__ = null;
+      syncDevDateInput();
+      pots.forEach(pot => {
+        if (pot.classList.contains('has-plant')) {
+          const tStr = getCurrentDate().toDateString();
+          if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== tStr) {
+            pot.dataset.wateredToday = 'false';
+          }
+          updatePotVisuals(pot);
+        }
+      });
+      if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
+        openPlantDetailsModal(currentDetailsPot);
+      }
+    });
+
+    // Secret code listener: type 'devdate' anywhere outside text inputs to toggle dev date popup
+    let secretBuffer = '';
+    const SECRET_CODE = 'devdate';
+
+    document.addEventListener('keydown', (e) => {
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) {
+        return;
+      }
+
+      if (e.key && e.key.length === 1) {
+        secretBuffer += e.key.toLowerCase();
+        if (secretBuffer.length > SECRET_CODE.length) {
+          secretBuffer = secretBuffer.slice(-SECRET_CODE.length);
+        }
+        if (secretBuffer === SECRET_CODE) {
+          secretBuffer = '';
+          const devContainer = document.getElementById('dev-date-container');
+          if (devContainer) {
+            const isHidden = devContainer.style.display === 'none' || devContainer.hasAttribute('hidden');
+            if (isHidden) {
+              devContainer.removeAttribute('hidden');
+              devContainer.style.display = 'flex';
+              devDateInput?.focus();
+            } else {
+              devContainer.style.display = 'none';
+            }
+          }
+        }
+      }
+    });
+
+    document.getElementById('dev-date-close')?.addEventListener('click', () => {
+      const devContainer = document.getElementById('dev-date-container');
+      if (devContainer) {
+        devContainer.style.display = 'none';
+      }
+    });
+    // /DEV OPTION: Date Setter
+
+    updateAllPotVisuals();
+  </script>
+</body>
+
+</html>
