@@ -13,8 +13,8 @@
   --col-2: calc(96.94px * var(--scale));
   --col-3: calc(127.17px * var(--scale));
   --col-4: calc(157px * var(--scale));
-  --row-top: calc(22px * var(--scale));
-  --row-bottom: calc(82px * var(--scale));
+  --row-top: calc(17px * var(--scale));
+  --row-bottom: calc(77px * var(--scale));
 }
 
 *,
@@ -769,7 +769,7 @@ body {
 
 .pot-plant {
   position: absolute;
-  bottom: calc(11px * var(--scale));
+  bottom: calc(21px * var(--scale));
   left: 0;
   width: 100%;
   height: auto;
