@@ -164,6 +164,7 @@
             <!-- 8 days rendered dynamically -->
           </ul>
 
+          <button class="pd-reset-pos" id="pd-reset-pos" type="button">reset position</button>
           <button class="pd-water" id="pd-water" type="button" aria-label="Water plant"></button>
           <div class="pd-actions"><button class="pd-edit" id="pd-edit" type="button">edit</button>&nbsp;&nbsp;<button
               class="pd-remove" id="pd-remove" type="button">remove</button></div>
@@ -212,6 +213,7 @@
     const pdRepeat = document.getElementById('pd-repeat');
     const pdStreak = document.getElementById('pd-streak');
     const pdWater = document.getElementById('pd-water');
+    const pdResetPos = document.getElementById('pd-reset-pos');
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
@@ -276,6 +278,12 @@
       pot.classList.add(`pot--c${col}`, `pot--h${col}`, `pot--${row}`);
     }
 
+    // Each pot's home slot, recorded once at load from its initial classes.
+    // setPotSlot rewrites the pot--cN/pot--hN classes, so the original slot
+    // would be lost after dragging without this.
+    const potHomeSlots = new Map();
+    pots.forEach(pot => potHomeSlots.set(pot, getPotSlot(pot)));
+
     function slotKey(col, row) { return `${col}-${row}`; }
 
     function slotCentre(col, row) {
@@ -336,12 +344,16 @@
     // After the first watering it becomes "drag to move!" (arrow stays).
     // After the first pot move the hint and arrow go away for good
     // (for the session).
+    // Once the first plant exists, the hint and arrow move to point at
+    // it: the arrow's centre lines up with that pot's centre, sitting
+    // just above the pot, with the text centred above the arrow.
     // A move before anything is planted doesn't count: the hint stays
     // as "click to add a plant!", so the prompts above still appear in
     // order after the first plant and the next move then dismisses them.
     let hasPlantedFirstPlant = false;
     let hasWateredFirstPlant = false;
     let hasMovedFirstPot = false;
+    let firstPlantedPot = null;
 
     function updateHint() {
       const hint = document.querySelector('.hint');
@@ -355,6 +367,34 @@
         hint.textContent = 'drag to move!';
       } else if (hasPlantedFirstPlant && hint) {
         hint.textContent = 'water your plant to track your progress!';
+      }
+      positionHint();
+    }
+
+    // Point the hint + arrow at the first planted plant. Before any
+    // plant exists the hint keeps its default spot (pointing at the
+    // top-left pot). The pot can't move while the hint is alive — any
+    // post-plant move dismisses it — so the position is set at planting
+    // and re-measured only when the text changes.
+    function positionHint() {
+      const hint = document.querySelector('.hint');
+      const hintArrow = document.querySelector('.hint-arrow');
+      if (!hint || !hintArrow || !firstPlantedPot) return;
+      const slot = getPotSlot(firstPlantedPot);
+      const centreX = SLOT_COL_LEFT[slot.col - 1] + POT_SIZE / 2;
+      const rowTop = SLOT_ROW_TOP[slot.row];
+      const arrowTop = rowTop - 11; // 9px arrow + 2px gap above the pot
+      const hintTop = rowTop - 19; // 7px text + 1px gap above the arrow
+      hintArrow.style.left = `calc(${centreX - 4.5}px * var(--scale))`;
+      hintArrow.style.top = `calc(${arrowTop}px * var(--scale))`;
+      hint.style.top = `calc(${hintTop}px * var(--scale))`;
+      // Centre the text on the pot: measure its rendered width and
+      // convert back to design units, so calc() keeps it right if the
+      // stage rescales. (No translateX: the bob animation owns transform.)
+      const stageWidth = stageEl.getBoundingClientRect().width;
+      if (stageWidth > 0 && hint.offsetWidth > 0) {
+        const textWidthDesign = hint.offsetWidth / (stageWidth / 256);
+        hint.style.left = `calc(${centreX - textWidthDesign / 2}px * var(--scale))`;
       }
     }
 
@@ -1037,6 +1077,21 @@
       });
     }
 
+    // Reset-position button: label + blocked state for the details popup.
+    // Blocked when the pot is away from home and its home slot is taken by
+    // another pot. Re-evaluated every time the popup opens, so moving the
+    // offending pot away and re-opening restores the working button.
+    function updateResetPosButton() {
+      if (!pdResetPos || !currentDetailsPot) return;
+      const home = potHomeSlots.get(currentDetailsPot);
+      if (!home) return;
+      const slot = getPotSlot(currentDetailsPot);
+      const atHome = slot.col === home.col && slot.row === home.row;
+      const blocked = !atHome && !!potAtSlot(home.col, home.row, currentDetailsPot);
+      pdResetPos.classList.toggle('is-blocked', blocked);
+      pdResetPos.textContent = blocked ? 'cannot move' : 'reset position';
+    }
+
     function openPlantDetailsModal(pot) {
       currentDetailsPot = pot;
 
@@ -1107,6 +1162,8 @@
       if (pdToday && pot.dataset.streakLastOppLabel) {
         pdToday.textContent = pot.dataset.streakLastOppLabel;
       }
+
+      updateResetPosButton();
 
       pdModal.classList.add('is-open');
       pdModal.setAttribute('aria-hidden', 'false');
@@ -1358,10 +1415,12 @@
         }
 
         // First plant planted: hint switches to
-        // "water your plant to track your progress!" (arrow stays).
+        // "water your plant to track your progress!" (arrow stays) and
+        // moves to point at this pot (see positionHint).
         // It becomes "drag to move!" after the first watering, and only
         // disappears for good after the first pot move (see noteFirstPotMoved).
         if (isNewPlant && !hasPlantedFirstPlant) {
+          firstPlantedPot = activePot;
           hasPlantedFirstPlant = true;
           updateHint();
         }
@@ -1453,6 +1512,18 @@
       }
       removePlant(currentDetailsPot);
       closePlantDetailsModal();
+    });
+
+    pdResetPos?.addEventListener('click', () => {
+      if (!currentDetailsPot) return;
+      const home = potHomeSlots.get(currentDetailsPot);
+      if (!home) return;
+      const slot = getPotSlot(currentDetailsPot);
+      if (slot.col === home.col && slot.row === home.row) return; // already home — no-op
+      if (potAtSlot(home.col, home.row, currentDetailsPot)) return; // home taken — blocked, do nothing
+      setPotSlot(currentDetailsPot, home.col, home.row);
+      // Re-open so the popup follows the pot and the button refreshes.
+      openPlantDetailsModal(currentDetailsPot);
     });
 
     plantInput?.addEventListener('input', checkCommitReady);

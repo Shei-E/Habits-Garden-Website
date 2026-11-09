@@ -1129,8 +1129,17 @@ body {
   color: #bda499;
 }
 
+/* "reset position" sits left of the water button, clear of the streak
+   row (y 70-81) and the title/repeat text above. */
+.pd-reset-pos {
+  position: absolute;
+  left: calc(10px * var(--scale));
+  top: calc(98px * var(--scale));
+}
+
 .pd-edit,
-.pd-remove {
+.pd-remove,
+.pd-reset-pos {
   padding: 0;
   border: 0;
   background: none;
@@ -1154,6 +1163,20 @@ body {
 
 .pd-remove:hover {
   color: #000;
+}
+
+.pd-reset-pos:hover {
+  color: #000;
+}
+
+.pd-reset-pos.is-blocked,
+.pd-reset-pos.is-blocked:hover {
+  color: #e05656;
+}
+
+.pd-reset-pos:focus-visible {
+  outline: 1px dashed #000;
+  outline-offset: 1px;
 }
 
 .pd-remove.is-confirming,
