@@ -216,8 +216,10 @@
     const pdRemove = document.getElementById('pd-remove');
 
     const potOptions = [
-      { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false },
-      { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true },
+      { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
+      { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true, isShort: true },
+      { id: 'blue', name: 'Blue pot', src: 'assets/blue-pot.png', isWhite: false, isShort: true },
+      { id: 'yellow', name: 'Yellow pot', src: 'assets/yellow-pot.png', isWhite: false, isShort: true },
     ];
     let selectedPotIndex = 0; // clay pot by default
 
@@ -234,6 +236,7 @@
       const carouselTrack = document.getElementById('ap-carousel-track');
       if (carouselTrack) {
         carouselTrack.classList.toggle('is-white-pot', potData.isWhite);
+        carouselTrack.classList.toggle('is-short-pot', !!potData.isShort);
       }
     }
 
@@ -1080,7 +1083,10 @@
           const potData = potOptions[selectedPotIndex] || potOptions[0];
           activePot.dataset.potType = potData.id;
           activePot.style.backgroundImage = `url("${potData.src}")`;
-          activePot.classList.toggle('pot--white', potData.isWhite);
+          activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow');
+          if (potData.id === 'white') activePot.classList.add('pot--white');
+          if (potData.id === 'blue') activePot.classList.add('pot--blue');
+          if (potData.id === 'yellow') activePot.classList.add('pot--yellow');
 
           // Check if already grown or new bud
           const alreadyGrown = activePot.dataset.stage === 'grown';

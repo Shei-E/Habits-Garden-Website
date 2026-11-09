@@ -97,6 +97,14 @@ body {
   background-image: url("assets/white-pot.png");
 }
 
+.pot.pot--blue {
+  background-image: url("assets/blue-pot.png");
+}
+
+.pot.pot--yellow {
+  background-image: url("assets/yellow-pot.png");
+}
+
 .pot:focus-visible {
   outline: 2px dashed #000;
   outline-offset: 2px;
@@ -740,6 +748,10 @@ body {
   bottom: calc(11px * var(--scale));
 }
 
+.ap-carousel-track.is-short-pot .ap-plant-sprite {
+  bottom: calc(11px * var(--scale));
+}
+
 .ap-plant-pot {
   position: absolute;
   left: 0;
@@ -749,6 +761,10 @@ body {
 }
 
 .ap-carousel-track.is-white-pot .ap-plant-pot {
+  height: calc(11px * var(--scale));
+}
+
+.ap-carousel-track.is-short-pot .ap-plant-pot {
   height: calc(11px * var(--scale));
 }
 
@@ -839,6 +855,11 @@ body {
 }
 
 .pot.pot--white .pot-plant {
+  bottom: calc(11px * var(--scale));
+}
+
+.pot.pot--blue .pot-plant,
+.pot.pot--yellow .pot-plant {
   bottom: calc(11px * var(--scale));
 }
 
