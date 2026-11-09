@@ -13,8 +13,8 @@
   --col-2: calc(96.94px * var(--scale));
   --col-3: calc(127.17px * var(--scale));
   --col-4: calc(157px * var(--scale));
-  --row-top: calc(17px * var(--scale));
-  --row-bottom: calc(77px * var(--scale));
+  --row-top: calc(21px * var(--scale));
+  --row-bottom: calc(81px * var(--scale));
 }
 
 *,
@@ -81,12 +81,19 @@ body {
   height: calc(32px * var(--scale));
   padding: 0;
   border: 0;
-  background: url("assets/pot-template.png") bottom center / contain no-repeat;
+  background-image: url("assets/pot-template.png");
+  background-position: bottom center;
+  background-size: contain;
+  background-repeat: no-repeat;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   cursor: pointer;
+}
+
+.pot.pot--white {
+  background-image: url("assets/white-pot.png");
 }
 
 .pot:focus-visible {
@@ -391,11 +398,6 @@ body {
   top: calc(32px * var(--scale));
 }
 
-.ap-label--choose {
-  left: calc(23px * var(--scale));
-  top: calc(56px * var(--scale));
-}
-
 .ap-input {
   left: calc(var(--stage-w) * 0.2 + 10.8px * var(--scale));
   top: calc(32px * var(--scale) - 2px);
@@ -645,6 +647,185 @@ body {
   left: calc(var(--stage-w) * 0.8 + 15.2px * var(--scale));
 }
 
+/* ---------- Choose (pot / plant) Row (Figma node 204:29) ---------- */
+.ap-choose-row {
+  position: absolute;
+  left: calc(23px * var(--scale));
+  top: calc(56px * var(--scale));
+  height: calc(7px * var(--scale));
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.ap-choose-row .ap-label--choose {
+  position: static;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  white-space: nowrap;
+  color: #000;
+  min-width: calc(21px * var(--scale));
+}
+
+.ap-choose-control {
+  display: inline-flex;
+  align-items: center;
+  height: calc(7px * var(--scale));
+  gap: calc(3px * var(--scale));
+  margin-left: calc(5px * var(--scale));
+}
+
+.ap-choose-control .ap-step {
+  position: static;
+  width: calc(7px * var(--scale));
+  height: calc(7px * var(--scale));
+  flex-shrink: 0;
+  background: url("assets/ui-tiny-button-1.png") center / contain no-repeat !important;
+  cursor: pointer;
+}
+
+.ap-choose-control .ap-step--prev {
+  transform: scaleX(-1);
+}
+
+.ap-choose-control .ap-choose-value {
+  position: static;
+  display: inline-block;
+  width: calc(28px * var(--scale));
+  text-align: center;
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ---------- Sections: Pot & Plant Pickers ---------- */
+.ap-section {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ap-section>* {
+  pointer-events: auto;
+}
+
+.ap-section[hidden] {
+  display: none !important;
+}
+
+/* Pot Picker Section */
+.ap-pots-row {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ap-pots-row>* {
+  pointer-events: auto;
+}
+
+.ap-pot {
+  position: absolute;
+  top: calc(94px * var(--scale));
+  width: calc(32px * var(--scale));
+  height: calc(13px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ap-pot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ap-pot--white {
+  top: calc(96px * var(--scale));
+  height: calc(11px * var(--scale));
+}
+
+.ap-pot--1 {
+  left: calc(35.18px * var(--scale));
+}
+
+.ap-pot--2 {
+  left: calc(var(--stage-w) * 0.2 + 11.8px * var(--scale));
+}
+
+.ap-pot--3 {
+  left: calc(var(--stage-w) * 0.2 + 39.93px * var(--scale));
+}
+
+.ap-pot--4 {
+  left: calc(var(--stage-w) * 0.4 + 17.74px * var(--scale));
+}
+
+.ap-pot.is-selected {
+  outline: none;
+  transform: translateY(calc(-4px * var(--scale)));
+}
+
+.ap-arrow--pots {
+  left: calc(var(--stage-w) * 0.6 + 0.72px * var(--scale)) !important;
+  top: calc(94px * var(--scale)) !important;
+}
+
+/* Bottom-right Preview in Add Plant 2 */
+.ap-preview {
+  position: absolute;
+  left: calc(var(--stage-w) * 0.6 + 31.73px * var(--scale));
+  top: calc(62px * var(--scale));
+  width: calc(32px * var(--scale));
+  height: calc(48px * var(--scale));
+  pointer-events: none;
+}
+
+.ap-preview-plant,
+.ap-preview-pot {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ap-preview-plant {
+  bottom: calc(11px * var(--scale));
+  height: auto;
+}
+
+.ap-preview.is-white-pot .ap-preview-plant {
+  bottom: calc(9px * var(--scale));
+}
+
+.ap-preview-pot {
+  bottom: 0;
+  height: calc(13px * var(--scale));
+}
+
+.ap-preview.is-white-pot .ap-preview-pot {
+  height: calc(11px * var(--scale));
+}
+
 /* Plant carousel viewport & track */
 .ap-carousel-viewport {
   position: absolute;
@@ -688,48 +869,70 @@ body {
 .ap-plant img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
+.ap-plant-sprite {
+  position: absolute;
+  left: 0;
+  bottom: calc(11px * var(--scale));
+  width: 100%;
+  height: auto;
+}
+
+.ap-carousel-track.is-white-pot .ap-plant-sprite {
+  bottom: calc(9px * var(--scale));
+}
+
+.ap-plant-pot {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(13px * var(--scale));
+}
+
+.ap-carousel-track.is-white-pot .ap-plant-pot {
+  height: calc(11px * var(--scale));
+}
+
 .ap-plant--cactus {
   left: 0;
-  top: calc(85px * var(--scale));
-  height: calc(32px * var(--scale));
+  top: calc(71px * var(--scale));
+  height: calc(45px * var(--scale));
 }
 
 .ap-plant--lavender {
   left: calc(36px * var(--scale));
-  top: calc(69px * var(--scale));
-  height: calc(48px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
 }
 
 .ap-plant--tree {
   left: calc(72px * var(--scale));
-  top: calc(69px * var(--scale));
-  height: calc(48px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
 }
 
 .ap-plant--lily {
   left: calc(108px * var(--scale));
-  top: calc(69px * var(--scale));
-  height: calc(48px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
 }
 
 .ap-plant--daisy {
   left: calc(144px * var(--scale));
-  top: calc(69px * var(--scale));
-  height: calc(48px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
 }
 
 .ap-plant--droopy {
   left: calc(180px * var(--scale));
-  top: calc(69px * var(--scale));
-  height: calc(48px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
 }
 
 /* Commit button */
@@ -769,7 +972,7 @@ body {
 
 .pot-plant {
   position: absolute;
-  bottom: calc(21px * var(--scale));
+  bottom: calc(13px * var(--scale));
   left: 0;
   width: 100%;
   height: auto;
