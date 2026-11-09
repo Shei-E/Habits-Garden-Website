@@ -9,7 +9,6 @@
   --stage-h: calc(144px * var(--scale));
 
   /* column x-positions (Home Screen 2 / Figma node 184:110: 67 / 96.94 / 127.17 / 157) */
-  /* POT TOP AND BOTTOM*/
   --col-1: calc(67px * var(--scale));
   --col-2: calc(96.94px * var(--scale));
   --col-3: calc(127.17px * var(--scale));
@@ -712,12 +711,12 @@ body {
   background: none;
   border: 0;
   padding: 0;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ap-plant.is-selected {
   outline: none;
-  transform: translateY(calc(-4px * var(--scale)));
+  transform: translateY(calc(-5px * var(--scale)));
 }
 
 .ap-plant img {
