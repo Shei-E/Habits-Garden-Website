@@ -731,13 +731,13 @@ body {
 .ap-plant-sprite {
   position: absolute;
   left: 0;
-  bottom: calc(11px * var(--scale));
+  bottom: calc(13px * var(--scale));
   width: 100%;
   height: auto;
 }
 
 .ap-carousel-track.is-white-pot .ap-plant-sprite {
-  bottom: calc(9.5px * var(--scale));
+  bottom: calc(11px * var(--scale));
 }
 
 .ap-plant-pot {
