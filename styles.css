@@ -247,10 +247,9 @@ body {
   }
 }
 
-/* Landscape phones: lock the page so it cannot scroll up or down, and
-   shrink the stage so the whole garden fits the short viewport.
-   (The space sizes the stage with fit(); the repo has no fit(), so the
-   scale is fixed here to fit typical landscape phones.) */
+/* Landscape phones: lock the page so it cannot scroll up or down.
+   (The stage scale for short landscape viewports is set later in this
+   file, after the 1024px rule, so that rule cannot override it.) */
 @media (orientation: landscape) and (max-height: 600px) {
 
   html,
@@ -262,10 +261,6 @@ body {
   body {
     position: fixed;
     inset: 0;
-  }
-
-  :root {
-    --scale: 2.5;
   }
 }
 
@@ -1346,6 +1341,15 @@ body {
   :root {
     --scale: 4;
     /* Fits small windows (1024 × 576) */
+  }
+}
+
+/* Landscape phones: shrink the stage so the whole garden fits the short
+   viewport. This MUST come after the 1024px rule above — that rule also
+   matches short landscape viewports, and the later rule wins. */
+@media (orientation: landscape) and (max-height: 600px) {
+  :root {
+    --scale: 2.5;
   }
 }
 
