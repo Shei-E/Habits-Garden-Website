@@ -252,7 +252,9 @@ body {
    (The space sizes the stage with fit(); the repo has no fit(), so the
    scale is fixed here to fit typical landscape phones.) */
 @media (orientation: landscape) and (max-height: 600px) {
-  html, body {
+
+  html,
+  body {
     height: 100dvh;
     overflow: hidden;
   }
@@ -490,7 +492,7 @@ body {
 
 .ap-input {
   left: calc(var(--stage-w) * 0.2 + 10.8px * var(--scale));
-  top: calc(32px * var(--scale) - 2px);
+  top: calc(32px * var(--scale)px);
   width: calc(120px * var(--scale));
   height: calc(9px * var(--scale));
   line-height: normal;
@@ -1352,7 +1354,7 @@ body {
    Larger screens use the original positions above. */
 @media (max-width: 700px) {
   .ap-input {
-    top: calc(35px * var(--scale) - 3px);
+    top: calc(35px * var(--scale));
   }
 
   .ap-plant-sprite {
