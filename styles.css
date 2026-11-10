@@ -758,17 +758,17 @@ body {
 .ap-plant-sprite {
   position: absolute;
   left: 0;
-  bottom: calc(13px * var(--scale));
+  bottom: calc(12.5px * var(--scale));
   width: 100%;
   height: auto;
 }
 
 .ap-carousel-track.is-white-pot .ap-plant-sprite {
-  bottom: calc(11px * var(--scale));
+  bottom: calc(10.5px * var(--scale));
 }
 
 .ap-carousel-track.is-short-pot .ap-plant-sprite {
-  bottom: calc(11px * var(--scale));
+  bottom: calc(10.5px * var(--scale));
 }
 
 .ap-plant-pot {
@@ -869,7 +869,7 @@ body {
 
 .pot-plant {
   position: absolute;
-  bottom: calc(13px * var(--scale));
+  bottom: calc(12.5px * var(--scale));
   left: 0;
   width: 100%;
   height: auto;
@@ -882,12 +882,12 @@ body {
 }
 
 .pot.pot--white .pot-plant {
-  bottom: calc(11px * var(--scale));
+  bottom: calc(10.5px * var(--scale));
 }
 
 .pot.pot--blue .pot-plant,
 .pot.pot--yellow .pot-plant {
-  bottom: calc(11px * var(--scale));
+  bottom: calc(10.5px * var(--scale));
 }
 
 /* Centre bud / dead-bud / peace-lily sprites over the pot rim.
