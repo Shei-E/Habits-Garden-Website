@@ -217,6 +217,31 @@
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
+    // ---------- Auto-rotate on portrait phones ----------
+    // On a narrow portrait viewport the whole garden is rotated 90°
+    // clockwise (see styles.css), so it displays horizontally while the
+    // phone is held upright. The scale is then set inline with the axes
+    // swapped: the rotated stage is 144 units wide and 256 tall on screen.
+    // Otherwise the inline override is cleared and the CSS :root scale
+    // media queries govern exactly as before.
+    const rotateQuery = window.matchMedia('(max-width: 700px) and (orientation: portrait)');
+    function isGardenRotated() {
+      return rotateQuery.matches;
+    }
+    function updateGardenScale() {
+      const rotated = isGardenRotated();
+      window.__gardenRotated = rotated;
+      if (rotated) {
+        const scale = Math.min(window.innerWidth / 144, window.innerHeight / 256);
+        document.documentElement.style.setProperty('--scale', String(scale));
+      } else {
+        document.documentElement.style.removeProperty('--scale');
+      }
+    }
+    updateGardenScale();
+    window.addEventListener('resize', updateGardenScale);
+    window.addEventListener('orientationchange', updateGardenScale);
+
     const potOptions = [
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
       { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true, isShort: true },
@@ -332,6 +357,14 @@
 
     function stagePointFromClient(clientX, clientY) {
       const rect = stageEl.getBoundingClientRect();
+      if (isGardenRotated()) {
+        // Rotated 90° clockwise: stage +x points down-screen, +y points
+        // left, so the rect's height spans the 256 stage units.
+        return {
+          x: ((clientY - rect.top) / rect.height) * 256,
+          y: (1 - (clientX - rect.left) / rect.width) * 144,
+        };
+      }
       return {
         x: ((clientX - rect.left) / rect.width) * 256,
         y: ((clientY - rect.top) / rect.height) * 144,
@@ -391,9 +424,12 @@
       // Centre the text on the pot: measure its rendered width and
       // convert back to design units, so calc() keeps it right if the
       // stage rescales. (No translateX: the bob animation owns transform.)
-      const stageWidth = stageEl.getBoundingClientRect().width;
-      if (stageWidth > 0 && hint.offsetWidth > 0) {
-        const textWidthDesign = hint.offsetWidth / (stageWidth / 256);
+      // 256 stage units span the rect's width normally, its height when
+      // the garden is rotated 90° clockwise.
+      const stageRect = stageEl.getBoundingClientRect();
+      const stageSpan = isGardenRotated() ? stageRect.height : stageRect.width;
+      if (stageSpan > 0 && hint.offsetWidth > 0) {
+        const textWidthDesign = hint.offsetWidth / (stageSpan / 256);
         hint.style.left = `calc(${centreX - textWidthDesign / 2}px * var(--scale))`;
       }
     }
@@ -448,7 +484,13 @@
         dragState.stageRect.right - dragState.potRect.right);
       dy = Math.min(Math.max(dy, dragState.stageRect.top - dragState.potRect.top),
         dragState.stageRect.bottom - dragState.potRect.bottom);
-      dragState.pot.style.transform = `translate(${dx}px, ${dy}px)`;
+      // The clamp above stays in screen space. A local translate (tx, ty)
+      // inside the 90°-clockwise-rotated stage appears on screen as
+      // (-ty, tx), so local (dy, -dx) makes the pot follow the pointer's
+      // screen delta (dx, dy) while rotated.
+      dragState.pot.style.transform = isGardenRotated()
+        ? `translate(${dy}px, ${-dx}px)`
+        : `translate(${dx}px, ${dy}px)`;
       // Blocked feedback: nearest slot already occupied by another pot?
       const pt = stagePointFromClient(e.clientX, e.clientY);
       const nearest = nearestSlot(

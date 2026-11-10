@@ -1321,3 +1321,15 @@ body {
     bottom: calc(10.5px * var(--scale));
   }
 }
+
+/* Auto-rotate: on portrait phones the whole garden turns 90° clockwise
+   so it displays horizontally while the phone is held upright.
+   Landscape phones and desktop are unchanged. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .home-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+}
