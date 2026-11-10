@@ -1384,3 +1384,16 @@ body {
     bottom: calc(10.5px * var(--scale));
   }
 }
+
+/* Mobile: centre the stage in the viewport (absolute + translate), so the
+   fit() scale leaves a ~5px margin on each edge. This replaces the grid
+   centring and the -30px offset, which would shift the fitted stage. */
+@media (max-width: 700px),
+(orientation: landscape) and (max-height: 600px) {
+  .home-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
