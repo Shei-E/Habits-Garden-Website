@@ -3,12 +3,11 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Habits Garden</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 
 <body>
@@ -173,13 +172,6 @@
     </div>
   </main>
 
-  <!-- Rotate overlay: portrait phones only (see styles.css) — covers the
-       whole screen until the phone is turned to landscape. -->
-  <div class="rotate-overlay" role="note" aria-label="Please rotate your phone">
-    <svg class="rotate-overlay-icon" viewBox="0 0 64 36" aria-hidden="true"><rect x="6" y="4" width="56" height="28" rx="6" fill="none" stroke="#fff" stroke-width="3" /><rect x="10" y="13" width="5" height="10" rx="2.5" fill="#fff" /></svg>
-    <span class="rotate-overlay-text">Please rotate<br />your phone</span>
-  </div>
-
   <script>
     // DEV OPTION: Date Setter helper (Remove anytime)
     function getCurrentDate() {
@@ -189,27 +181,6 @@
       return new Date();
     }
     // /DEV OPTION
-
-    // Fit the stage to the visible viewport on mobile, leaving a ~5px
-    // margin on each edge. (Desktop keeps the CSS --scale.)
-    function fit() {
-      var vv = window.visualViewport;
-      var w = vv ? vv.width : window.innerWidth;
-      var h = vv ? vv.height : window.innerHeight;
-      var isMobile = (w <= 700) || (h <= 600 && w > h);
-      var root = document.documentElement;
-      if (!isMobile) {
-        root.style.removeProperty('--scale');
-        return;
-      }
-      var scale = Math.min((w - 10) / 256, (h - 10) / 144);
-      if (scale > 0) root.style.setProperty('--scale', scale);
-      window.scrollTo(0, 0);
-    }
-    window.addEventListener('resize', fit);
-    window.addEventListener('orientationchange', fit);
-    if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
-    fit();
 
     const modal = document.getElementById('add-plant-modal');
     const closeBtn = document.getElementById('ap-close');
