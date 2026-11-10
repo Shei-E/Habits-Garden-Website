@@ -1133,7 +1133,7 @@ body {
    row (y 70-81) and the title/repeat text above. */
 .pd-reset-pos {
   position: absolute;
-  left: calc(14px * var(--scale));
+  left: calc(15px * var(--scale));
   top: calc(98px * var(--scale));
 }
 
@@ -1289,4 +1289,3 @@ body {
     /* Fits small windows (1024 × 576) */
   }
 }
-
