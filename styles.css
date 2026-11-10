@@ -1130,16 +1130,30 @@ body {
 }
 
 /* "reset position" sits left of the water button, clear of the streak
-   row (y 70-81) and the title/repeat text above. */
+   row (y 70-81) and the title/repeat text above. Right-anchored so its
+   right edge stays just left of the water button whatever the label
+   reads ("reset position" / "cannot reset"), matching the space.
+   Explicit Tiny5 font: unlike edit/remove it is a direct child of
+   .pd-content, not .pd-actions, so it cannot inherit the font from
+   there — without this it fell back to the browser default serif. */
 .pd-reset-pos {
   position: absolute;
-  left: calc(17px * var(--scale));
+  right: calc(147px * var(--scale) - 4px);
   top: calc(98px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-size: calc(5px * var(--scale));
+  line-height: normal;
+  color: #bda499;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s ease;
 }
 
 .pd-edit,
-.pd-remove,
-.pd-reset-pos {
+.pd-remove {
   padding: 0;
   border: 0;
   background: none;

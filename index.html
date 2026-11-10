@@ -313,22 +313,6 @@
       return best;
     }
 
-    function nearestFreeSlot(x, y, exceptPot) {
-      // Nearest slot that is not occupied; falls back to the pot's own slot.
-      const ranked = [];
-      for (let col = 1; col <= 4; col++) {
-        for (const row of ['top', 'bottom']) {
-          const c = slotCentre(col, row);
-          ranked.push({ col, row, d: Math.hypot(x - c.x, y - c.y) });
-        }
-      }
-      ranked.sort((a, b) => a.d - b.d);
-      for (const s of ranked) {
-        if (!potAtSlot(s.col, s.row, exceptPot)) return s;
-      }
-      return getPotSlot(exceptPot);
-    }
-
     function stagePointFromClient(clientX, clientY) {
       const rect = stageEl.getBoundingClientRect();
       return {
@@ -382,8 +366,16 @@
       const slot = getPotSlot(firstPlantedPot);
       const centreX = SLOT_COL_LEFT[slot.col - 1] + POT_SIZE / 2;
       const rowTop = SLOT_ROW_TOP[slot.row];
-      const arrowTop = rowTop - 11; // 9px arrow + 2px gap above the pot
-      const hintTop = rowTop - 19; // 7px text + 1px gap above the arrow
+      // Measure from the visible pot rim, not the button top: the pot
+      // artwork occupies only the bottom of its 32-unit button (13
+      // units tall for clay, 11 for white/blue/yellow), so using the
+      // button top put the hint ~19 units too high.
+      const potH = firstPlantedPot.classList.contains('pot--white') ||
+        firstPlantedPot.classList.contains('pot--blue') ||
+        firstPlantedPot.classList.contains('pot--yellow') ? 11 : 13;
+      const rimTop = rowTop + (POT_SIZE - potH);
+      const arrowTop = rimTop - 11; // 9px arrow + 2px gap above the pot
+      const hintTop = rimTop - 19; // 7px text + 1px gap above the arrow
       hintArrow.style.left = `calc(${centreX - 4.5}px * var(--scale))`;
       hintArrow.style.top = `calc(${arrowTop}px * var(--scale))`;
       hint.style.top = `calc(${hintTop}px * var(--scale))`;
@@ -448,14 +440,6 @@
       dy = Math.min(Math.max(dy, dragState.stageRect.top - dragState.potRect.top),
         dragState.stageRect.bottom - dragState.potRect.bottom);
       dragState.pot.style.transform = `translate(${dx}px, ${dy}px)`;
-      // Blocked feedback: nearest slot already occupied by another pot?
-      const pt = stagePointFromClient(e.clientX, e.clientY);
-      const nearest = nearestSlot(
-        Math.min(256, Math.max(0, pt.x)),
-        Math.min(144, Math.max(0, pt.y))
-      );
-      const blocked = !!potAtSlot(nearest.col, nearest.row, dragState.pot);
-      dragState.pot.classList.toggle('is-blocked', blocked);
     }
 
     function endPotDrag(e, cancelled) {
@@ -470,12 +454,15 @@
       // Fallback so a missing click event can't suppress the next real click.
       setTimeout(() => { suppressNextPotClick = false; }, 0);
       const pt = stagePointFromClient(e.clientX, e.clientY);
-      const target = nearestFreeSlot(
+      const target = nearestSlot(
         Math.min(256, Math.max(0, pt.x)),
-        Math.min(144, Math.max(0, pt.y)),
-        pot
+        Math.min(144, Math.max(0, pt.y))
       );
       if (target.col !== state.origSlot.col || target.row !== state.origSlot.row) {
+        // Dropping on another pot swaps the two: with 8 pots in 8 slots
+        // there is never a free slot, so a swap is the only way to move.
+        const other = potAtSlot(target.col, target.row, pot);
+        if (other) setPotSlot(other, state.origSlot.col, state.origSlot.row);
         setPotSlot(pot, target.col, target.row);
         noteFirstPotMoved();
       }
@@ -505,7 +492,8 @@
         if (e.key === 'ArrowUp') target.row = 'top';
         if (e.key === 'ArrowDown') target.row = 'bottom';
         if (target.col === slot.col && target.row === slot.row) return;
-        if (potAtSlot(target.col, target.row, pot)) return; // occupied — no overlap
+        const other = potAtSlot(target.col, target.row, pot);
+        if (other) setPotSlot(other, slot.col, slot.row); // swap with the pot there
         setPotSlot(pot, target.col, target.row);
         noteFirstPotMoved();
       });
