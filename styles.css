@@ -107,6 +107,14 @@ body {
   background-image: url("assets/yellow-pot.png");
 }
 
+.pot.pot--orange {
+  background-image: url("assets/orange-pot.png");
+}
+
+.pot.pot--white-small {
+  background-image: url("assets/white-pot-small.png");
+}
+
 /* Drag-and-drop pots: Pointer Events drive the move (see index.html),
    so touch must not scroll and text must not select mid-drag. */
 .pot {
@@ -777,6 +785,12 @@ body {
   bottom: calc(11px * var(--scale));
 }
 
+.ap-carousel-track.is-small-pot .ap-plant-sprite {
+  bottom: calc(6px * var(--scale));
+  width: 50%;
+  left: calc(8px * var(--scale));
+}
+
 .ap-plant-pot {
   position: absolute;
   left: 0;
@@ -793,12 +807,20 @@ body {
   height: calc(11px * var(--scale));
 }
 
+.ap-carousel-track.is-small-pot .ap-plant-pot {
+  height: calc(6px * var(--scale));
+}
+
 /* Centre the peace lily in the plant picker: its mass centroid sits
    0.4 units right of the pot rim centre (16.4 vs 16.0); the space
    renders it centred at a 0.5 shift left, so match that. Sprite file
    unchanged. */
 .ap-plant--lily .ap-plant-sprite {
   left: calc(-0.5px * var(--scale));
+}
+
+.ap-carousel-track.is-small-pot .ap-plant--lily .ap-plant-sprite {
+  left: calc(7.75px * var(--scale));
 }
 
 .ap-plant--cactus {
@@ -894,6 +916,26 @@ body {
 .pot.pot--blue .pot-plant,
 .pot.pot--yellow .pot-plant {
   bottom: calc(11px * var(--scale));
+}
+
+/* The small white pot is only 6 units tall, and plants on it render
+   at half size: half width, centred (left 8px of the 32-wide pot),
+   sitting on the 6-unit rim. Width-based, not transform, so it can't
+   fight the plant-grow animation, which owns transform. The bud/lily
+   centring offsets halve too (0.25 instead of 0.5). */
+.pot.pot--white-small .pot-plant {
+  bottom: calc(6px * var(--scale));
+  width: 50%;
+  left: calc(8px * var(--scale));
+}
+
+.pot.pot--white-small .pot-plant[src*="bud-4.png"],
+.pot.pot--white-small .pot-plant[src*="dead-bud.png"] {
+  left: calc(8.25px * var(--scale));
+}
+
+.pot.pot--white-small .pot-plant[src*="peace-lily"] {
+  left: calc(7.75px * var(--scale));
 }
 
 /* Centre bud / dead-bud / peace-lily sprites over the pot rim.
