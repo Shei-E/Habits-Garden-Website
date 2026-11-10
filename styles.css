@@ -91,6 +91,8 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   cursor: pointer;
+  /* Left/top animate to the resolved spot on drop; disabled while dragging. */
+  transition: left 0.18s ease, top 0.18s ease;
 }
 
 .pot.pot--white {
@@ -117,6 +119,8 @@ body {
 .pot.is-dragging {
   z-index: 50;
   cursor: grabbing;
+  transition: none;
+  transform: translateY(calc(-2px * var(--scale)));
 }
 
 .pot.is-dragging.is-blocked {

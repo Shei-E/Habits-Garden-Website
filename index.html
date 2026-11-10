@@ -252,14 +252,22 @@
       setSelectedPot(nextIdx);
     });
 
-    // ---------- Drag-and-drop pots (snap to shelves, no overlap) ----------
+    // ---------- Drag-and-drop pots (free position on the shelf) ----------
     // Shelf slots in design units (1 unit = 1px before --scale).
     // Columns match the --col-1..4 positions; rows match --row-top/bottom.
+    // Pots start on the 8 slots, but dragging can put a pot at any
+    // continuous horizontal position on a shelf row (like the space):
+    // vertical position always snaps to the nearest shelf row.
     const stageEl = document.querySelector('.home-screen');
     const SLOT_COL_LEFT = [67, 96.94, 127.17, 157];
     const SLOT_ROW_TOP = { top: 21, bottom: 81 };
     const POT_SIZE = 32;
+    const POT_MIN_LEFT = 37; // shelf's left edge in design units
+    const POT_MAX_LEFT = 183; // shelf's right edge minus the pot width
+    const POT_MIN_GAP = 18; // minimum left-edge gap between pots on a row
+    const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
 
+    // The pot's starting slot, from its pot--cN/pot--hN + row classes.
     function getPotSlot(pot) {
       let col = 1;
       if (pot.classList.contains('pot--c2') || pot.classList.contains('pot--h2')) col = 2;
@@ -269,56 +277,59 @@
       return { col, row };
     }
 
-    function setPotSlot(pot, col, row) {
+    // Live position: { left, row }. Left is the last free position
+    // (dataset.posLeft, in design units); before any move it is the
+    // starting slot's left. Row comes from the pot--top/pot--bottom class.
+    function getPotPos(pot) {
+      const row = pot.classList.contains('pot--bottom') ? 'bottom' : 'top';
+      if (pot.dataset.posLeft !== undefined && pot.dataset.posLeft !== '') {
+        return { left: parseFloat(pot.dataset.posLeft), row };
+      }
+      const slot = getPotSlot(pot);
+      return { left: SLOT_COL_LEFT[slot.col - 1], row: slot.row };
+    }
+
+    function setPotPos(pot, left, row) {
+      pot.dataset.posLeft = String(left);
+      pot.style.left = `calc(${left}px * var(--scale))`;
       for (let i = 1; i <= 4; i++) {
         pot.classList.remove(`pot--c${i}`, `pot--h${i}`);
       }
       pot.classList.remove('pot--top', 'pot--bottom');
-      pot.classList.add(`pot--c${col}`, `pot--h${col}`, `pot--${row}`);
+      pot.classList.add(`pot--${row}`);
     }
 
-    // Each pot's home slot, recorded once at load from its initial classes.
-    // setPotSlot rewrites the pot--cN/pot--hN classes, so the original slot
-    // would be lost after dragging without this.
-    const potHomeSlots = new Map();
-    pots.forEach(pot => potHomeSlots.set(pot, getPotSlot(pot)));
+    // Each pot's home slot, recorded once at load from its initial
+    // classes. Dragging never rewrites it, so "reset position" always
+    // means the original slot.
+    pots.forEach(pot => {
+      const slot = getPotSlot(pot);
+      pot.dataset.homeLeft = String(SLOT_COL_LEFT[slot.col - 1]);
+      pot.dataset.homeRow = slot.row;
+    });
 
-    function slotKey(col, row) { return `${col}-${row}`; }
-
-    function slotCentre(col, row) {
-      return { x: SLOT_COL_LEFT[col - 1] + POT_SIZE / 2, y: SLOT_ROW_TOP[row] + POT_SIZE / 2 };
-    }
-
-    function potAtSlot(col, row, exceptPot) {
-      const key = slotKey(col, row);
+    // Is a left-edge position on a row free? Another pot on the same
+    // row blocks it when its left edge is within POT_MIN_GAP units.
+    function posIsFree(left, row, exceptPot) {
       for (const p of pots) {
         if (p === exceptPot) continue;
-        const s = getPotSlot(p);
-        if (slotKey(s.col, s.row) === key) return p;
+        const s = getPotPos(p);
+        if (s.row === row && Math.abs(s.left - left) < POT_MIN_GAP) return false;
+      }
+      return true;
+    }
+
+    // Resolve a drop: the drop point if free, else the nearest free spot
+    // on the same row (scanning outward 1 unit at a time, left first),
+    // else null (row full — the pot snaps back to the drag origin).
+    function resolveDrop(left, row, exceptPot) {
+      const lo = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(left)));
+      if (posIsFree(lo, row, exceptPot)) return { left: lo, row };
+      for (let d = 1; d <= POT_MAX_LEFT - POT_MIN_LEFT; d++) {
+        if (lo - d >= POT_MIN_LEFT && posIsFree(lo - d, row, exceptPot)) return { left: lo - d, row };
+        if (lo + d <= POT_MAX_LEFT && posIsFree(lo + d, row, exceptPot)) return { left: lo + d, row };
       }
       return null;
-    }
-
-    function nearestSlot(x, y) {
-      // x/y are stage design-unit coords; nearest slot centre wins.
-      let best = null;
-      let bestDist = Infinity;
-      for (let col = 1; col <= 4; col++) {
-        for (const row of ['top', 'bottom']) {
-          const c = slotCentre(col, row);
-          const d = Math.hypot(x - c.x, y - c.y);
-          if (d < bestDist) { bestDist = d; best = { col, row }; }
-        }
-      }
-      return best;
-    }
-
-    function stagePointFromClient(clientX, clientY) {
-      const rect = stageEl.getBoundingClientRect();
-      return {
-        x: ((clientX - rect.left) / rect.width) * 256,
-        y: ((clientY - rect.top) / rect.height) * 144,
-      };
     }
 
     // ---------- Intro hint flow ----------
@@ -356,16 +367,16 @@
 
     // Point the hint + arrow at the first planted plant. Before any
     // plant exists the hint keeps its default spot (pointing at the
-    // top-left pot). The pot can't move while the hint is alive — any
-    // post-plant move dismisses it — so the position is set at planting
-    // and re-measured only when the text changes.
+    // top-left pot). The position follows the pot's live position, so
+    // it is re-measured on every drag move as well as at planting and
+    // when the text changes.
     function positionHint() {
       const hint = document.querySelector('.hint');
       const hintArrow = document.querySelector('.hint-arrow');
       if (!hint || !hintArrow || !firstPlantedPot) return;
-      const slot = getPotSlot(firstPlantedPot);
-      const centreX = SLOT_COL_LEFT[slot.col - 1] + POT_SIZE / 2;
-      const rowTop = SLOT_ROW_TOP[slot.row];
+      const pos = getPotPos(firstPlantedPot);
+      const centreX = pos.left + POT_SIZE / 2;
+      const rowTop = SLOT_ROW_TOP[pos.row];
       // Measure from the visible pot rim, not the button top: the pot
       // artwork occupies only the bottom of its 32-unit button (13
       // units tall for clay, 11 for white/blue/yellow), so using the
@@ -405,9 +416,24 @@
     }
 
     // ---------- Drag-and-drop pots (pointer + keyboard) ----------
-    const DRAG_THRESHOLD_PX = 6;
-    let dragState = null; // { pot, startClientX, startClientY, moved, origSlot, potRect, stageRect }
+    // Free-form like the space: horizontal position is continuous
+    // (integer design units, clamped to the shelf), vertical position
+    // snaps to the nearest shelf row. Overlap is prevented by the
+    // 18-unit same-row gap; a blocked drop slides to the nearest free
+    // spot, or snaps back to the drag origin if the row is full.
+    const DRAG_THRESHOLD = 3; // design units of pointer travel to start a drag
+    let dragState = null; // { pot, startClientX, startClientY, moved, origPos, stageRect }
     let suppressNextPotClick = false;
+
+    // Pointer travel since dragstart, converted to design units.
+    function designDelta(e) {
+      const w = dragState.stageRect.width || 1;
+      const h = dragState.stageRect.height || 1;
+      return {
+        dx: (e.clientX - dragState.startClientX) * (256 / w),
+        dy: (e.clientY - dragState.startClientY) * (144 / h),
+      };
+    }
 
     function beginPotDrag(pot, e) {
       if (dragState) return;
@@ -417,8 +443,7 @@
         startClientX: e.clientX,
         startClientY: e.clientY,
         moved: false,
-        origSlot: getPotSlot(pot),
-        potRect: pot.getBoundingClientRect(),
+        origPos: getPotPos(pot),
         stageRect: stageEl.getBoundingClientRect(),
       };
       try { pot.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
@@ -426,20 +451,23 @@
 
     function movePotDrag(e) {
       if (!dragState) return;
-      let dx = e.clientX - dragState.startClientX;
-      let dy = e.clientY - dragState.startClientY;
-      if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      const { dx, dy } = designDelta(e);
+      if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
       if (!dragState.moved) {
         dragState.moved = true;
         dragState.pot.classList.add('is-dragging');
       }
       e.preventDefault();
-      // Keep the pot on the stage / shelf boards while dragging.
-      dx = Math.min(Math.max(dx, dragState.stageRect.left - dragState.potRect.left),
-        dragState.stageRect.right - dragState.potRect.right);
-      dy = Math.min(Math.max(dy, dragState.stageRect.top - dragState.potRect.top),
-        dragState.stageRect.bottom - dragState.potRect.bottom);
-      dragState.pot.style.transform = `translate(${dx}px, ${dy}px)`;
+      const pot = dragState.pot;
+      const orig = dragState.origPos;
+      const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
+      // Row from the pot centre's Y: above the midpoint is the top shelf.
+      const centreY = SLOT_ROW_TOP[orig.row] + POT_SIZE / 2 + dy;
+      const row = centreY < ROW_MID_Y ? 'top' : 'bottom';
+      setPotPos(pot, left, row);
+      // Blocked feedback while the drop point is occupied.
+      pot.classList.toggle('is-blocked', !posIsFree(left, row, pot));
+      positionHint();
     }
 
     function endPotDrag(e, cancelled) {
@@ -448,25 +476,26 @@
       dragState = null;
       const pot = state.pot;
       pot.classList.remove('is-dragging', 'is-blocked');
-      pot.style.transform = '';
-      if (cancelled || !state.moved) return; // plain click — let the click handler open the modal
+      if (cancelled || !state.moved) {
+        // Plain click, or a cancelled drag: back to the drag origin.
+        if (state.moved) setPotPos(pot, state.origPos.left, state.origPos.row);
+        return; // plain click — let the click handler open the modal
+      }
       suppressNextPotClick = true;
-      // Fallback so a missing click event can't suppress the next real click.
-      setTimeout(() => { suppressNextPotClick = false; }, 0);
-      const pt = stagePointFromClient(e.clientX, e.clientY);
-      const target = nearestSlot(
-        Math.min(256, Math.max(0, pt.x)),
-        Math.min(144, Math.max(0, pt.y))
-      );
-      if (target.col !== state.origSlot.col || target.row !== state.origSlot.row) {
-        // Dropping on another pot swaps the two: with 8 pots in 8 slots
-        // there is never a free slot, so a swap is the only way to move.
-        const other = potAtSlot(target.col, target.row, pot);
-        if (other) setPotSlot(other, state.origSlot.col, state.origSlot.row);
-        setPotSlot(pot, target.col, target.row);
+      // A click is suppressed for 300 ms after a real drag so dragging
+      // does not also open a popup.
+      setTimeout(() => { suppressNextPotClick = false; }, 300);
+      const pos = getPotPos(pot);
+      const target = resolveDrop(pos.left, pos.row, pot);
+      if (!target) {
+        setPotPos(pot, state.origPos.left, state.origPos.row); // row full — snap back
+        return;
+      }
+      setPotPos(pot, target.left, target.row);
+      if (target.left !== state.origPos.left || target.row !== state.origPos.row) {
         noteFirstPotMoved();
       }
-      // Otherwise the pot snaps back to its original slot (transform cleared above).
+      positionHint();
     }
 
     pots.forEach(pot => {
@@ -485,17 +514,27 @@
         // Don't hijack arrows while a modal is open.
         if (modal.classList.contains('is-open') || pdModal.classList.contains('is-open')) return;
         e.preventDefault();
-        const slot = getPotSlot(pot);
-        const target = { col: slot.col, row: slot.row };
-        if (e.key === 'ArrowLeft') target.col = Math.max(1, slot.col - 1);
-        if (e.key === 'ArrowRight') target.col = Math.min(4, slot.col + 1);
-        if (e.key === 'ArrowUp') target.row = 'top';
-        if (e.key === 'ArrowDown') target.row = 'bottom';
-        if (target.col === slot.col && target.row === slot.row) return;
-        const other = potAtSlot(target.col, target.row, pot);
-        if (other) setPotSlot(other, slot.col, slot.row); // swap with the pot there
-        setPotSlot(pot, target.col, target.row);
+        const pos = getPotPos(pot);
+        const step = e.shiftKey ? 10 : 2;
+        let left = pos.left;
+        let row = pos.row;
+        if (e.key === 'ArrowLeft') left = Math.max(POT_MIN_LEFT, pos.left - step);
+        if (e.key === 'ArrowRight') left = Math.min(POT_MAX_LEFT, pos.left + step);
+        if (e.key === 'ArrowUp') row = 'top';
+        if (e.key === 'ArrowDown') row = 'bottom';
+        if (left === pos.left && row === pos.row) return;
+        if (row !== pos.row) {
+          // Row change uses the same nearest-free-spot resolution as a drop.
+          const target = resolveDrop(left, row, pot);
+          if (!target) return;
+          setPotPos(pot, target.left, target.row);
+        } else {
+          // Same-row move into a blocked spot does nothing.
+          if (!posIsFree(left, row, pot)) return;
+          setPotPos(pot, left, row);
+        }
         noteFirstPotMoved();
+        positionHint();
       });
     });
 
@@ -508,20 +547,21 @@
     let currentDetailsPot = null;
 
     // Plant details popup artwork + position, computed from the pot's
-    // actual slot so the popup follows the pot after dragging.
+    // live position so the popup follows the pot after dragging.
     // The dialog is 236 units wide. Spike offsets measured from the PNG
     // artwork: left art 73, mid art 119, flipped left art 163 (= 236 - 73).
     // Dialog left = pot centre - spike, rounded, which reproduces the
-    // original mid configs exactly (c2: -6, c3: 24).
+    // original mid configs exactly (c2: -6, c3: 24). Zones follow the
+    // pot centre: <98 left art, 98-158 mid art, >158 flipped left art.
     function getPopupConfig(pot) {
-      const slot = getPotSlot(pot);
-      const potCentre = SLOT_COL_LEFT[slot.col - 1] + POT_SIZE / 2;
+      const pos = getPotPos(pot);
+      const potCentre = pos.left + POT_SIZE / 2;
       let bg;
       let spike;
-      if (slot.col === 1) {
+      if (potCentre < 98) {
         bg = 'assets/ui-popup-left.png';
         spike = 73;
-      } else if (slot.col === 4) {
+      } else if (potCentre > 158) {
         bg = 'assets/ui-popup-left.png';
         spike = 163;
       } else {
@@ -531,9 +571,9 @@
       return {
         bg,
         left: Math.round(potCentre - spike),
-        top: slot.row === 'bottom' ? -5 : 28,
-        flipX: slot.col === 4,
-        flipY: slot.row === 'bottom',
+        top: pos.row === 'bottom' ? -5 : 28,
+        flipX: potCentre > 158,
+        flipY: pos.row === 'bottom',
       };
     }
 
@@ -1498,19 +1538,21 @@
 
     pdResetPos?.addEventListener('click', () => {
       if (!currentDetailsPot) return;
-      const home = potHomeSlots.get(currentDetailsPot);
-      if (!home) return;
-      const slot = getPotSlot(currentDetailsPot);
-      if (slot.col === home.col && slot.row === home.row) return; // already home — no-op
-      if (potAtSlot(home.col, home.row, currentDetailsPot)) {
+      const pot = currentDetailsPot;
+      const homeLeft = parseFloat(pot.dataset.homeLeft);
+      const homeRow = pot.dataset.homeRow;
+      if (isNaN(homeLeft) || !homeRow) return;
+      const pos = getPotPos(pot);
+      if (pos.left === homeLeft && pos.row === homeRow) return; // already home — no-op
+      if (!posIsFree(homeLeft, homeRow, pot)) {
         // Home taken: only now, after pressing, show "cannot reset" in red.
         pdResetPos.classList.add('is-blocked');
         pdResetPos.textContent = 'cannot reset';
         return;
       }
-      setPotSlot(currentDetailsPot, home.col, home.row);
+      setPotPos(pot, homeLeft, homeRow);
       // Re-open so the popup follows the pot and the button refreshes.
-      openPlantDetailsModal(currentDetailsPot);
+      openPlantDetailsModal(pot);
     });
 
     plantInput?.addEventListener('input', checkCommitReady);
