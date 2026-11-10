@@ -210,50 +210,60 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* Rotate hint: shown only on portrait phones, suggesting a turn to
-   landscape for a bigger view. Fixed to the viewport, outside the
-   stage, in the garden's Tiny5 hint style. */
-.rotate-hint {
+/* Rotate overlay: shown only on portrait phones. Fills the whole screen
+   with a black cover and a "please rotate your phone" prompt until the
+   phone is turned to landscape, when the garden shows as normal. */
+.rotate-overlay {
   display: none;
   position: fixed;
-  top: calc(8px * var(--scale));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 60;
+  inset: 0;
+  height: 100dvh;
+  background: #000;
+  z-index: 10000;
   align-items: center;
-  gap: calc(3px * var(--scale));
+  justify-content: center;
+  gap: clamp(12px, 4vw, 20px);
   margin: 0;
-  font-family: "Tiny5", monospace;
-  font-weight: 400;
-  font-size: calc(7px * var(--scale));
-  line-height: normal;
-  color: #000;
-  white-space: nowrap;
-  pointer-events: none;
 }
 
-.rotate-hint-icon {
-  width: calc(9px * var(--scale));
-  height: calc(9px * var(--scale));
+.rotate-overlay-icon {
+  width: clamp(56px, 14vw, 84px);
+  height: auto;
   flex-shrink: 0;
-  animation: rotate-hint-spin 2.4s linear infinite;
 }
 
-@keyframes rotate-hint-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.rotate-overlay-text {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 800;
+  font-size: clamp(17px, 5.4vw, 24px);
+  line-height: 1.3;
+  color: #fff;
+  text-transform: uppercase;
 }
 
 @media (max-width: 700px) and (orientation: portrait) {
-  .rotate-hint {
+  .rotate-overlay {
     display: flex;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rotate-hint-icon {
-    animation: none;
+/* Landscape phones: lock the page so it cannot scroll up or down, and
+   shrink the stage so the whole garden fits the short viewport.
+   (The space sizes the stage with fit(); the repo has no fit(), so the
+   scale is fixed here to fit typical landscape phones.) */
+@media (orientation: landscape) and (max-height: 600px) {
+  html, body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    position: fixed;
+    inset: 0;
+  }
+
+  :root {
+    --scale: 2.5;
   }
 }
 
