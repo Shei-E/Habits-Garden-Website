@@ -210,6 +210,53 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* Rotate hint: shown only on portrait phones, suggesting a turn to
+   landscape for a bigger view. Fixed to the viewport, outside the
+   stage, in the garden's Tiny5 hint style. */
+.rotate-hint {
+  display: none;
+  position: fixed;
+  top: calc(8px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  align-items: center;
+  gap: calc(3px * var(--scale));
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.rotate-hint-icon {
+  width: calc(9px * var(--scale));
+  height: calc(9px * var(--scale));
+  flex-shrink: 0;
+  animation: rotate-hint-spin 2.4s linear infinite;
+}
+
+@keyframes rotate-hint-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .rotate-hint {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-hint-icon {
+    animation: none;
+  }
+}
+
 /* ---------- Home Screen 2 (Figma node 184:110) ----------
    Narrower shelf, pots re-spaced and shifted toward the centre. */
 .home-2 .pot--h1,
@@ -1295,7 +1342,7 @@ body {
    Larger screens use the original positions above. */
 @media (max-width: 700px) {
   .ap-input {
-    top: calc(35px * var(--scale));
+    top: calc(35px * var(--scale) - 3px);
   }
 
   .ap-plant-sprite {
@@ -1319,17 +1366,5 @@ body {
   .pot.pot--yellow .pot-plant[src*="bud-4.png"],
   .pot.pot--yellow .pot-plant[src*="dead-bud.png"] {
     bottom: calc(10.5px * var(--scale));
-  }
-}
-
-/* Auto-rotate: on portrait phones the whole garden turns 90° clockwise
-   so it displays horizontally while the phone is held upright.
-   Landscape phones and desktop are unchanged. */
-@media (max-width: 700px) and (orientation: portrait) {
-  .home-screen {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(90deg);
   }
 }
