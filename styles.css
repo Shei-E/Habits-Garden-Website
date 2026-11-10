@@ -1133,7 +1133,7 @@ body {
    row (y 70-81) and the title/repeat text above. */
 .pd-reset-pos {
   position: absolute;
-  left: calc(10px * var(--scale));
+  left: calc(14px * var(--scale));
   top: calc(98px * var(--scale));
 }
 
@@ -1287,5 +1287,37 @@ body {
   :root {
     --scale: 4;
     /* Fits small windows (1024 × 576) */
+  }
+}
+
+/* Phone: keep the Add Plant positions that were tuned for phone scale
+   (input level with its label; previews and buds seated on the rim).
+   Larger screens use the original positions above. */
+@media (max-width: 700px) {
+  .ap-input {
+    top: calc(35px * var(--scale));
+  }
+
+  .ap-plant-sprite {
+    bottom: calc(12.5px * var(--scale));
+  }
+
+  .ap-carousel-track.is-white-pot .ap-plant-sprite,
+  .ap-carousel-track.is-short-pot .ap-plant-sprite {
+    bottom: calc(10.5px * var(--scale));
+  }
+
+  .pot-plant[src*="bud-4.png"],
+  .pot-plant[src*="dead-bud.png"] {
+    bottom: calc(12.5px * var(--scale));
+  }
+
+  .pot.pot--white .pot-plant[src*="bud-4.png"],
+  .pot.pot--white .pot-plant[src*="dead-bud.png"],
+  .pot.pot--blue .pot-plant[src*="bud-4.png"],
+  .pot.pot--blue .pot-plant[src*="dead-bud.png"],
+  .pot.pot--yellow .pot-plant[src*="bud-4.png"],
+  .pot.pot--yellow .pot-plant[src*="dead-bud.png"] {
+    bottom: calc(10.5px * var(--scale));
   }
 }
