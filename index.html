@@ -333,21 +333,18 @@
     }
 
     // ---------- Intro hint flow ----------
-    // Starts as "click to add a plant!". After the first plant is planted
-    // it becomes "water your plant to track your progress!" (arrow stays).
-    // After the first watering it becomes "drag to move!" (arrow stays).
-    // After the first pot move the hint and arrow go away for good
-    // (for the session).
-    // Once the first plant exists, the hint and arrow move to point at
-    // it: the arrow's centre lines up with that pot's centre, sitting
-    // just above the pot, with the text centred above the arrow.
-    // A move before anything is planted doesn't count: the hint stays
-    // as "click to add a plant!", so the prompts above still appear in
-    // order after the first plant and the next move then dismisses them.
+    // The hint stays at one fixed spot (pointing at the top-left pot)
+    // and never follows a pot. It starts as "click to add a plant!".
+    // After the first plant is planted it becomes "water your plant to
+    // track your progress!" — and it stays there until the first
+    // watering, no matter how much you move pots around. After the
+    // first watering it becomes "drag to move!", and only a move made
+    // after that prompt makes the hint and arrow go away for good
+    // (for the session). A move before anything is planted doesn't
+    // count either.
     let hasPlantedFirstPlant = false;
     let hasWateredFirstPlant = false;
     let hasMovedFirstPot = false;
-    let firstPlantedPot = null;
 
     function updateHint() {
       const hint = document.querySelector('.hint');
@@ -365,32 +362,16 @@
       positionHint();
     }
 
-    // Point the hint + arrow at the first planted plant. Before any
-    // plant exists the hint keeps its default spot (pointing at the
-    // top-left pot). The position follows the pot's live position, so
-    // it is re-measured on every drag move as well as at planting and
-    // when the text changes.
+    // Keep the hint text centred on the arrow. The hint itself never
+    // moves: it stays at its fixed spot (CSS top 23, arrow top 29,
+    // pointing at the top-left pot) and no longer follows any pot.
+    // This only re-centres the text when the wording changes, since
+    // the prompts are different lengths.
     function positionHint() {
       const hint = document.querySelector('.hint');
-      const hintArrow = document.querySelector('.hint-arrow');
-      if (!hint || !hintArrow || !firstPlantedPot) return;
-      const pos = getPotPos(firstPlantedPot);
-      const centreX = pos.left + POT_SIZE / 2;
-      const rowTop = SLOT_ROW_TOP[pos.row];
-      // Measure from the visible pot rim, not the button top: the pot
-      // artwork occupies only the bottom of its 32-unit button (13
-      // units tall for clay, 11 for white/blue/yellow), so using the
-      // button top put the hint ~19 units too high.
-      const potH = firstPlantedPot.classList.contains('pot--white') ||
-        firstPlantedPot.classList.contains('pot--blue') ||
-        firstPlantedPot.classList.contains('pot--yellow') ? 11 : 13;
-      const rimTop = rowTop + (POT_SIZE - potH);
-      const arrowTop = rimTop - 11; // 9px arrow + 2px gap above the pot
-      const hintTop = rimTop - 17; // 7px text, nudged 2 units down — the glyphs sit high in their box, so the visible gap read ~23px
-      hintArrow.style.left = `calc(${centreX - 4.5}px * var(--scale))`;
-      hintArrow.style.top = `calc(${arrowTop}px * var(--scale))`;
-      hint.style.top = `calc(${hintTop}px * var(--scale))`;
-      // Centre the text on the pot: measure its rendered width and
+      if (!hint) return;
+      const centreX = 83.68; // centre of the arrow as placed by CSS
+      // Centre the text on the arrow: measure its rendered width and
       // convert back to design units, so calc() keeps it right if the
       // stage rescales. (No translateX: the bob animation owns transform.)
       const stageWidth = stageEl.getBoundingClientRect().width;
@@ -408,9 +389,11 @@
 
     function noteFirstPotMoved() {
       if (hasMovedFirstPot) return;
-      // Don't dismiss the hint for a move made before planting: the
-      // prompts above still need to appear after the first plant.
-      if (!hasPlantedFirstPlant) return;
+      // A move only dismisses the hint once the "drag to move!"
+      // prompt is showing (after the first watering). The water tip
+      // only goes away when you water, so moves before that leave it
+      // alone; a move before anything is planted doesn't count either.
+      if (!hasPlantedFirstPlant || !hasWateredFirstPlant) return;
       hasMovedFirstPot = true;
       updateHint();
     }
@@ -467,7 +450,6 @@
       setPotPos(pot, left, row);
       // Blocked feedback while the drop point is occupied.
       pot.classList.toggle('is-blocked', !posIsFree(left, row, pot));
-      positionHint();
     }
 
     function endPotDrag(e, cancelled) {
@@ -495,7 +477,6 @@
       if (target.left !== state.origPos.left || target.row !== state.origPos.row) {
         noteFirstPotMoved();
       }
-      positionHint();
     }
 
     pots.forEach(pot => {
@@ -534,7 +515,6 @@
           setPotPos(pot, left, row);
         }
         noteFirstPotMoved();
-        positionHint();
       });
     });
 
@@ -1437,12 +1417,11 @@
         }
 
         // First plant planted: hint switches to
-        // "water your plant to track your progress!" (arrow stays) and
-        // moves to point at this pot (see positionHint).
-        // It becomes "drag to move!" after the first watering, and only
-        // disappears for good after the first pot move (see noteFirstPotMoved).
+        // "water your plant to track your progress!" (it stays put and
+        // only goes away when you water). It becomes "drag to move!"
+        // after the first watering, and only disappears for good after
+        // a pot move made after that prompt (see noteFirstPotMoved).
         if (isNewPlant && !hasPlantedFirstPlant) {
-          firstPlantedPot = activePot;
           hasPlantedFirstPlant = true;
           updateHint();
         }

@@ -189,7 +189,9 @@ body {
 .hint {
   position: absolute;
   left: calc(54.68px * var(--scale));
-  top: calc(21px * var(--scale));
+  /* 23px, not 21px: nudged 2 units down — the glyphs sit high in their
+     box, so the visible gap to the arrow read ~23px. */
+  top: calc(23px * var(--scale));
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
