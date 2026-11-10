@@ -1077,9 +1077,9 @@
     }
 
     // Reset-position button: always shows "reset position" when the popup
-    // opens. "cannot move" only appears after pressing the button while
+    // opens. "cannot reset" only appears after pressing the button while
     // the home slot is taken (set in the click handler below), so the
-    // popup never opens already showing "cannot move".
+    // popup never opens already showing "cannot reset".
     function updateResetPosButton() {
       if (!pdResetPos || !currentDetailsPot) return;
       pdResetPos.classList.remove('is-blocked');
@@ -1515,9 +1515,9 @@
       const slot = getPotSlot(currentDetailsPot);
       if (slot.col === home.col && slot.row === home.row) return; // already home — no-op
       if (potAtSlot(home.col, home.row, currentDetailsPot)) {
-        // Home taken: only now, after pressing, show "cannot move" in red.
+        // Home taken: only now, after pressing, show "cannot reset" in red.
         pdResetPos.classList.add('is-blocked');
-        pdResetPos.textContent = 'cannot move';
+        pdResetPos.textContent = 'cannot reset';
         return;
       }
       setPotSlot(currentDetailsPot, home.col, home.row);
