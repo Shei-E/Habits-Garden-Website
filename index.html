@@ -386,7 +386,7 @@
         firstPlantedPot.classList.contains('pot--yellow') ? 11 : 13;
       const rimTop = rowTop + (POT_SIZE - potH);
       const arrowTop = rimTop - 11; // 9px arrow + 2px gap above the pot
-      const hintTop = rimTop - 19; // 7px text + 1px gap above the arrow
+      const hintTop = rimTop - 17; // 7px text, nudged 2 units down — the glyphs sit high in their box, so the visible gap read ~23px
       hintArrow.style.left = `calc(${centreX - 4.5}px * var(--scale))`;
       hintArrow.style.top = `calc(${arrowTop}px * var(--scale))`;
       hint.style.top = `calc(${hintTop}px * var(--scale))`;
