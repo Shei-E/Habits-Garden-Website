@@ -267,7 +267,19 @@
     const POT_SIZE = 32;
     const POT_MIN_LEFT = 37; // shelf's left edge in design units
     const POT_MAX_LEFT = 183; // shelf's right edge minus the pot width
-    const POT_MIN_GAP = 18; // minimum left-edge gap between pots on a row
+    // Overlap detection, per pot type: the visible sprite widths,
+    // measured from the PNGs (ink bounds) — clay/orange 16 (8-24),
+    // white/blue/yellow 12 (10-22), white-small 8 (12-20) — shrunk
+    // by 1 unit on each side, so the detection zone is smaller than
+    // the visible sprite and pots can overlap by up to 2 units.
+    // Two pots block each other when their left edges are closer than
+    // the average of their detection widths: clay-clay 14, clay-white
+    // 12, white-white 10, clay-small 10, white-small 8, small-small 6.
+    const POT_DETECT_WIDTH = { clay: 14, orange: 14, white: 10, blue: 10, yellow: 10, 'white-small': 6 };
+    function getPotDetectWidth(pot) {
+      const type = (pot && pot.dataset.potType) || 'clay';
+      return POT_DETECT_WIDTH[type] ?? 14;
+    }
     const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
 
     // The pot's starting slot, from its pot--cN/pot--hN + row classes.
@@ -311,13 +323,16 @@
       pot.dataset.homeRow = slot.row;
     });
 
-    // Is a left-edge position on a row free? Another pot on the same
-    // row blocks it when its left edge is within POT_MIN_GAP units.
+    // Is a left-edge position on a row free for exceptPot? Another pot
+    // on the same row blocks it when their detection zones overlap —
+    // i.e. their left edges are closer than the average of their
+    // detection widths (see POT_DETECT_WIDTH). Empty pots count as clay.
     function posIsFree(left, row, exceptPot) {
+      const w = getPotDetectWidth(exceptPot);
       for (const p of pots) {
         if (p === exceptPot) continue;
         const s = getPotPos(p);
-        if (s.row === row && Math.abs(s.left - left) < POT_MIN_GAP) return false;
+        if (s.row === row && Math.abs(s.left - left) < (w + getPotDetectWidth(p)) / 2) return false;
       }
       return true;
     }

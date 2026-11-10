@@ -786,7 +786,7 @@ body {
 }
 
 .ap-carousel-track.is-small-pot .ap-plant-sprite {
-  bottom: calc(6px * var(--scale));
+  bottom: calc(7px * var(--scale));
   width: 50%;
   left: calc(8px * var(--scale));
 }
@@ -808,7 +808,7 @@ body {
 }
 
 .ap-carousel-track.is-small-pot .ap-plant-pot {
-  height: calc(6px * var(--scale));
+  height: calc(7px * var(--scale));
 }
 
 /* Centre the peace lily in the plant picker: its mass centroid sits
@@ -918,13 +918,13 @@ body {
   bottom: calc(11px * var(--scale));
 }
 
-/* The small white pot is only 6 units tall, and plants on it render
+/* The small white pot is only 7 units tall, and plants on it render
    at half size: half width, centred (left 8px of the 32-wide pot),
-   sitting on the 6-unit rim. Width-based, not transform, so it can't
+   sitting on the 7-unit rim. Width-based, not transform, so it can't
    fight the plant-grow animation, which owns transform. The bud/lily
    centring offsets halve too (0.25 instead of 0.5). */
 .pot.pot--white-small .pot-plant {
-  bottom: calc(6px * var(--scale));
+  bottom: calc(7px * var(--scale));
   width: 50%;
   left: calc(8px * var(--scale));
 }
