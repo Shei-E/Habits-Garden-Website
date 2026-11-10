@@ -492,7 +492,7 @@ body {
 
 .ap-input {
   left: calc(var(--stage-w) * 0.2 + 10.8px * var(--scale));
-  top: calc(32px * var(--scale)px);
+  top: calc(32px * var(--scale));
   width: calc(120px * var(--scale));
   height: calc(9px * var(--scale));
   line-height: normal;
