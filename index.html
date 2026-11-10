@@ -1076,19 +1076,14 @@
       });
     }
 
-    // Reset-position button: label + blocked state for the details popup.
-    // Blocked when the pot is away from home and its home slot is taken by
-    // another pot. Re-evaluated every time the popup opens, so moving the
-    // offending pot away and re-opening restores the working button.
+    // Reset-position button: always shows "reset position" when the popup
+    // opens. "cannot move" only appears after pressing the button while
+    // the home slot is taken (set in the click handler below), so the
+    // popup never opens already showing "cannot move".
     function updateResetPosButton() {
       if (!pdResetPos || !currentDetailsPot) return;
-      const home = potHomeSlots.get(currentDetailsPot);
-      if (!home) return;
-      const slot = getPotSlot(currentDetailsPot);
-      const atHome = slot.col === home.col && slot.row === home.row;
-      const blocked = !atHome && !!potAtSlot(home.col, home.row, currentDetailsPot);
-      pdResetPos.classList.toggle('is-blocked', blocked);
-      pdResetPos.textContent = blocked ? 'cannot move' : 'reset position';
+      pdResetPos.classList.remove('is-blocked');
+      pdResetPos.textContent = 'reset position';
     }
 
     function openPlantDetailsModal(pot) {
@@ -1519,7 +1514,12 @@
       if (!home) return;
       const slot = getPotSlot(currentDetailsPot);
       if (slot.col === home.col && slot.row === home.row) return; // already home — no-op
-      if (potAtSlot(home.col, home.row, currentDetailsPot)) return; // home taken — blocked, do nothing
+      if (potAtSlot(home.col, home.row, currentDetailsPot)) {
+        // Home taken: only now, after pressing, show "cannot move" in red.
+        pdResetPos.classList.add('is-blocked');
+        pdResetPos.textContent = 'cannot move';
+        return;
+      }
       setPotSlot(currentDetailsPot, home.col, home.row);
       // Re-open so the popup follows the pot and the button refreshes.
       openPlantDetailsModal(currentDetailsPot);
