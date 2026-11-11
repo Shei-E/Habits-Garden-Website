@@ -318,18 +318,19 @@
       return null;
     }
 
-    // The last moved pot paints in front of the others: give it a
-    // z-index above the rest (the others keep z-index auto, i.e. DOM
-    // order) and clear it from the previously frontmost pot. Only one
-    // pot ever holds it. The dragging pot stays on top while dragging
-    // via .is-dragging (z-index 50) — unless it is the frontmost pot,
-    // in which case its inline z-index 10 still beats every auto pot.
-    // Modals (90/100) and the hint/sparkle layers (30/35) stay above.
-    let frontPot = null;
-    function bringPotToFront(pot) {
-      if (frontPot && frontPot !== pot) frontPot.style.zIndex = '';
-      frontPot = pot;
-      pot.style.zIndex = 10;
+    // Paint order by pot size: the smallest pot goes on top, so a tiny
+    // pot tucked against a big one stays visible instead of being
+    // swallowed by it. Tiers follow the measured sprite width, so they
+    // still hold if the sprites are resized: white-small (8) front,
+    // white/blue/yellow (12) middle, clay (16, and empty pots) back.
+    // Ties within a tier fall back to DOM order. Called when a pot is
+    // planted (its type changes) and after a drag (to restore the tier
+    // after the dragging pot was lifted to z-index 50).
+    function updatePotZOrder(pot) {
+      const w = getPotSprite(pot).w;
+      if (w <= 8) pot.style.zIndex = 10;
+      else if (w <= 12) pot.style.zIndex = 5;
+      else pot.style.zIndex = '';
     }
     const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
 
@@ -516,6 +517,10 @@
       if (!dragState.moved) {
         dragState.moved = true;
         dragState.pot.classList.add('is-dragging');
+        // Lift above every tier while dragging: the .is-dragging rule
+        // (z-index 50) is overridden by an inline tier z-index, so a
+        // small pot would otherwise drag underneath its neighbours.
+        dragState.pot.style.zIndex = 50;
       }
       e.preventDefault();
       const pot = dragState.pot;
@@ -535,6 +540,8 @@
       dragState = null;
       const pot = state.pot;
       pot.classList.remove('is-dragging', 'is-blocked');
+      // Restore the size-tier z-index after the drag lift (above).
+      if (state.moved) updatePotZOrder(pot);
       if (cancelled || !state.moved) {
         // Plain click, or a cancelled drag: back to the drag origin.
         if (state.moved) setPotPos(pot, state.origPos.left, state.origPos.row);
@@ -553,7 +560,6 @@
       setPotPos(pot, target.left, target.row);
       if (target.left !== state.origPos.left || target.row !== state.origPos.row) {
         noteFirstPotMoved();
-        bringPotToFront(pot);
       }
     }
 
@@ -593,7 +599,6 @@
           setPotPos(pot, left, row);
         }
         noteFirstPotMoved();
-        bringPotToFront(pot);
       });
     });
 
@@ -1466,6 +1471,7 @@
           // Save chosen pot type
           const potData = potOptions[selectedPotIndex] || potOptions[0];
           activePot.dataset.potType = potData.id;
+          updatePotZOrder(activePot);
           activePot.style.backgroundImage = `url("${potData.src}")`;
           activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-small');
           if (potData.id === 'white') activePot.classList.add('pot--white');
@@ -1617,7 +1623,6 @@
         return;
       }
       setPotPos(pot, homeLeft, homeRow);
-      bringPotToFront(pot);
       // Re-open so the popup follows the pot and the button refreshes.
       openPlantDetailsModal(pot);
     });
