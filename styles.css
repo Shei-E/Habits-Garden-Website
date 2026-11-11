@@ -305,15 +305,16 @@ body {
 }
 
 /* Currency display: top right of the shelf screen. Display only for
-   now (no behaviour); the sprite is a 48x32 canvas, ink 44x16 with
-   2 units of clear canvas on its right, so a -1-unit right offset
-   puts the visible pill 1 unit from the stage edge. */
+   now (no behaviour); the sprite is a 48x32 canvas shown at x0.75
+   (36x24). Its ink (44x16, 2 units of clear canvas on the right =
+   1.5 at this scale) sits 1 unit from the stage edge via a -0.5
+   right offset. */
 .ui-currency {
   position: absolute;
   top: calc(4px * var(--scale));
-  right: calc(-1px * var(--scale));
-  width: calc(48px * var(--scale));
-  height: calc(32px * var(--scale));
+  right: calc(-0.5px * var(--scale));
+  width: calc(36px * var(--scale));
+  height: calc(24px * var(--scale));
   pointer-events: none;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
@@ -322,16 +323,18 @@ body {
 }
 
 /* Add-a-pot button: below the currency display, the two sprites'
-   visible right edges aligned (the sprite is a 28x32 canvas, ink
-   23x15 with 3 units of clear canvas on its right, so a -2-unit
-   right offset also puts its visible edge 1 unit from the stage
-   edge). Hidden until the intro hint flow finishes. */
+   visible right edges aligned at 1 unit from the stage edge. The
+   sprite is a 28x32 canvas shown at x0.75 (21x24); its ink (23x15,
+   3 units of clear canvas on the right = 2.25 at this scale) needs
+   a -1.25 right offset for that same 1-unit margin. The top leaves
+   a 4-unit visible gap below the pill's ink. Hidden until the intro
+   hint flow finishes. */
 .ui-addplant {
   position: absolute;
-  top: calc(29px * var(--scale));
-  right: calc(-2px * var(--scale));
-  width: calc(28px * var(--scale));
-  height: calc(32px * var(--scale));
+  top: calc(20px * var(--scale));
+  right: calc(-1.25px * var(--scale));
+  width: calc(21px * var(--scale));
+  height: calc(24px * var(--scale));
   padding: 0;
   border: 0;
   background-color: transparent;
@@ -346,7 +349,7 @@ body {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .ui-addplant.is-visible {
