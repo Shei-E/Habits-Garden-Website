@@ -82,7 +82,7 @@ body {
   padding: 0;
   border: 0;
   background-color: transparent;
-  background-image: url("assets/pot-template.png");
+  background-image: url("assets/pot-clay.png");
   background-position: bottom center;
   background-size: contain;
   background-repeat: no-repeat;
@@ -96,23 +96,23 @@ body {
 }
 
 .pot.pot--white {
-  background-image: url("assets/white-pot.png");
+  background-image: url("assets/pot-white.png");
 }
 
 .pot.pot--blue {
-  background-image: url("assets/blue-pot.png");
+  background-image: url("assets/pot-blue.png");
 }
 
 .pot.pot--yellow {
-  background-image: url("assets/yellow-pot.png");
+  background-image: url("assets/pot-yellow.png");
 }
 
 .pot.pot--orange {
-  background-image: url("assets/orange-pot.png");
+  background-image: url("assets/pot-orange.png");
 }
 
 .pot.pot--grey {
-  background-image: url("assets/grey-pot.png");
+  background-image: url("assets/pot-grey.png");
 }
 
 .pot.pot--white-smallest {
@@ -136,23 +136,23 @@ body {
 }
 
 .pot.pot--orange-smaller {
-  background-image: url("assets/orange-pot-smaller.png");
+  background-image: url("assets/pot-smaller-orange.png");
 }
 
 .pot.pot--white-smaller {
-  background-image: url("assets/white-pot-smaller.png");
+  background-image: url("assets/pot-smaller-white.png");
 }
 
 .pot.pot--blue-smaller {
-  background-image: url("assets/blue-pot-smaller.png");
+  background-image: url("assets/pot-smaller-blue.png");
 }
 
 .pot.pot--yellow-smaller {
-  background-image: url("assets/yellow-pot-smaller.png");
+  background-image: url("assets/pot-smaller-yellow.png");
 }
 
 .pot.pot--grey-smaller {
-  background-image: url("assets/grey-pot-smaller.png");
+  background-image: url("assets/pot-smaller-grey.png");
 }
 
 /* Drag-and-drop pots: Pointer Events drive the move (see index.html),
@@ -985,7 +985,7 @@ body {
 }
 
 /* Planted pot preview on shelf */
-/* Keep the default pot-template.png background visible under the plant sprite */
+/* Keep the default pot-clay.png background visible under the plant sprite */
 /* PLANT BOTTOM*/
 
 .pot-plant {

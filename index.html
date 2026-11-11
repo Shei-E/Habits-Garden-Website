@@ -112,27 +112,27 @@
           <div class="ap-carousel-track" id="ap-carousel-track">
             <button class="ap-plant ap-plant--cactus" type="button" aria-label="Cactus" data-plant="cactus">
               <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
             <button class="ap-plant ap-plant--lavender" type="button" aria-label="Lavender" data-plant="lavender">
               <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
             <button class="ap-plant ap-plant--tree" type="button" aria-label="White flowered tree" data-plant="tree">
               <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
             <button class="ap-plant ap-plant--lily" type="button" aria-label="Peace lily" data-plant="lily">
               <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
             <button class="ap-plant ap-plant--daisy" type="button" aria-label="Daisy" data-plant="daisy">
               <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
             <button class="ap-plant ap-plant--droopy" type="button" aria-label="White droopy flower" data-plant="droopy">
               <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
-              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-clay.png" alt="">
             </button>
           </div>
         </div>
@@ -217,21 +217,21 @@
     const pdRemove = document.getElementById('pd-remove');
 
     const potOptions = [
-      { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
-      { id: 'orange', name: 'Orange pot', src: 'assets/orange-pot.png', isWhite: false, isShort: true },
-      { id: 'orange-smaller', name: 'Smaller orange pot', src: 'assets/orange-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'clay', name: 'Clay pot', src: 'assets/pot-clay.png', isWhite: false, isShort: false },
+      { id: 'orange', name: 'Orange pot', src: 'assets/pot-orange.png', isWhite: false, isShort: true },
+      { id: 'orange-smaller', name: 'Smaller orange pot', src: 'assets/pot-smaller-orange.png', isWhite: false, isShort: true, isSmaller: true },
       { id: 'orange-smallest', name: 'Smallest orange pot', src: 'assets/pot-smallest-orange.png', isWhite: false, isShort: true, isSmall: true },
-      { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true, isShort: true },
-      { id: 'white-smaller', name: 'Smaller white pot', src: 'assets/white-pot-smaller.png', isWhite: true, isShort: true, isSmaller: true },
+      { id: 'white', name: 'White pot', src: 'assets/pot-white.png', isWhite: true, isShort: true },
+      { id: 'white-smaller', name: 'Smaller white pot', src: 'assets/pot-smaller-white.png', isWhite: true, isShort: true, isSmaller: true },
       { id: 'white-smallest', name: 'Smallest white pot', src: 'assets/pot-smallest-white.png', isWhite: true, isShort: true, isSmall: true },
-      { id: 'blue', name: 'Blue pot', src: 'assets/blue-pot.png', isWhite: false, isShort: true },
-      { id: 'blue-smaller', name: 'Smaller blue pot', src: 'assets/blue-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'blue', name: 'Blue pot', src: 'assets/pot-blue.png', isWhite: false, isShort: true },
+      { id: 'blue-smaller', name: 'Smaller blue pot', src: 'assets/pot-smaller-blue.png', isWhite: false, isShort: true, isSmaller: true },
       { id: 'blue-smallest', name: 'Smallest blue pot', src: 'assets/pot-smallest-blue.png', isWhite: false, isShort: true, isSmall: true },
-      { id: 'yellow', name: 'Yellow pot', src: 'assets/yellow-pot.png', isWhite: false, isShort: true },
-      { id: 'yellow-smaller', name: 'Smaller yellow pot', src: 'assets/yellow-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'yellow', name: 'Yellow pot', src: 'assets/pot-yellow.png', isWhite: false, isShort: true },
+      { id: 'yellow-smaller', name: 'Smaller yellow pot', src: 'assets/pot-smaller-yellow.png', isWhite: false, isShort: true, isSmaller: true },
       { id: 'yellow-smallest', name: 'Smallest yellow pot', src: 'assets/pot-smallest-yellow.png', isWhite: false, isShort: true, isSmall: true },
-      { id: 'grey', name: 'Grey pot', src: 'assets/grey-pot.png', isWhite: false, isShort: true },
-      { id: 'grey-smaller', name: 'Smaller grey pot', src: 'assets/grey-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'grey', name: 'Grey pot', src: 'assets/pot-grey.png', isWhite: false, isShort: true },
+      { id: 'grey-smaller', name: 'Smaller grey pot', src: 'assets/pot-smaller-grey.png', isWhite: false, isShort: true, isSmaller: true },
       { id: 'grey-smallest', name: 'Smallest grey pot', src: 'assets/pot-smallest-grey.png', isWhite: false, isShort: true, isSmall: true },
     ];
     let selectedPotIndex = 0; // clay pot by default
