@@ -311,15 +311,20 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* Currency pill: top right of the shelf screen, showing today's
+/* Currency pill: top right corner of the SCREEN, showing today's
    dew drop count in the blank half of the sprite, next to its coin
    and x. The sprite is a 48x32 canvas shown at x0.75 (36x24). Its
    ink (44x16, 2 units of clear canvas on the right = 1.5 at this
-   scale) sits flush with the stage edge via a -1.5 right offset.
+   scale) sits flush with the screen's right edge via a -1.5 right
+   offset. The pill is position:fixed — anchored to the window's
+   top-right corner, not the stage's — so on a screen wider or
+   taller than the 16:9 garden it hugs the real corner instead of
+   floating in from the edge with the letterboxed stage. (On a
+   16:9 screen the two corners coincide, so nothing moves there.)
    Clicking opens the dew drops info card; hovering grows the pill
    a touch (like the add-a-pot button) to show it is clickable. */
 .ui-currency {
-  position: absolute;
+  position: fixed;
   top: calc(4px * var(--scale));
   right: calc(-1.5px * var(--scale));
   width: calc(36px * var(--scale));
@@ -361,14 +366,15 @@ body {
 }
 
 /* Add-a-pot button: below the currency display, the two sprites'
-   visible right edges aligned flush with the stage edge. The
-   sprite is a 28x32 canvas shown at x0.75 (21x24); its ink (23x15,
-   3 units of clear canvas on the right = 2.25 at this scale) needs
-   a -2.25 right offset to sit flush too. The top leaves a 2-unit
-   visible gap below the pill's ink. Hidden until the intro hint
-   flow finishes. */
+   visible right edges aligned flush with the screen's right edge
+   (position:fixed like the pill, so the pair stays in the window's
+   top-right corner — see .ui-currency). The sprite is a 28x32
+   canvas shown at x0.75 (21x24); its ink (23x15, 3 units of clear
+   canvas on the right = 2.25 at this scale) needs a -2.25 right
+   offset to sit flush too. The top leaves a 2-unit visible gap
+   below the pill's ink. Hidden until the intro hint flow finishes. */
 .ui-addplant {
-  position: absolute;
+  position: fixed;
   top: calc(18px * var(--scale));
   right: calc(-2.25px * var(--scale));
   width: calc(21px * var(--scale));
