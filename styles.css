@@ -307,12 +307,12 @@ body {
 /* Currency display: top right of the shelf screen. Display only for
    now (no behaviour); the sprite is a 48x32 canvas shown at x0.75
    (36x24). Its ink (44x16, 2 units of clear canvas on the right =
-   1.5 at this scale) sits 1 unit from the stage edge via a -0.5
+   1.5 at this scale) sits flush with the stage edge via a -1.5
    right offset. */
 .ui-currency {
   position: absolute;
   top: calc(4px * var(--scale));
-  right: calc(-0.5px * var(--scale));
+  right: calc(-1.5px * var(--scale));
   width: calc(36px * var(--scale));
   height: calc(24px * var(--scale));
   pointer-events: none;
@@ -323,16 +323,16 @@ body {
 }
 
 /* Add-a-pot button: below the currency display, the two sprites'
-   visible right edges aligned at 1 unit from the stage edge. The
+   visible right edges aligned flush with the stage edge. The
    sprite is a 28x32 canvas shown at x0.75 (21x24); its ink (23x15,
    3 units of clear canvas on the right = 2.25 at this scale) needs
-   a -1.25 right offset for that same 1-unit margin. The top leaves
-   a 4-unit visible gap below the pill's ink. Hidden until the intro
-   hint flow finishes. */
+   a -2.25 right offset to sit flush too. The top leaves a 2-unit
+   visible gap below the pill's ink. Hidden until the intro hint
+   flow finishes. */
 .ui-addplant {
   position: absolute;
   top: calc(18px * var(--scale));
-  right: calc(-1.25px * var(--scale));
+  right: calc(-2.25px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
