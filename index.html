@@ -584,12 +584,14 @@
     const DELETE_X_INK = 6;
 
     // Where the delete marker sits for a drag that started at pos
-    // (design units): centred on the pot, floating above its row so
-    // the visible X sits just clear of the row's top edge.
+    // (design units): centred on the pot, its box top on the row's
+    // top edge, so the visible X floats about 9 units above the
+    // pot's sprite — half the distance it had when the box top sat
+    // 10 units above the row.
     function deleteXBox(pos) {
       return {
         left: pos.left + POT_SIZE / 2 - DELETE_X_SIZE / 2,
-        top: SLOT_ROW_TOP[pos.row] - 10,
+        top: SLOT_ROW_TOP[pos.row],
       };
     }
 
