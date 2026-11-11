@@ -841,16 +841,15 @@ body {
   height: calc(7px * var(--scale));
 }
 
-/* Centre the peace lily in the plant picker: its mass centroid sits
-   0.4 units right of the pot rim centre (16.4 vs 16.0); the space
-   renders it centred at a 0.5 shift left, so match that. Sprite file
-   unchanged. */
+/* Centre the peace lily in the plant picker: its ink centre sits
+   1.0 unit right of the pot rim centre (17.0 vs 16.0) after the sprite
+   was shifted +1 in the file, so shift it left 1.0 to centre it exactly. */
 .ap-plant--lily .ap-plant-sprite {
-  left: calc(-0.5px * var(--scale));
+  left: calc(-1px * var(--scale));
 }
 
 .ap-carousel-track.is-small-pot .ap-plant--lily .ap-plant-sprite {
-  left: calc(5.275px * var(--scale));
+  left: calc(4.95px * var(--scale));
 }
 
 .ap-plant--cactus {
@@ -954,7 +953,7 @@ body {
    at 0.65 size: 65% width, centred (left 5.6px of the 32-wide pot),
    sitting on the 7-unit rim. Width-based, not transform, so it can't
    fight the plant-grow animation, which owns transform. The bud/lily
-   centring offsets scale too (0.325 instead of 0.5). */
+   centring offsets scale too (bud 0.325 instead of 0.5; lily 0.65 instead of 1.0). */
 .pot.pot--white-small .pot-plant {
   bottom: calc(7px * var(--scale));
   width: 65%;
@@ -967,22 +966,21 @@ body {
 }
 
 .pot.pot--white-small .pot-plant[src*="peace-lily"] {
-  left: calc(5.275px * var(--scale));
+  left: calc(4.95px * var(--scale));
 }
 
 /* Centre bud / dead-bud / peace-lily sprites over the pot rim.
    Pot rim centre is 16.0 of the 32-wide pot box; bud and dead-bud
-   artwork centres are 15.5 (shift right 0.5); the peace lily's mass
-   centroid is 16.4, and the space renders it centred at a 0.5 shift
-   left, so match that. CSS offsets only — the sprite files are
-   unchanged. */
+   artwork centres are 15.5 (shift right 0.5); the peace lily's ink
+   centre is 17.0 after its +1 shift in the sprite file, so shift it
+   left 1.0 to centre it exactly. CSS offsets only. */
 .pot-plant[src*="bud-4.png"],
 .pot-plant[src*="dead-bud.png"] {
   left: calc(0.5px * var(--scale));
 }
 
 .pot-plant[src*="peace-lily"] {
-  left: calc(-0.5px * var(--scale));
+  left: calc(-1px * var(--scale));
 }
 
 
