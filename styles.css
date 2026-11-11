@@ -119,6 +119,26 @@ body {
   background-image: url("assets/white-pot-small.png");
 }
 
+.pot.pot--orange-smaller {
+  background-image: url("assets/orange-pot-smaller.png");
+}
+
+.pot.pot--white-smaller {
+  background-image: url("assets/white-pot-smaller.png");
+}
+
+.pot.pot--blue-smaller {
+  background-image: url("assets/blue-pot-smaller.png");
+}
+
+.pot.pot--yellow-smaller {
+  background-image: url("assets/yellow-pot-smaller.png");
+}
+
+.pot.pot--grey-smaller {
+  background-image: url("assets/grey-pot-smaller.png");
+}
+
 /* Drag-and-drop pots: Pointer Events drive the move (see index.html),
    so touch must not scroll and text must not select mid-drag. */
 .pot {
@@ -138,8 +158,8 @@ body {
 /* The blocked-drop outline hugs the visible pot sprite, not the
    32-unit button, so it shows the pot's real footprint. The sprite
    sits at the bottom centre of the button: clay 16x13 (left 8),
-   white/blue/yellow/orange/grey 12x11 (left 10), white-small 8x7
-   (left 12). */
+   white/blue/yellow/orange/grey 12x11 (left 10), the smaller pots
+   10x9 (left 11), white-small 8x7 (left 12). */
 .pot.is-dragging.is-blocked::after {
   content: "";
   position: absolute;
@@ -158,6 +178,16 @@ body {
   left: calc(10px * var(--scale));
   width: calc(12px * var(--scale));
   height: calc(11px * var(--scale));
+}
+
+.pot.pot--orange-smaller.is-dragging.is-blocked::after,
+.pot.pot--white-smaller.is-dragging.is-blocked::after,
+.pot.pot--blue-smaller.is-dragging.is-blocked::after,
+.pot.pot--yellow-smaller.is-dragging.is-blocked::after,
+.pot.pot--grey-smaller.is-dragging.is-blocked::after {
+  left: calc(11px * var(--scale));
+  width: calc(10px * var(--scale));
+  height: calc(9px * var(--scale));
 }
 
 .pot.pot--white-small.is-dragging.is-blocked::after {
@@ -817,8 +847,14 @@ body {
 
 .ap-carousel-track.is-small-pot .ap-plant-sprite {
   bottom: calc(7px * var(--scale));
-  width: 65%;
-  left: calc(5.6px * var(--scale));
+  width: 50%;
+  left: calc(8px * var(--scale));
+}
+
+.ap-carousel-track.is-smaller-pot .ap-plant-sprite {
+  bottom: calc(9px * var(--scale));
+  width: 75%;
+  left: calc(4px * var(--scale));
 }
 
 .ap-plant-pot {
@@ -841,6 +877,10 @@ body {
   height: calc(7px * var(--scale));
 }
 
+.ap-carousel-track.is-smaller-pot .ap-plant-pot {
+  height: calc(9px * var(--scale));
+}
+
 /* Centre the peace lily in the plant picker: its ink centre sits
    1.0 unit right of the pot rim centre (17.0 vs 16.0) after the sprite
    was shifted +1 in the file, so shift it left 1.0 to centre it exactly. */
@@ -849,7 +889,11 @@ body {
 }
 
 .ap-carousel-track.is-small-pot .ap-plant--lily .ap-plant-sprite {
-  left: calc(4.95px * var(--scale));
+  left: calc(7.5px * var(--scale));
+}
+
+.ap-carousel-track.is-smaller-pot .ap-plant--lily .ap-plant-sprite {
+  left: calc(3.25px * var(--scale));
 }
 
 .ap-plant--cactus {
@@ -950,23 +994,58 @@ body {
 }
 
 /* The small white pot is only 7 units tall, and plants on it render
-   at 0.65 size: 65% width, centred (left 5.6px of the 32-wide pot),
+   at 0.5 size: 50% width, centred (left 8px of the 32-wide pot),
    sitting on the 7-unit rim. Width-based, not transform, so it can't
    fight the plant-grow animation, which owns transform. The bud/lily
-   centring offsets scale too (bud 0.325 instead of 0.5; lily 0.65 instead of 1.0). */
+   centring offsets scale too (bud 0.25 instead of 0.5; lily 0.5 instead of 1.0). */
 .pot.pot--white-small .pot-plant {
   bottom: calc(7px * var(--scale));
-  width: 65%;
-  left: calc(5.6px * var(--scale));
+  width: 50%;
+  left: calc(8px * var(--scale));
 }
 
 .pot.pot--white-small .pot-plant[src*="bud-4.png"],
 .pot.pot--white-small .pot-plant[src*="dead-bud.png"] {
-  left: calc(5.925px * var(--scale));
+  left: calc(8.25px * var(--scale));
 }
 
 .pot.pot--white-small .pot-plant[src*="peace-lily"] {
-  left: calc(4.95px * var(--scale));
+  left: calc(7.5px * var(--scale));
+}
+
+/* The smaller pots are 9 units tall, and plants on them render at
+   0.75 size: 75% width, centred (left 4px of the 32-wide pot),
+   sitting on the 9-unit rim. The bud/lily centring offsets scale too
+   (bud 0.375 instead of 0.5; lily 0.75 instead of 1.0). */
+.pot.pot--orange-smaller .pot-plant,
+.pot.pot--white-smaller .pot-plant,
+.pot.pot--blue-smaller .pot-plant,
+.pot.pot--yellow-smaller .pot-plant,
+.pot.pot--grey-smaller .pot-plant {
+  bottom: calc(9px * var(--scale));
+  width: 75%;
+  left: calc(4px * var(--scale));
+}
+
+.pot.pot--orange-smaller .pot-plant[src*="bud-4.png"],
+.pot.pot--white-smaller .pot-plant[src*="bud-4.png"],
+.pot.pot--blue-smaller .pot-plant[src*="bud-4.png"],
+.pot.pot--yellow-smaller .pot-plant[src*="bud-4.png"],
+.pot.pot--grey-smaller .pot-plant[src*="bud-4.png"],
+.pot.pot--orange-smaller .pot-plant[src*="dead-bud.png"],
+.pot.pot--white-smaller .pot-plant[src*="dead-bud.png"],
+.pot.pot--blue-smaller .pot-plant[src*="dead-bud.png"],
+.pot.pot--yellow-smaller .pot-plant[src*="dead-bud.png"],
+.pot.pot--grey-smaller .pot-plant[src*="dead-bud.png"] {
+  left: calc(4.375px * var(--scale));
+}
+
+.pot.pot--orange-smaller .pot-plant[src*="peace-lily"],
+.pot.pot--white-smaller .pot-plant[src*="peace-lily"],
+.pot.pot--blue-smaller .pot-plant[src*="peace-lily"],
+.pot.pot--yellow-smaller .pot-plant[src*="peace-lily"],
+.pot.pot--grey-smaller .pot-plant[src*="peace-lily"] {
+  left: calc(3.25px * var(--scale));
 }
 
 /* Centre bud / dead-bud / peace-lily sprites over the pot rim.
