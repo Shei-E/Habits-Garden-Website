@@ -31,23 +31,20 @@
     <div class="plant plant--daisy" aria-hidden="true"></div>
     <div class="plant plant--peace-lily" aria-hidden="true"></div>
 
-    <!-- Top shelf -->
+    <!-- The page starts with a single pot; more are added with the
+         add-a-pot button (below) once the intro hint flow is done. -->
     <button class="pot pot--h1 pot--c1 pot--top" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h2 pot--c2 pot--top" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h3 pot--c3 pot--top" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h4 pot--c4 pot--top" type="button" aria-label="Add a plant"></button>
-
-    <!-- Bottom shelf -->
-    <button class="pot pot--h1 pot--c1 pot--bottom" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h2 pot--c2 pot--bottom" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h3 pot--c3 pot--bottom" type="button" aria-label="Add a plant"></button>
-    <button class="pot pot--h4 pot--c4 pot--bottom" type="button" aria-label="Add a plant"></button>
 
     <p class="hint">click to add a plant!</p>
     <img class="hint-arrow" src="assets/ui-arrow-down.png" alt="">
 
     <!-- Currency display (top right; display only, no behaviour yet) -->
     <img class="ui-currency" src="assets/ui-currency.png" alt="">
+
+    <!-- Add-a-pot button: sits below the currency display, hidden
+         until the intro hint flow finishes. Each press adds an empty
+         pot to the first free shelf slot. -->
+    <button class="ui-addplant" id="ui-addplant" type="button" aria-label="Add a pot"></button>
 
     <!-- Add Plant Popup Modal -->
     <div class="ap-modal" id="add-plant-modal" aria-hidden="true" role="dialog" aria-modal="true"
@@ -191,7 +188,9 @@
     const apRemove = document.getElementById('ap-remove');
     const plantInput = document.getElementById('plant-name');
     const commitBtn = document.getElementById('ap-commit');
-    const pots = document.querySelectorAll('.pot');
+    // A plain array (not the live NodeList) so the add-a-pot button
+    // can push new pots into every loop below at runtime.
+    const pots = Array.from(document.querySelectorAll('.pot'));
     const repeatVal = document.getElementById('ap-repeat-val');
     const daysPicker = document.getElementById('ap-days-picker');
     const monthlyPicker = document.getElementById('ap-monthly-picker');
@@ -462,6 +461,9 @@
       if (hasMovedFirstPot) {
         if (hint) hint.remove();
         if (hintArrow) hintArrow.remove();
+        // The intro is finished: reveal the add-a-pot button.
+        const addPotBtn = document.getElementById('ui-addplant');
+        if (addPotBtn) addPotBtn.classList.add('is-visible');
         return;
       }
       if (hasWateredFirstPlant && hint) {
@@ -507,6 +509,45 @@
       hasMovedFirstPot = true;
       updateHint();
     }
+
+    // ---------- Add-a-pot button ----------
+    // Revealed by updateHint once the intro flow is finished (above).
+    // Each press adds one empty pot at the first free shelf slot —
+    // the designed slots in order (top row left to right, then the
+    // bottom row). If every slot happens to be blocked by dragged
+    // pots, the nearest free spot to the first slot is used instead;
+    // if a shelf is completely full, nothing happens. The new pot's
+    // home is where it appears, so "reset position" returns it there.
+    function addPot() {
+      const pot = document.createElement('button');
+      pot.classList.add('pot');
+      pot.setAttribute('type', 'button');
+      pot.setAttribute('aria-label', 'Add a plant');
+      let spot = null;
+      for (const row of ['top', 'bottom']) {
+        for (const left of SLOT_COL_LEFT) {
+          if (posIsFree(left, row, pot)) { spot = { left, row }; break; }
+        }
+        if (spot) break;
+      }
+      if (!spot) {
+        for (const row of ['top', 'bottom']) {
+          spot = resolveDrop(SLOT_COL_LEFT[0], row, pot);
+          if (spot) break;
+        }
+      }
+      if (!spot) return; // both shelves are full
+      stageEl.appendChild(pot);
+      pots.push(pot);
+      setPotPos(pot, spot.left, spot.row);
+      pot.dataset.homeLeft = String(spot.left);
+      pot.dataset.homeRow = spot.row;
+      updatePotZOrder(pot);
+      wirePotDrag(pot);
+      wirePotClick(pot);
+    }
+
+    document.getElementById('ui-addplant')?.addEventListener('click', addPot);
 
     // ---------- Drag-and-drop pots (pointer + keyboard) ----------
     // Free-form like the space: horizontal position is continuous
@@ -607,7 +648,9 @@
       }
     }
 
-    pots.forEach(pot => {
+    // Wires one pot's drag + arrow-key handlers. Called for the
+    // starting pot at load and for each pot the button adds.
+    function wirePotDrag(pot) {
       pot.addEventListener('pointerdown', (e) => beginPotDrag(pot, e));
       pot.addEventListener('pointermove', (e) => {
         if (dragState && dragState.pot === pot) movePotDrag(e);
@@ -644,7 +687,9 @@
         }
         noteFirstPotMoved();
       });
-    });
+    }
+
+    pots.forEach(wirePotDrag);
 
     const repeatOptions = ['daily', 'weekly', 'monthly', 'yearly'];
     let repeatIndex = 0;
@@ -1411,7 +1456,10 @@
       return 5;
     }
 
-    pots.forEach(pot => {
+    // Wires one pot's click handler (open Add Plant, or the plant
+    // details when planted). Called for the starting pot at load and
+    // for each pot the button adds.
+    function wirePotClick(pot) {
       pot.addEventListener('click', (e) => {
         if (suppressNextPotClick) {
           suppressNextPotClick = false;
@@ -1430,7 +1478,9 @@
           openModal(target);
         }
       });
-    });
+    }
+
+    pots.forEach(wirePotClick);
 
     closeBtn.addEventListener('click', closeModal);
 

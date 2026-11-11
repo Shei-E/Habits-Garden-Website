@@ -306,13 +306,12 @@ body {
 
 /* Currency display: top right of the shelf screen. Display only for
    now (no behaviour); the sprite is a 48x32 canvas, ink 44x16 with
-   2 units of clear canvas on its right, so a 1-unit right offset puts
-   the visible pill 3 units from the stage edge — half the original
-   6-unit visible margin. */
+   2 units of clear canvas on its right, so a -1-unit right offset
+   puts the visible pill 1 unit from the stage edge. */
 .ui-currency {
   position: absolute;
   top: calc(4px * var(--scale));
-  right: calc(1px * var(--scale));
+  right: calc(-1px * var(--scale));
   width: calc(48px * var(--scale));
   height: calc(32px * var(--scale));
   pointer-events: none;
@@ -320,6 +319,39 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+/* Add-a-pot button: below the currency display, the two sprites'
+   visible right edges aligned (the sprite is a 28x32 canvas, ink
+   23x15 with 3 units of clear canvas on its right, so a -2-unit
+   right offset also puts its visible edge 1 unit from the stage
+   edge). Hidden until the intro hint flow finishes. */
+.ui-addplant {
+  position: absolute;
+  top: calc(29px * var(--scale));
+  right: calc(-2px * var(--scale));
+  width: calc(28px * var(--scale));
+  height: calc(32px * var(--scale));
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  background-image: url("assets/ui-addplant.png");
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.ui-addplant.is-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* ---------- Home Screen 2 (Figma node 184:110) ----------
