@@ -64,7 +64,7 @@
         <h2 class="dd-title" id="dd-title">Dew Drops</h2>
         <button class="dd-close" id="dd-close" type="button" aria-label="Close"></button>
         <div class="dd-body">
-          <p class="dd-line">dew drops reset every day, and they can never go below 0.</p>
+          <p class="dd-line">a new day starts at 4am. dew drops are rewarded at the start of each day, based on your plants at that moment, and they can never go below 0.</p>
           <p class="dd-line">buds… 1 drop a day</p>
           <p class="dd-line">flowers… 5, 10 or 20 drops on the day after watering (5 for daily and weekly flowers, 10 for monthly, 20 for yearly) — after that, 2 drops a day</p>
           <p class="dd-line">dead plants… -2 drops a day</p>
@@ -207,6 +207,27 @@
       return new Date();
     }
     // /DEV OPTION
+
+    // ---- Game day: every day starts at 4am ----
+    // Before 4am it is still yesterday's game day: 2am on the 12th
+    // counts as the 11th. Everything date-based — watering days,
+    // missed days and plant death, dew drop rewards — follows this
+    // game day, never the calendar day. getGameDate() returns the
+    // current moment shifted back a day when it falls before 4am,
+    // so its calendar date IS the game date. (A plain formatter like
+    // getLocalDateStr must NOT shift: opportunity dates built at
+    // midnight would slide a day. Only "now" gets shifted.)
+    const DAY_START_HOUR = 4;
+    function getGameDate(date = getCurrentDate()) {
+      const d = new Date(date);
+      if (d.getHours() < DAY_START_HOUR) d.setDate(d.getDate() - 1);
+      return d;
+    }
+    // The game day as a toDateString() ("Tue Nov 11 2026") — the
+    // format lastWateredDate is stored and compared in.
+    function getGameDayStr() {
+      return getGameDate().toDateString();
+    }
 
     const modal = document.getElementById('add-plant-modal');
     const closeBtn = document.getElementById('ap-close');
@@ -932,7 +953,7 @@
       if (dayNumInput) dayNumInput.value = '';
       if (ordinalSuffix) ordinalSuffix.textContent = 'th';
 
-      yearMonthIndex = getCurrentDate().getMonth();
+      yearMonthIndex = getGameDate().getMonth();
       updateYearMonth();
       if (yearDayNumInput) yearDayNumInput.value = '';
       if (yearOrdinalSuffix) yearOrdinalSuffix.textContent = 'th';
@@ -1099,7 +1120,10 @@
 
     function calculateStreak(pot) {
       if (!pot) return ['-', '-', '-', '-', '-', '-', '-', '-'];
-      const today = getCurrentDate();
+      // "Today" is the game day (starts 4am), so the last 8
+      // opportunities — and with them missed days and death — are
+      // counted against the 4am boundary, not midnight.
+      const today = getGameDate();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const todayStr = getLocalDateStr(todayStart);
 
@@ -1275,7 +1299,7 @@
 
     function getMissedOpportunitiesCount(pot) {
       if (!pot || !pot.classList.contains('has-plant')) return 0;
-      const todayStr = getCurrentDate().toDateString();
+      const todayStr = getGameDayStr();
       if (pot.dataset.wateredToday === 'true' && pot.dataset.lastWateredDate === todayStr) {
         return 0;
       }
@@ -1302,7 +1326,7 @@
       const potPlant = pot.querySelector('.pot-plant');
       if (!potPlant) return;
 
-      const todayStr = getCurrentDate().toDateString();
+      const todayStr = getGameDayStr();
       const isWateredToday = (pot.dataset.wateredToday === 'true') && (pot.dataset.lastWateredDate === todayStr);
 
       const missedCount = isWateredToday ? 0 : getMissedOpportunitiesCount(pot);
@@ -1358,13 +1382,23 @@
     }
 
     // ---- Dew drops ----
-    // The currency, tallied fresh every day (it resets by day) from
-    // the plants on the shelf, and the total never goes below 0:
+    // The currency is rewarded ONLY at the start of each game day
+    // (4am): at that moment the day's amount is worked out from the
+    // plants on the shelf as they stand, and it then stays fixed
+    // for the whole day — planting, watering, reviving or removing
+    // a plant during the day changes nothing until the next 4am,
+    // when the next day's reward is granted. The total never goes
+    // below 0:
     //   bud ....... 1 drop a day
     //   dead ...... -2 drops a day
     //   flower .... 5 (daily/weekly), 10 (monthly) or 20 (yearly)
     //               on the day after it was watered, 2 a day after
     const dewModal = document.getElementById('dew-modal');
+    // The game day the current reward was granted for (an ISO date
+    // string), and the granted amount. null = nothing granted yet,
+    // so the first updateDewDrops() of a day grants that day.
+    let dewRewardDayStr = null;
+    let dewRewardAmount = 0;
 
     function dewDropRate(pot) {
       if (!pot.classList.contains('has-plant')) return 0;
@@ -1375,7 +1409,7 @@
       try {
         if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
       } catch (e) { }
-      const yesterday = getCurrentDate();
+      const yesterday = getGameDate();
       yesterday.setDate(yesterday.getDate() - 1);
       if (!history.includes(getLocalDateStr(yesterday))) return 2;
       const repeatType = pot.dataset.repeatType || 'daily';
@@ -1384,6 +1418,10 @@
       return 5; // daily and weekly
     }
 
+    // What the shelf would earn if a reward were granted right
+    // now. updateDewDrops() only takes this number at the start
+    // of a game day; the rest of the day it is not used for the
+    // pill, however much the shelf changes.
     function calculateDewDrops() {
       let total = 0;
       pots.forEach(pot => { total += dewDropRate(pot); });
@@ -1391,9 +1429,30 @@
     }
 
     function updateDewDrops() {
+      const todayStr = getLocalDateStr(getGameDate());
+      if (dewRewardDayStr !== todayStr) {
+        // Start of a new game day: grant today's reward from the
+        // shelf as it stands now, then freeze it for the day.
+        dewRewardDayStr = todayStr;
+        dewRewardAmount = calculateDewDrops();
+      }
       const el = document.getElementById('ui-currency-count');
-      if (el) el.textContent = String(calculateDewDrops());
+      if (el) el.textContent = String(dewRewardAmount);
     }
+
+    // Runs when the game day may have rolled over (the 4am timer
+    // below, dev date changes): first re-judge every plant against
+    // the new day — a plant whose watering was due yesterday and
+    // was missed is dead from 4am — then grant the new day's dew
+    // drops (updatePotVisuals/updateDewDrops do the granting).
+    function checkDayRollover() {
+      if (dewRewardDayStr === getLocalDateStr(getGameDate())) return;
+      updateAllPotVisuals();
+      updateDewDrops();
+    }
+
+    // Watch for the 4am rollover while the page sits open.
+    setInterval(checkDayRollover, 30000);
 
     function openDewModal() {
       if (!dewModal) return;
@@ -1452,7 +1511,7 @@
 
       pdRepeat.textContent = pot.dataset.repeat || 'daily';
 
-      const todayStr = getCurrentDate().toDateString();
+      const todayStr = getGameDayStr();
       if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== todayStr) {
         pot.dataset.wateredToday = 'false';
       }
@@ -1774,7 +1833,7 @@
             activePot.dataset.wateredToday = 'false';
           }
           if (!activePot.dataset.createdDate) {
-            activePot.dataset.createdDate = getLocalDateStr(getCurrentDate());
+            activePot.dataset.createdDate = getLocalDateStr(getGameDate());
           }
           if (!activePot.dataset.waterHistory) {
             activePot.dataset.waterHistory = JSON.stringify([]);
@@ -1800,7 +1859,7 @@
       if (!currentDetailsPot) return;
       const pot = currentDetailsPot;
 
-      const todayStr = getCurrentDate().toDateString();
+      const todayStr = getGameDayStr();
       const isFirstWaterToday = (pot.dataset.wateredToday !== 'true') || (pot.dataset.lastWateredDate !== todayStr);
 
       // If missed watering opportunities occurred, reset growth counter
@@ -1814,7 +1873,7 @@
       // First watering: the hint moves on to "drag to move!".
       noteFirstWatered();
 
-      const todayIso = getLocalDateStr(getCurrentDate());
+      const todayIso = getLocalDateStr(getGameDate());
       let history = [];
       try {
         if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
@@ -2012,7 +2071,7 @@
 
     function syncDevDateInput() {
       if (devDateInput) {
-        devDateInput.value = getLocalDateStr(getCurrentDate());
+        devDateInput.value = getLocalDateStr(getGameDate());
       }
     }
     syncDevDateInput();
@@ -2025,13 +2084,15 @@
       }
       pots.forEach(pot => {
         if (pot.classList.contains('has-plant')) {
-          const tStr = getCurrentDate().toDateString();
+          const tStr = getGameDayStr();
           if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== tStr) {
             pot.dataset.wateredToday = 'false';
           }
           updatePotVisuals(pot);
         }
       });
+      // A new dev day is a new game day: grant its dew drops.
+      checkDayRollover();
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
       }
@@ -2042,13 +2103,14 @@
       syncDevDateInput();
       pots.forEach(pot => {
         if (pot.classList.contains('has-plant')) {
-          const tStr = getCurrentDate().toDateString();
+          const tStr = getGameDayStr();
           if (pot.dataset.lastWateredDate && pot.dataset.lastWateredDate !== tStr) {
             pot.dataset.wateredToday = 'false';
           }
           updatePotVisuals(pot);
         }
       });
+      checkDayRollover();
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
       }
