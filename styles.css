@@ -322,11 +322,14 @@ body {
    taller than the 16:9 garden it hugs the real corner instead of
    floating in from the edge with the letterboxed stage. (On a
    16:9 screen the two corners coincide, so nothing moves there.)
+   Both pills' tops were nudged 5 units up at Shusuke's request
+   (pill -1, add-pot 13; were 4/18), so the pill's element starts
+   1 unit above the window top and its ink sits 4.25 units down.
    Clicking opens the dew drops info card; hovering grows the pill
    a touch (like the add-a-pot button) to show it is clickable. */
 .ui-currency {
   position: fixed;
-  top: calc(4px * var(--scale));
+  top: calc(-1px * var(--scale));
   right: calc(3.5px * var(--scale));
   width: calc(36px * var(--scale));
   height: calc(24px * var(--scale));
@@ -377,7 +380,7 @@ body {
    below the pill's ink. Hidden until the intro hint flow finishes. */
 .ui-addplant {
   position: fixed;
-  top: calc(18px * var(--scale));
+  top: calc(13px * var(--scale));
   right: calc(2.75px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
