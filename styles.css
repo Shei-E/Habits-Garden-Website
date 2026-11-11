@@ -1141,6 +1141,10 @@ body {
   left: calc(3.25px * var(--scale));
 }
 
+/* Carousel slots, left to right in picker order: cactus, droopy,
+   tree, lily, daisy, lavender. These left offsets ARE the visible
+   order — the buttons are absolutely positioned, so rearranging
+   the markup alone does not move them; swap the offsets too. */
 .ap-plant--cactus {
   left: 0;
   top: calc(71px * var(--scale));
@@ -1148,7 +1152,7 @@ body {
 }
 
 .ap-plant--lavender {
-  left: calc(36px * var(--scale));
+  left: calc(180px * var(--scale));
   top: calc(55px * var(--scale));
   height: calc(61px * var(--scale));
 }
@@ -1172,7 +1176,7 @@ body {
 }
 
 .ap-plant--droopy {
-  left: calc(180px * var(--scale));
+  left: calc(36px * var(--scale));
   top: calc(55px * var(--scale));
   height: calc(61px * var(--scale));
 }
