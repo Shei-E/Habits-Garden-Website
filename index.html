@@ -1293,8 +1293,8 @@
       const isGrown = pot.dataset.stage === 'grown';
       const normalImg = isGrown ? (pot.dataset.grownPlantImg || 'assets/bud-4.png') : 'assets/bud-4.png';
 
-      if (missedCount >= 2) {
-        // Missed twice -> dead
+      if (missedCount >= 1) {
+        // Missed once -> dead
         if (isGrown) {
           // Dead grown plant (pick random from the 4 dead plants if not already assigned)
           if (!pot.dataset.deadPlantImg || pot.dataset.deadPlantImg === 'assets/dead-bud.png') {
