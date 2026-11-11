@@ -82,7 +82,7 @@ body {
   padding: 0;
   border: 0;
   background-color: transparent;
-  background-image: url("assets/pot-clay.png");
+  background-image: url("assets/pot-template.png");
   background-position: bottom center;
   background-size: contain;
   background-repeat: no-repeat;
@@ -985,7 +985,7 @@ body {
 }
 
 /* Planted pot preview on shelf */
-/* Keep the default pot-clay.png background visible under the plant sprite */
+/* Keep the default pot-template.png background visible under the plant sprite */
 /* PLANT BOTTOM*/
 
 .pot-plant {
