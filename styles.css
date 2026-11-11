@@ -331,7 +331,7 @@ body {
    hint flow finishes. */
 .ui-addplant {
   position: absolute;
-  top: calc(20px * var(--scale));
+  top: calc(18px * var(--scale));
   right: calc(-1.25px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
