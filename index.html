@@ -577,19 +577,19 @@
 
     // Drag-to-delete: while a pot is dragged, an X marker floats
     // above the spot the drag started from; dropping the pot on it
-    // deletes the pot. The marker box is 22x22 with the visible X
-    // being the centred 10x10 of the sprite.
+    // deletes the pot. The marker box is 13.2x13.2 with the visible
+    // X being the centred 6x6 of the sprite.
     const deleteXEl = document.getElementById('drag-delete-x');
-    const DELETE_X_SIZE = 22;
-    const DELETE_X_INK = 10;
+    const DELETE_X_SIZE = 13.2;
+    const DELETE_X_INK = 6;
 
     // Where the delete marker sits for a drag that started at pos
-    // (design units): centred on the pot, floating just above its
-    // row's top edge.
+    // (design units): centred on the pot, floating above its row so
+    // the visible X sits just clear of the row's top edge.
     function deleteXBox(pos) {
       return {
         left: pos.left + POT_SIZE / 2 - DELETE_X_SIZE / 2,
-        top: SLOT_ROW_TOP[pos.row] - 2,
+        top: SLOT_ROW_TOP[pos.row] - 10,
       };
     }
 

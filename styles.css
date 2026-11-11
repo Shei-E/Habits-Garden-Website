@@ -360,12 +360,12 @@ body {
 /* Drag-to-delete marker: floats above the dragged pot's starting
    spot for the length of a drag; dropping the pot on it deletes the
    pot. The sprite is a 55x55 canvas with a centred 25x25 X, shown
-   at 22x22 so the visible X is 10x10. JS sets left/top per drag.
+   at 13.2x13.2 so the visible X is 6x6. JS sets left/top per drag.
    Sits above the dragged pot (z-index 50), below the modals. */
 .drag-delete-x {
   position: absolute;
-  width: calc(22px * var(--scale));
-  height: calc(22px * var(--scale));
+  width: calc(13.2px * var(--scale));
+  height: calc(13.2px * var(--scale));
   background: url("assets/ui-tiny-x.png") center / contain no-repeat;
   pointer-events: none;
   opacity: 0;
