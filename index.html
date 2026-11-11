@@ -38,8 +38,12 @@
     <p class="hint">click to add a plant!</p>
     <img class="hint-arrow" src="assets/ui-arrow-down.png" alt="">
 
-    <!-- Currency display (top right; display only, no behaviour yet) -->
-    <img class="ui-currency" src="assets/ui-currency.png" alt="">
+    <!-- Currency pill (top right): shows today's dew drop count.
+         Clicking it opens the dew drops info card. -->
+    <button class="ui-currency" id="ui-currency" type="button" aria-label="Dew drops: how they work">
+      <img class="ui-currency-img" src="assets/ui-currency.png" alt="">
+      <span class="ui-currency-count" id="ui-currency-count">0</span>
+    </button>
 
     <!-- Add-a-pot button: sits below the currency display, hidden
          until the intro hint flow finishes. Each press adds an empty
@@ -50,6 +54,23 @@
          above the spot the drag started from; dropping the pot on it
          deletes the pot. Positioned by the drag code. -->
     <div class="drag-delete-x" id="drag-delete-x" aria-hidden="true"></div>
+
+    <!-- Dew Drops info card: opened by clicking the currency pill.
+         Built on the Add Plant modal's panel background. -->
+    <div class="dd-modal" id="dew-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="dd-title">
+      <div class="dd-container">
+        <img class="dd-panel" src="assets/ui-plant-1.png" alt="">
+        <h2 class="dd-title" id="dd-title">Dew Drops</h2>
+        <button class="dd-close" id="dd-close" type="button" aria-label="Close"></button>
+        <div class="dd-body">
+          <p class="dd-line">dew drops reset every day, and they can never go below 0.</p>
+          <p class="dd-line">buds… 1 drop a day</p>
+          <p class="dd-line">flowers… 5, 10 or 20 drops on the day after watering (5 for daily and weekly flowers, 10 for monthly, 20 for yearly) — after that, 2 drops a day</p>
+          <p class="dd-line">dead plants… -2 drops a day</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Add Plant Popup Modal -->
     <div class="ap-modal" id="add-plant-modal" aria-hidden="true" role="dialog" aria-modal="true"
@@ -721,6 +742,7 @@
       if (i !== -1) pots.splice(i, 1);
       if (activePot === pot) activePot = null;
       pot.remove();
+      updateDewDrops();
     }
 
     // Wires one pot's drag + arrow-key handlers. Called for the
@@ -1322,6 +1344,9 @@
         potPlant.classList.remove('is-dead');
         pot.dataset.plantState = 'healthy';
       }
+
+      // The day's dew drops depend on every plant's state.
+      updateDewDrops();
     }
 
     function updateAllPotVisuals() {
@@ -1331,6 +1356,74 @@
         }
       });
     }
+
+    // ---- Dew drops ----
+    // The currency, tallied fresh every day (it resets by day) from
+    // the plants on the shelf, and the total never goes below 0:
+    //   bud ....... 1 drop a day
+    //   dead ...... -2 drops a day
+    //   flower .... 5 (daily/weekly), 10 (monthly) or 20 (yearly)
+    //               on the day after it was watered, 2 a day after
+    const dewModal = document.getElementById('dew-modal');
+
+    function dewDropRate(pot) {
+      if (!pot.classList.contains('has-plant')) return 0;
+      if (getMissedOpportunitiesCount(pot) >= 1) return -2; // dead
+      if (pot.dataset.stage !== 'grown') return 1; // bud
+      // A flower pays its big rate on the day after a watering.
+      let history = [];
+      try {
+        if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
+      } catch (e) { }
+      const yesterday = getCurrentDate();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (!history.includes(getLocalDateStr(yesterday))) return 2;
+      const repeatType = pot.dataset.repeatType || 'daily';
+      if (repeatType === 'monthly') return 10;
+      if (repeatType === 'yearly') return 20;
+      return 5; // daily and weekly
+    }
+
+    function calculateDewDrops() {
+      let total = 0;
+      pots.forEach(pot => { total += dewDropRate(pot); });
+      return Math.max(0, total);
+    }
+
+    function updateDewDrops() {
+      const el = document.getElementById('ui-currency-count');
+      if (el) el.textContent = String(calculateDewDrops());
+    }
+
+    function openDewModal() {
+      if (!dewModal) return;
+      updateDewDrops();
+      dewModal.classList.remove('is-closing');
+      dewModal.classList.add('is-open');
+      dewModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDewModal() {
+      if (!dewModal || !dewModal.classList.contains('is-open') || dewModal.classList.contains('is-closing')) return;
+      dewModal.classList.remove('is-open');
+      dewModal.classList.add('is-closing');
+      dewModal.setAttribute('aria-hidden', 'true');
+      function onAnimationEnd(e) {
+        if (e.animationName === 'ap-fall-fade-out') {
+          dewModal.classList.remove('is-closing');
+          dewModal.removeEventListener('animationend', onAnimationEnd);
+        }
+      }
+      dewModal.addEventListener('animationend', onAnimationEnd);
+    }
+
+    document.getElementById('ui-currency')?.addEventListener('click', openDewModal);
+    document.getElementById('dd-close')?.addEventListener('click', closeDewModal);
+    dewModal?.addEventListener('click', (e) => {
+      if (e.target === dewModal) closeDewModal();
+    });
+
+    updateDewDrops();
 
     // Reset-position button: always shows "reset position" when the popup
     // opens. "cannot reset" only appears after pressing the button while
@@ -1586,6 +1679,7 @@
       delete pot.dataset.deadPlantImg;
 
       pot.setAttribute('aria-label', 'Add a plant');
+      updateDewDrops();
     }
 
     apRemove?.addEventListener('click', () => {
@@ -1768,6 +1862,7 @@
           }
         }, 450);
       }
+      updateDewDrops();
     });
 
     pdEdit?.addEventListener('click', () => {
@@ -1985,6 +2080,7 @@
         }
         playSparkleAnimation(pot);
       });
+      updateDewDrops();
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
       }
