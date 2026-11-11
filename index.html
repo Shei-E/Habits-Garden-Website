@@ -46,6 +46,11 @@
          pot to the first free shelf slot. -->
     <button class="ui-addplant" id="ui-addplant" type="button" aria-label="Add a pot"></button>
 
+    <!-- Drag-to-delete marker: while a pot is dragged, this X floats
+         above the spot the drag started from; dropping the pot on it
+         deletes the pot. Positioned by the drag code. -->
+    <div class="drag-delete-x" id="drag-delete-x" aria-hidden="true"></div>
+
     <!-- Add Plant Popup Modal -->
     <div class="ap-modal" id="add-plant-modal" aria-hidden="true" role="dialog" aria-modal="true"
       aria-labelledby="ap-title">
@@ -570,6 +575,24 @@
       };
     }
 
+    // Drag-to-delete: while a pot is dragged, an X marker floats
+    // above the spot the drag started from; dropping the pot on it
+    // deletes the pot. The marker box is 22x22 with the visible X
+    // being the centred 10x10 of the sprite.
+    const deleteXEl = document.getElementById('drag-delete-x');
+    const DELETE_X_SIZE = 22;
+    const DELETE_X_INK = 10;
+
+    // Where the delete marker sits for a drag that started at pos
+    // (design units): centred on the pot, floating just above its
+    // row's top edge.
+    function deleteXBox(pos) {
+      return {
+        left: pos.left + POT_SIZE / 2 - DELETE_X_SIZE / 2,
+        top: SLOT_ROW_TOP[pos.row] - 2,
+      };
+    }
+
     function beginPotDrag(pot, e) {
       if (dragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
@@ -580,13 +603,20 @@
       // no pot's sprite.
       const target = potAtPoint(e.clientX, e.clientY);
       if (!target) return;
+      const stageRect = stageEl.getBoundingClientRect();
       dragState = {
         pot: target,
         startClientX: e.clientX,
         startClientY: e.clientY,
+        // The pointer's drag-start position in design units, so the
+        // delete marker can hit-test the pointer during the drag.
+        startDesignX: (e.clientX - stageRect.left) * (256 / (stageRect.width || 1)),
+        startDesignY: (e.clientY - stageRect.top) * (144 / (stageRect.height || 1)),
         moved: false,
+        deleteShown: false,
+        deleteArmed: false,
         origPos: getPotPos(target),
-        stageRect: stageEl.getBoundingClientRect(),
+        stageRect,
       };
       try { target.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
     }
@@ -606,6 +636,16 @@
         // (z-index 50) is overridden by an inline tier z-index, so a
         // small pot would otherwise drag underneath its neighbours.
         dragState.pot.style.zIndex = 50;
+        // Show the delete marker above the drag's starting spot —
+        // unless this is the only pot left: the shelf always keeps
+        // one, so a lone pot shows no marker and cannot be deleted.
+        if (pots.length > 1 && deleteXEl) {
+          const box = deleteXBox(dragState.origPos);
+          deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
+          deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
+          deleteXEl.classList.add('is-visible');
+          dragState.deleteShown = true;
+        }
       }
       e.preventDefault();
       const pot = dragState.pot;
@@ -617,6 +657,20 @@
       setPotPos(pot, left, row);
       // Blocked feedback while the drop point is occupied.
       pot.classList.toggle('is-blocked', !posIsFree(left, row, pot));
+      // Delete arming: the pointer inside the marker's visible X
+      // (grown by 4 units so it is easy to hit) arms the delete;
+      // releasing the drag then deletes the pot instead of dropping.
+      if (dragState.deleteShown) {
+        const box = deleteXBox(orig);
+        const ink = (DELETE_X_SIZE - DELETE_X_INK) / 2;
+        const px = dragState.startDesignX + dx;
+        const py = dragState.startDesignY + dy;
+        const armed =
+          px >= box.left + ink - 4 && px <= box.left + DELETE_X_SIZE - ink + 4 &&
+          py >= box.top + ink - 4 && py <= box.top + DELETE_X_SIZE - ink + 4;
+        dragState.deleteArmed = armed;
+        deleteXEl.classList.toggle('is-armed', armed);
+      }
     }
 
     function endPotDrag(e, cancelled) {
@@ -625,6 +679,8 @@
       dragState = null;
       const pot = state.pot;
       pot.classList.remove('is-dragging', 'is-blocked');
+      // The delete marker only lives for the length of a drag.
+      if (deleteXEl) deleteXEl.classList.remove('is-visible', 'is-armed');
       // Restore the size-tier z-index after the drag lift (above).
       if (state.moved) updatePotZOrder(pot);
       if (cancelled || !state.moved) {
@@ -636,6 +692,12 @@
       // A click is suppressed for 300 ms after a real drag so dragging
       // does not also open a popup.
       setTimeout(() => { suppressNextPotClick = false; }, 300);
+      if (state.deleteArmed) {
+        // Dropped on the delete marker: the pot (and any plant in
+        // it) is removed instead of landing anywhere.
+        deletePot(pot);
+        return;
+      }
       const pos = getPotPos(pot);
       const target = resolveDrop(pos.left, pos.row, pot);
       if (!target) {
@@ -646,6 +708,17 @@
       if (target.left !== state.origPos.left || target.row !== state.origPos.row) {
         noteFirstPotMoved();
       }
+    }
+
+    // Removes a pot from the shelf for good, plant and all (the
+    // plant's state lives in the pot's dataset, so it goes with the
+    // element). Only called from a drop on the delete marker, which
+    // never shows for the last remaining pot.
+    function deletePot(pot) {
+      const i = pots.indexOf(pot);
+      if (i !== -1) pots.splice(i, 1);
+      if (activePot === pot) activePot = null;
+      pot.remove();
     }
 
     // Wires one pot's drag + arrow-key handlers. Called for the
