@@ -321,19 +321,33 @@
       return null;
     }
 
-    // Paint order by pot size: the smallest pot goes on top, so a tiny
-    // pot tucked against a big one stays visible instead of being
-    // swallowed by it. Tiers follow the measured sprite width, so they
-    // still hold if the sprites are resized: white-small (8) front,
-    // white/blue/yellow (12) middle, clay (16, and empty pots) back.
-    // Ties within a tier fall back to DOM order. Called when a pot is
-    // planted (its type changes) and after a drag (to restore the tier
-    // after the dragging pot was lifted to z-index 50).
-    function updatePotZOrder(pot) {
+    // Paint order by pot size, then by last drag within a size: the
+    // smallest pot goes on top, so a tiny pot tucked against a big one
+    // stays visible instead of being swallowed by it; among pots of the
+    // same size, the last dragged one goes in front (a drag counts even
+    // if the pot ends up back where it started). Tiers follow the
+    // measured sprite width, so they still hold if the sprites are
+    // resized: white-small (8) front, white/blue/yellow (12) middle,
+    // clay (16, and empty pots) back. Called when a pot is planted (its
+    // type changes) and after a drag (to restore the tier after the
+    // dragging pot was lifted to z-index 50).
+    const lastDraggedByTier = { small: null, mid: null, clay: null };
+    function getPotTier(pot) {
       const w = getPotSprite(pot).w;
-      if (w <= 8) pot.style.zIndex = 10;
-      else if (w <= 12) pot.style.zIndex = 5;
-      else pot.style.zIndex = '';
+      return w <= 8 ? 'small' : w <= 12 ? 'mid' : 'clay';
+    }
+    function updatePotZOrder(pot) {
+      const tier = getPotTier(pot);
+      const isFront = lastDraggedByTier[tier] === pot;
+      if (tier === 'small') pot.style.zIndex = isFront ? 11 : 10;
+      else if (tier === 'mid') pot.style.zIndex = isFront ? 6 : 5;
+      else pot.style.zIndex = isFront ? 1 : '';
+    }
+    function notePotDragged(pot) {
+      const tier = getPotTier(pot);
+      const prev = lastDraggedByTier[tier];
+      lastDraggedByTier[tier] = pot;
+      if (prev && prev !== pot) updatePotZOrder(prev);
     }
     const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
 
@@ -520,6 +534,10 @@
       if (!dragState.moved) {
         dragState.moved = true;
         dragState.pot.classList.add('is-dragging');
+        // A drag counts even if the pot ends up back where it started:
+        // this pot is now the front of its size tier (the previous
+        // front of that tier drops back to its base).
+        notePotDragged(dragState.pot);
         // Lift above every tier while dragging: the .is-dragging rule
         // (z-index 50) is overridden by an inline tier z-index, so a
         // small pot would otherwise drag underneath its neighbours.
