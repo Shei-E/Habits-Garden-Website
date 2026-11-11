@@ -1,9 +1,12 @@
-/* Habits Garden — Home Screen (Figma node 1:14), scaled 1.25x for desktop (1600 × 900) */
+/* Habits Garden — Home Screen (Figma node 1:14). The 256x144 stage
+   is scaled by --scale to fit the window exactly (see fitStage). */
 
 :root {
   --bg: #e1bf89;
+  /* Default only, for the first paint before the fit code runs:
+     fitStage() in index.html replaces this with the scale that
+     fits the actual window (1600 × 900 at 6.25). */
   --scale: 6.25;
-  /* 1.25x larger (1600 × 900) */
 
   --stage-w: calc(256px * var(--scale));
   --stage-h: calc(144px * var(--scale));
@@ -27,21 +30,25 @@ html,
 body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  height: 100%;
   background: var(--bg);
 }
 
+/* The page is exactly one screen: its height is the viewport's
+   height and overflow is hidden, so it can never scroll. The
+   garden's size itself comes from --scale, which the fit code in
+   index.html sets from the real window size (see fitStage). */
 body {
   display: grid;
   place-items: center;
   background: var(--bg);
-  min-height: 100vh;
-  overflow: auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .home-screen {
   position: relative;
-  top: -30px;
   width: var(--stage-w);
   height: var(--stage-h);
   overflow: hidden;
@@ -1687,19 +1694,5 @@ body {
   }
 }
 
-/* Responsive adjustments for smaller desktop / laptop viewports */
-@media (max-width: 1280px),
-(max-height: 720px) {
-  :root {
-    --scale: 5;
-    /* Scales to 1280 × 720 on compact desktop screens */
-  }
-}
-
-@media (max-width: 1024px),
-(max-height: 580px) {
-  :root {
-    --scale: 4;
-    /* Fits small windows (1024 × 576) */
-  }
-}
+/* No fixed responsive scale steps: fitStage() in index.html sets
+   --scale from the real window size, so every window size fits. */

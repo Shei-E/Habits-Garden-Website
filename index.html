@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 
 <body>
@@ -227,6 +227,34 @@
     // format lastWateredDate is stored and compared in.
     function getGameDayStr() {
       return getGameDate().toDateString();
+    }
+
+    // ---- Fit the garden to the screen ----
+    // The stage is 256x144 design units and everything on it is
+    // sized from the single --scale variable. Set that scale from
+    // the real window size — the smaller of (window width / 256)
+    // and (window height / 144) — so the whole garden always fits
+    // on one screen at any window size, in fullscreen too, with
+    // nothing to scroll (the body also hides overflow, see
+    // styles.css). Runs at load and again whenever the window is
+    // resized or the visible viewport changes (browser zoom, device
+    // toolbars). On a screen that is not exactly 16:9 the stage
+    // centres with the page background showing at the sides or the
+    // top/bottom — stretching it to fill both axes would distort
+    // the pixel art, since everything scales from one --scale.
+    function fitStage() {
+      const vv = window.visualViewport;
+      const vw = vv ? vv.width : window.innerWidth;
+      const vh = vv ? vv.height : window.innerHeight;
+      if (!vw || !vh) return;
+      const scale = Math.min(vw / 256, vh / 144);
+      document.documentElement.style.setProperty('--scale', String(scale));
+    }
+    fitStage();
+    window.addEventListener('resize', fitStage);
+    window.addEventListener('orientationchange', fitStage);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', fitStage);
     }
 
     const modal = document.getElementById('add-plant-modal');
