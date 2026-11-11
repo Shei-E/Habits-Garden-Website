@@ -135,9 +135,35 @@ body {
   transform: translateY(calc(-2px * var(--scale)));
 }
 
-.pot.is-dragging.is-blocked {
+/* The blocked-drop outline hugs the visible pot sprite, not the
+   32-unit button, so it shows the pot's real footprint. The sprite
+   sits at the bottom centre of the button: clay 16x13 (left 8),
+   white/blue/yellow/orange/grey 12x11 (left 10), white-small 8x7
+   (left 12). */
+.pot.is-dragging.is-blocked::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: calc(8px * var(--scale));
+  width: calc(16px * var(--scale));
+  height: calc(13px * var(--scale));
   outline: 2px dashed #e05656;
-  outline-offset: 2px;
+}
+
+.pot.pot--white.is-dragging.is-blocked::after,
+.pot.pot--blue.is-dragging.is-blocked::after,
+.pot.pot--yellow.is-dragging.is-blocked::after,
+.pot.pot--orange.is-dragging.is-blocked::after,
+.pot.pot--grey.is-dragging.is-blocked::after {
+  left: calc(10px * var(--scale));
+  width: calc(12px * var(--scale));
+  height: calc(11px * var(--scale));
+}
+
+.pot.pot--white-small.is-dragging.is-blocked::after {
+  left: calc(12px * var(--scale));
+  width: calc(8px * var(--scale));
+  height: calc(7px * var(--scale));
 }
 
 .pot:focus-visible {
