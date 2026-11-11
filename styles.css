@@ -107,6 +107,14 @@ body {
   background-image: url("assets/yellow-pot.png");
 }
 
+.pot.pot--orange {
+  background-image: url("assets/orange-pot-2.png");
+}
+
+.pot.pot--grey {
+  background-image: url("assets/grey-pot.png");
+}
+
 .pot.pot--white-small {
   background-image: url("assets/white-pot-small.png");
 }
@@ -910,7 +918,9 @@ body {
 }
 
 .pot.pot--blue .pot-plant,
-.pot.pot--yellow .pot-plant {
+.pot.pot--yellow .pot-plant,
+.pot.pot--orange .pot-plant,
+.pot.pot--grey .pot-plant {
   bottom: calc(11px * var(--scale));
 }
 

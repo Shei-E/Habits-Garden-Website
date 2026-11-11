@@ -218,9 +218,11 @@
 
     const potOptions = [
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
+      { id: 'orange', name: 'Orange pot', src: 'assets/orange-pot-2.png', isWhite: false, isShort: true },
       { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true, isShort: true },
       { id: 'blue', name: 'Blue pot', src: 'assets/blue-pot.png', isWhite: false, isShort: true },
       { id: 'yellow', name: 'Yellow pot', src: 'assets/yellow-pot.png', isWhite: false, isShort: true },
+      { id: 'grey', name: 'Grey pot', src: 'assets/grey-pot.png', isWhite: false, isShort: true },
       { id: 'white-small', name: 'Small white pot', src: 'assets/white-pot-small.png', isWhite: true, isShort: true, isSmall: true },
     ];
     let selectedPotIndex = 0; // clay pot by default
@@ -268,7 +270,7 @@
     const POT_MAX_LEFT = 183; // shelf's right edge minus the pot width
     // Visible sprite bounds per pot type, measured from the PNGs:
     // ink width, and the height the sprite occupies at the bottom of
-    // the 32-unit pot button. clay 16x13, white/blue/yellow
+    // the 32-unit pot button. clay 16x13, white/blue/yellow/orange/grey
     // 12x11, white-small 8x7. The overlap detection zone is the sprite
     // shrunk by 1 unit on each side (detection widths 14/10/6), so two
     // pots block each other when their left edges are closer than the
@@ -278,6 +280,7 @@
     const POT_SPRITE = {
       clay: { w: 16, h: 13 },
       white: { w: 12, h: 11 }, blue: { w: 12, h: 11 }, yellow: { w: 12, h: 11 },
+      orange: { w: 12, h: 11 }, grey: { w: 12, h: 11 },
       'white-small': { w: 8, h: 7 },
     };
     function getPotSprite(pot) {
@@ -1473,11 +1476,13 @@
           activePot.dataset.potType = potData.id;
           updatePotZOrder(activePot);
           activePot.style.backgroundImage = `url("${potData.src}")`;
-          activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-small');
+          activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-small', 'pot--orange', 'pot--grey');
           if (potData.id === 'white') activePot.classList.add('pot--white');
           if (potData.id === 'blue') activePot.classList.add('pot--blue');
           if (potData.id === 'yellow') activePot.classList.add('pot--yellow');
           if (potData.id === 'white-small') activePot.classList.add('pot--white-small');
+          if (potData.id === 'orange') activePot.classList.add('pot--orange');
+          if (potData.id === 'grey') activePot.classList.add('pot--grey');
 
           // Check if already grown or new bud
           const alreadyGrown = activePot.dataset.stage === 'grown';
