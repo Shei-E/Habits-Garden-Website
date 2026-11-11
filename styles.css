@@ -315,8 +315,9 @@ body {
    dew drop count in the blank half of the sprite, next to its coin
    and x. The sprite is a 48x32 canvas shown at x0.75 (36x24). Its
    ink (44x16, 2 units of clear canvas on the right = 1.5 at this
-   scale) sits flush with the screen's right edge via a -1.5 right
-   offset. The pill is position:fixed — anchored to the window's
+   scale) sits 5 units in from the screen's right edge via a 3.5
+   right offset (flush would be -1.5; Shusuke asked for 5 left).
+   The pill is position:fixed — anchored to the window's
    top-right corner, not the stage's — so on a screen wider or
    taller than the 16:9 garden it hugs the real corner instead of
    floating in from the edge with the letterboxed stage. (On a
@@ -326,7 +327,7 @@ body {
 .ui-currency {
   position: fixed;
   top: calc(4px * var(--scale));
-  right: calc(-1.5px * var(--scale));
+  right: calc(3.5px * var(--scale));
   width: calc(36px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
@@ -366,17 +367,18 @@ body {
 }
 
 /* Add-a-pot button: below the currency display, the two sprites'
-   visible right edges aligned flush with the screen's right edge
-   (position:fixed like the pill, so the pair stays in the window's
-   top-right corner — see .ui-currency). The sprite is a 28x32
-   canvas shown at x0.75 (21x24); its ink (23x15, 3 units of clear
-   canvas on the right = 2.25 at this scale) needs a -2.25 right
-   offset to sit flush too. The top leaves a 2-unit visible gap
+   visible right edges aligned, 5 units in from the screen's right
+   edge (position:fixed like the pill, so the pair stays in the
+   window's top-right corner — see .ui-currency). The sprite is a
+   28x32 canvas shown at x0.75 (21x24); its ink (23x15, 3 units of
+   clear canvas on the right = 2.25 at this scale) needs a 2.75
+   right offset to line up with the pill's ink (flush would be
+   -2.25; +5 like the pill). The top leaves a 2-unit visible gap
    below the pill's ink. Hidden until the intro hint flow finishes. */
 .ui-addplant {
   position: fixed;
   top: calc(18px * var(--scale));
-  right: calc(-2.25px * var(--scale));
+  right: calc(2.75px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
