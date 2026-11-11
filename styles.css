@@ -304,6 +304,21 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* Currency display: top right of the shelf screen. Display only for
+   now (no behaviour); the sprite is a 48x32 canvas, ink 44x16. */
+.ui-currency {
+  position: absolute;
+  top: calc(4px * var(--scale));
+  right: calc(4px * var(--scale));
+  width: calc(48px * var(--scale));
+  height: calc(32px * var(--scale));
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 /* ---------- Home Screen 2 (Figma node 184:110) ----------
    Narrower shelf, pots re-spaced and shifted toward the centre. */
 .home-2 .pot--h1,
