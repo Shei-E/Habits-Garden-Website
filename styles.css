@@ -115,8 +115,24 @@ body {
   background-image: url("assets/grey-pot.png");
 }
 
-.pot.pot--white-small {
-  background-image: url("assets/white-pot-small.png");
+.pot.pot--white-smallest {
+  background-image: url("assets/pot-smallest-white.png");
+}
+
+.pot.pot--orange-smallest {
+  background-image: url("assets/pot-smallest-orange.png");
+}
+
+.pot.pot--yellow-smallest {
+  background-image: url("assets/pot-smallest-yellow.png");
+}
+
+.pot.pot--blue-smallest {
+  background-image: url("assets/pot-smallest-blue.png");
+}
+
+.pot.pot--grey-smallest {
+  background-image: url("assets/pot-smallest-grey.png");
 }
 
 .pot.pot--orange-smaller {
@@ -159,7 +175,7 @@ body {
    32-unit button, so it shows the pot's real footprint. The sprite
    sits at the bottom centre of the button: clay 16x13 (left 8),
    white/blue/yellow/orange/grey 12x11 (left 10), the smaller pots
-   10x9 (left 11), white-small 8x7 (left 12). */
+   10x9 (left 11), the smallest pots 8x7 (left 12). */
 .pot.is-dragging.is-blocked::after {
   content: "";
   position: absolute;
@@ -190,7 +206,11 @@ body {
   height: calc(9px * var(--scale));
 }
 
-.pot.pot--white-small.is-dragging.is-blocked::after {
+.pot.pot--white-smallest.is-dragging.is-blocked::after,
+.pot.pot--orange-smallest.is-dragging.is-blocked::after,
+.pot.pot--yellow-smallest.is-dragging.is-blocked::after,
+.pot.pot--blue-smallest.is-dragging.is-blocked::after,
+.pot.pot--grey-smallest.is-dragging.is-blocked::after {
   left: calc(12px * var(--scale));
   width: calc(8px * var(--scale));
   height: calc(7px * var(--scale));
@@ -993,23 +1013,39 @@ body {
   bottom: calc(11px * var(--scale));
 }
 
-/* The small white pot is only 7 units tall, and plants on it render
+/* The smallest pots are only 7 units tall, and plants on them render
    at 0.5 size: 50% width, centred (left 8px of the 32-wide pot),
    sitting on the 7-unit rim. Width-based, not transform, so it can't
    fight the plant-grow animation, which owns transform. The bud/lily
    centring offsets scale too (bud 0.25 instead of 0.5; lily 0.5 instead of 1.0). */
-.pot.pot--white-small .pot-plant {
+.pot.pot--white-smallest .pot-plant,
+.pot.pot--orange-smallest .pot-plant,
+.pot.pot--yellow-smallest .pot-plant,
+.pot.pot--blue-smallest .pot-plant,
+.pot.pot--grey-smallest .pot-plant {
   bottom: calc(7px * var(--scale));
   width: 50%;
   left: calc(8px * var(--scale));
 }
 
-.pot.pot--white-small .pot-plant[src*="bud-4.png"],
-.pot.pot--white-small .pot-plant[src*="dead-bud.png"] {
+.pot.pot--white-smallest .pot-plant[src*="bud-4.png"],
+.pot.pot--orange-smallest .pot-plant[src*="bud-4.png"],
+.pot.pot--yellow-smallest .pot-plant[src*="bud-4.png"],
+.pot.pot--blue-smallest .pot-plant[src*="bud-4.png"],
+.pot.pot--grey-smallest .pot-plant[src*="bud-4.png"],
+.pot.pot--white-smallest .pot-plant[src*="dead-bud.png"],
+.pot.pot--orange-smallest .pot-plant[src*="dead-bud.png"],
+.pot.pot--yellow-smallest .pot-plant[src*="dead-bud.png"],
+.pot.pot--blue-smallest .pot-plant[src*="dead-bud.png"],
+.pot.pot--grey-smallest .pot-plant[src*="dead-bud.png"] {
   left: calc(8.25px * var(--scale));
 }
 
-.pot.pot--white-small .pot-plant[src*="peace-lily"] {
+.pot.pot--white-smallest .pot-plant[src*="peace-lily"],
+.pot.pot--orange-smallest .pot-plant[src*="peace-lily"],
+.pot.pot--yellow-smallest .pot-plant[src*="peace-lily"],
+.pot.pot--blue-smallest .pot-plant[src*="peace-lily"],
+.pot.pot--grey-smallest .pot-plant[src*="peace-lily"] {
   left: calc(7.5px * var(--scale));
 }
 

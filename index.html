@@ -220,15 +220,19 @@
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
       { id: 'orange', name: 'Orange pot', src: 'assets/orange-pot.png', isWhite: false, isShort: true },
       { id: 'orange-smaller', name: 'Smaller orange pot', src: 'assets/orange-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'orange-smallest', name: 'Smallest orange pot', src: 'assets/pot-smallest-orange.png', isWhite: false, isShort: true, isSmall: true },
       { id: 'white', name: 'White pot', src: 'assets/white-pot.png', isWhite: true, isShort: true },
       { id: 'white-smaller', name: 'Smaller white pot', src: 'assets/white-pot-smaller.png', isWhite: true, isShort: true, isSmaller: true },
+      { id: 'white-smallest', name: 'Smallest white pot', src: 'assets/pot-smallest-white.png', isWhite: true, isShort: true, isSmall: true },
       { id: 'blue', name: 'Blue pot', src: 'assets/blue-pot.png', isWhite: false, isShort: true },
       { id: 'blue-smaller', name: 'Smaller blue pot', src: 'assets/blue-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'blue-smallest', name: 'Smallest blue pot', src: 'assets/pot-smallest-blue.png', isWhite: false, isShort: true, isSmall: true },
       { id: 'yellow', name: 'Yellow pot', src: 'assets/yellow-pot.png', isWhite: false, isShort: true },
       { id: 'yellow-smaller', name: 'Smaller yellow pot', src: 'assets/yellow-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
+      { id: 'yellow-smallest', name: 'Smallest yellow pot', src: 'assets/pot-smallest-yellow.png', isWhite: false, isShort: true, isSmall: true },
       { id: 'grey', name: 'Grey pot', src: 'assets/grey-pot.png', isWhite: false, isShort: true },
       { id: 'grey-smaller', name: 'Smaller grey pot', src: 'assets/grey-pot-smaller.png', isWhite: false, isShort: true, isSmaller: true },
-      { id: 'white-small', name: 'Small white pot', src: 'assets/white-pot-small.png', isWhite: true, isShort: true, isSmall: true },
+      { id: 'grey-smallest', name: 'Smallest grey pot', src: 'assets/pot-smallest-grey.png', isWhite: false, isShort: true, isSmall: true },
     ];
     let selectedPotIndex = 0; // clay pot by default
 
@@ -278,13 +282,13 @@
     // ink width, and the height the sprite occupies at the bottom of
     // the 32-unit pot button. clay 16x13, white/blue/yellow/orange/grey
     // 12x11, orange-smaller/white-smaller/blue-smaller/yellow-smaller/
-    // grey-smaller 10x9, white-small 8x7. The overlap detection zone is
-    // the sprite shrunk by 1 unit on each side (detection widths
-    // 14/10/8/6), so two pots block each other when their left edges
-    // are closer than the average of their detection widths:
-    // clay-clay 14, clay-white 12, clay-smaller 11, white-white 10,
-    // white-smaller 9, smaller-smaller 8, clay-small 10, white-small 8,
-    // smaller-small 7, small-small 6.
+    // grey-smaller 10x9, the smallest pots (orange/white/blue/yellow/
+    // grey) 8x7. The overlap detection zone is the sprite shrunk by 1
+    // unit on each side (detection widths 14/10/8/6), so two pots block
+    // each other when their left edges are closer than the average of
+    // their detection widths: clay-clay 14, clay-mid 12, clay-smaller
+    // 11, mid-mid 10, mid-smaller 9, smaller-smaller 8, clay-small
+    // 10, mid-small 8, smaller-small 7, small-small 6.
     // The click zone is the same shrunk sprite, in both dimensions.
     const POT_SPRITE = {
       clay: { w: 16, h: 13 },
@@ -293,7 +297,9 @@
       'orange-smaller': { w: 10, h: 9 }, 'white-smaller': { w: 10, h: 9 },
       'blue-smaller': { w: 10, h: 9 }, 'yellow-smaller': { w: 10, h: 9 },
       'grey-smaller': { w: 10, h: 9 },
-      'white-small': { w: 8, h: 7 },
+      'orange-smallest': { w: 8, h: 7 }, 'white-smallest': { w: 8, h: 7 },
+      'blue-smallest': { w: 8, h: 7 }, 'yellow-smallest': { w: 8, h: 7 },
+      'grey-smallest': { w: 8, h: 7 },
     };
     function getPotSprite(pot) {
       const type = (pot && pot.dataset.potType) || 'clay';
@@ -339,7 +345,7 @@
     // same size, the last dragged one goes in front (a drag counts even
     // if the pot ends up back where it started). Tiers follow the
     // measured sprite width, so they still hold if the sprites are
-    // resized: white-small (8) front, the smaller pots (10) next,
+    // resized: the smallest pots (8) front, the smaller pots (10) next,
     // white/blue/yellow/orange/grey (12) middle, clay (16, and empty
     // pots) back. Called when a pot is planted (its
     // type changes) and after a drag (to restore the tier after the
@@ -1508,11 +1514,11 @@
           activePot.dataset.potType = potData.id;
           updatePotZOrder(activePot);
           activePot.style.backgroundImage = `url("${potData.src}")`;
-          activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-small', 'pot--orange', 'pot--grey', 'pot--orange-smaller', 'pot--white-smaller', 'pot--blue-smaller', 'pot--yellow-smaller', 'pot--grey-smaller');
+          activePot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-smallest', 'pot--orange', 'pot--grey', 'pot--orange-smaller', 'pot--white-smaller', 'pot--blue-smaller', 'pot--yellow-smaller', 'pot--grey-smaller', 'pot--orange-smallest', 'pot--yellow-smallest', 'pot--blue-smallest', 'pot--grey-smallest');
           if (potData.id === 'white') activePot.classList.add('pot--white');
           if (potData.id === 'blue') activePot.classList.add('pot--blue');
           if (potData.id === 'yellow') activePot.classList.add('pot--yellow');
-          if (potData.id === 'white-small') activePot.classList.add('pot--white-small');
+          if (potData.id === 'white-smallest') activePot.classList.add('pot--white-smallest');
           if (potData.id === 'orange') activePot.classList.add('pot--orange');
           if (potData.id === 'grey') activePot.classList.add('pot--grey');
           if (potData.id === 'orange-smaller') activePot.classList.add('pot--orange-smaller');
@@ -1520,6 +1526,10 @@
           if (potData.id === 'blue-smaller') activePot.classList.add('pot--blue-smaller');
           if (potData.id === 'yellow-smaller') activePot.classList.add('pot--yellow-smaller');
           if (potData.id === 'grey-smaller') activePot.classList.add('pot--grey-smaller');
+          if (potData.id === 'orange-smallest') activePot.classList.add('pot--orange-smallest');
+          if (potData.id === 'yellow-smallest') activePot.classList.add('pot--yellow-smallest');
+          if (potData.id === 'blue-smallest') activePot.classList.add('pot--blue-smallest');
+          if (potData.id === 'grey-smallest') activePot.classList.add('pot--grey-smallest');
 
           // Check if already grown or new bud
           const alreadyGrown = activePot.dataset.stage === 'grown';
