@@ -267,18 +267,56 @@
     const POT_SIZE = 32;
     const POT_MIN_LEFT = 37; // shelf's left edge in design units
     const POT_MAX_LEFT = 183; // shelf's right edge minus the pot width
-    // Overlap detection, per pot type: the visible sprite widths,
-    // measured from the PNGs (ink bounds) — clay/orange 16 (8-24),
-    // white/blue/yellow 12 (10-22), white-small 8 (12-20) — shrunk
-    // by 1 unit on each side, so the detection zone is smaller than
-    // the visible sprite and pots can overlap by up to 2 units.
-    // Two pots block each other when their left edges are closer than
-    // the average of their detection widths: clay-clay 14, clay-white
-    // 12, white-white 10, clay-small 10, white-small 8, small-small 6.
-    const POT_DETECT_WIDTH = { clay: 14, orange: 14, white: 10, blue: 10, yellow: 10, 'white-small': 6 };
-    function getPotDetectWidth(pot) {
+    // Visible sprite bounds per pot type, measured from the PNGs:
+    // ink width, and the height the sprite occupies at the bottom of
+    // the 32-unit pot button. clay/orange 16x13, white/blue/yellow
+    // 12x11, white-small 8x7. The overlap detection zone is the sprite
+    // shrunk by 1 unit on each side (detection widths 14/10/6), so two
+    // pots block each other when their left edges are closer than the
+    // average of their detection widths: clay-clay 14, clay-white 12,
+    // white-white 10, clay-small 10, white-small 8, small-small 6.
+    // The click zone is the same shrunk sprite, in both dimensions.
+    const POT_SPRITE = {
+      clay: { w: 16, h: 13 }, orange: { w: 16, h: 13 },
+      white: { w: 12, h: 11 }, blue: { w: 12, h: 11 }, yellow: { w: 12, h: 11 },
+      'white-small': { w: 8, h: 7 },
+    };
+    function getPotSprite(pot) {
       const type = (pot && pot.dataset.potType) || 'clay';
-      return POT_DETECT_WIDTH[type] ?? 14;
+      return POT_SPRITE[type] ?? POT_SPRITE.clay;
+    }
+    function getPotDetectWidth(pot) {
+      return getPotSprite(pot).w - 2;
+    }
+
+    // Is a pointer position inside a pot's click zone — the visible
+    // sprite shrunk by 1 unit on each side? The pot button is 32 units
+    // square but the sprite only fills the bottom of it, so without
+    // this a click on the empty space above a pot — or, now that pots
+    // can sit 6 units apart, on a neighbour's sprite — would hit the
+    // wrong pot.
+    function isInPotHitZone(pot, clientX, clientY) {
+      const rect = pot.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      const scale = rect.width / POT_SIZE;
+      const x = (clientX - rect.left) / scale;
+      const y = (clientY - rect.top) / scale;
+      const sprite = getPotSprite(pot);
+      const hitLeft = (POT_SIZE - sprite.w) / 2 + 1;
+      const hitTop = POT_SIZE - sprite.h + 1;
+      return x >= hitLeft && x <= hitLeft + sprite.w - 2 && y >= hitTop && y <= POT_SIZE - 1;
+    }
+
+    // The pot whose click zone contains a pointer position, topmost
+    // first (later in the DOM paints above earlier pots), or null when
+    // the point is on no pot's sprite. Zones of neighbouring pots never
+    // overlap — at the closest allowed gap they sit 2 units apart — so
+    // at most one pot matches.
+    function potAtPoint(clientX, clientY) {
+      for (let i = pots.length - 1; i >= 0; i--) {
+        if (isInPotHitZone(pots[i], clientX, clientY)) return pots[i];
+      }
+      return null;
     }
     const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
 
@@ -326,7 +364,7 @@
     // Is a left-edge position on a row free for exceptPot? Another pot
     // on the same row blocks it when their detection zones overlap —
     // i.e. their left edges are closer than the average of their
-    // detection widths (see POT_DETECT_WIDTH). Empty pots count as clay.
+    // detection widths (see POT_SPRITE). Empty pots count as clay.
     function posIsFree(left, row, exceptPot) {
       const w = getPotDetectWidth(exceptPot);
       for (const p of pots) {
@@ -439,15 +477,22 @@
     function beginPotDrag(pot, e) {
       if (dragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
+      // Start the drag on the pot whose click zone contains the pointer,
+      // not necessarily the pot whose (larger, overlapping) button box
+      // was on top — otherwise a drag starting on a neighbour's sprite
+      // would move the wrong pot. Nothing starts when the pointer is on
+      // no pot's sprite.
+      const target = potAtPoint(e.clientX, e.clientY);
+      if (!target) return;
       dragState = {
-        pot,
+        pot: target,
         startClientX: e.clientX,
         startClientY: e.clientY,
         moved: false,
-        origPos: getPotPos(pot),
+        origPos: getPotPos(target),
         stageRect: stageEl.getBoundingClientRect(),
       };
-      try { pot.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+      try { target.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
     }
 
     function movePotDrag(e) {
@@ -1302,15 +1347,22 @@
     }
 
     pots.forEach(pot => {
-      pot.addEventListener('click', () => {
+      pot.addEventListener('click', (e) => {
         if (suppressNextPotClick) {
           suppressNextPotClick = false;
           return; // was a drag, not a click
         }
-        if (pot.classList.contains('has-plant')) {
-          openPlantDetailsModal(pot);
+        // Route the click to the pot whose click zone contains the
+        // pointer — the visible sprite shrunk by 1 unit per side —
+        // not necessarily the pot whose button box was on top.
+        // Keyboard clicks have no pointer position (0, 0) and use the
+        // focused pot as before. A click on no pot's sprite is ignored.
+        const target = (e.clientX === 0 && e.clientY === 0) ? pot : potAtPoint(e.clientX, e.clientY);
+        if (!target) return;
+        if (target.classList.contains('has-plant')) {
+          openPlantDetailsModal(target);
         } else {
-          openModal(pot);
+          openModal(target);
         }
       });
     });

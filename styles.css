@@ -787,8 +787,8 @@ body {
 
 .ap-carousel-track.is-small-pot .ap-plant-sprite {
   bottom: calc(7px * var(--scale));
-  width: 50%;
-  left: calc(8px * var(--scale));
+  width: 75%;
+  left: calc(4px * var(--scale));
 }
 
 .ap-plant-pot {
@@ -820,7 +820,7 @@ body {
 }
 
 .ap-carousel-track.is-small-pot .ap-plant--lily .ap-plant-sprite {
-  left: calc(7.75px * var(--scale));
+  left: calc(3.625px * var(--scale));
 }
 
 .ap-plant--cactus {
@@ -919,23 +919,23 @@ body {
 }
 
 /* The small white pot is only 7 units tall, and plants on it render
-   at half size: half width, centred (left 8px of the 32-wide pot),
-   sitting on the 7-unit rim. Width-based, not transform, so it can't
-   fight the plant-grow animation, which owns transform. The bud/lily
-   centring offsets halve too (0.25 instead of 0.5). */
+   at three-quarter size: 75% width, centred (left 4px of the 32-wide
+   pot), sitting on the 7-unit rim. Width-based, not transform, so it
+   can't fight the plant-grow animation, which owns transform. The
+   bud/lily centring offsets scale too (0.375 instead of 0.5). */
 .pot.pot--white-small .pot-plant {
   bottom: calc(7px * var(--scale));
-  width: 50%;
-  left: calc(8px * var(--scale));
+  width: 75%;
+  left: calc(4px * var(--scale));
 }
 
 .pot.pot--white-small .pot-plant[src*="bud-4.png"],
 .pot.pot--white-small .pot-plant[src*="dead-bud.png"] {
-  left: calc(8.25px * var(--scale));
+  left: calc(4.375px * var(--scale));
 }
 
 .pot.pot--white-small .pot-plant[src*="peace-lily"] {
-  left: calc(7.75px * var(--scale));
+  left: calc(3.625px * var(--scale));
 }
 
 /* Centre bud / dead-bud / peace-lily sprites over the pot rim.
