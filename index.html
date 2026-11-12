@@ -1799,8 +1799,8 @@
     // y = -x^2, flipped up to start at full speed: quick at
     // first, slowing more and more, landing exactly at rest.
     // As a cubic-bezier that curve is exact, not approximate.
-    // Everything plays at x0.75 speed (the 800ms / 30ms timings
-    // below, stretched).
+    // Everything plays at x0.75 speed (the 800ms timing below,
+    // stretched), and every drop starts at once — no stagger.
     function animateDewScatterOut(pot, effect) {
       const drops = Array.from(effect.children || []);
       if (!drops.length || typeof drops[0].animate !== 'function') { effect.remove(); return; }
@@ -1812,7 +1812,6 @@
       const rect = pot.getBoundingClientRect();
       const unit = rect && rect.width ? rect.width / POT_SIZE : 1; // px per design unit
       const DURATION = 1067; // the 800ms drift at x0.75 speed
-      const STAGGER = 40; // the 30ms stagger, likewise stretched
       let remaining = drops.length * 2; // a move and a fade per drop
       const done = () => { remaining -= 1; if (remaining <= 0) effect.remove(); };
       const watch = (anim) => {
@@ -1833,17 +1832,17 @@
           watch(d.animate([
             { transform: 'translate(0px, 0px)' },
             { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)` },
-          ], { duration: DURATION, delay: i * STAGGER, easing: 'cubic-bezier(0.333, 0.5, 0.667, 1)', fill: 'forwards', composite: 'add' }));
+          ], { duration: DURATION, easing: 'cubic-bezier(0.333, 0.5, 0.667, 1)', fill: 'forwards', composite: 'add' }));
         } catch (e) { done(); }
         try {
           watch(d.animate([
             { opacity: 1 },
             { opacity: 0 },
-          ], { duration: DURATION, delay: i * STAGGER, easing: 'linear', fill: 'forwards' }));
+          ], { duration: DURATION, easing: 'linear', fill: 'forwards' }));
         } catch (e) { done(); }
       });
       // Sweep up in case a finish never reports back.
-      setTimeout(() => { if (effect.parentNode) effect.remove(); }, DURATION + drops.length * STAGGER + 400);
+      setTimeout(() => { if (effect.parentNode) effect.remove(); }, DURATION + 400);
     }
 
     function collectDew(pot, iconEl) {
