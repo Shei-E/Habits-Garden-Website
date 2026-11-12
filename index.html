@@ -1799,7 +1799,7 @@
     // y = -x^2, flipped up to start at full speed: quick at
     // first, slowing more and more, landing exactly at rest.
     // As a cubic-bezier that curve is exact, not approximate.
-    // Everything plays at x0.6 speed (the 800ms / 30ms timings
+    // Everything plays at x0.75 speed (the 800ms / 30ms timings
     // below, stretched).
     function animateDewScatterOut(pot, effect) {
       const drops = Array.from(effect.children || []);
@@ -1811,8 +1811,8 @@
       const centreY = seat + ink.h * pScale / 2; // bottom-based design units
       const rect = pot.getBoundingClientRect();
       const unit = rect && rect.width ? rect.width / POT_SIZE : 1; // px per design unit
-      const DURATION = 1333; // the 800ms drift at x0.6 speed
-      const STAGGER = 50; // the 30ms stagger, likewise stretched
+      const DURATION = 1067; // the 800ms drift at x0.75 speed
+      const STAGGER = 40; // the 30ms stagger, likewise stretched
       let remaining = drops.length * 2; // a move and a fade per drop
       const done = () => { remaining -= 1; if (remaining <= 0) effect.remove(); };
       const watch = (anim) => {
