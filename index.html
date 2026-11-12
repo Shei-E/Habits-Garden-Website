@@ -578,14 +578,23 @@
     // after that prompt makes the hint and arrow go away for good
     // (for the session). A move before anything is planted doesn't
     // count either.
-    let hasPlantedFirstPlant = false;
-    let hasWateredFirstPlant = false;
-    let hasMovedFirstPot = false;
+    // Finishing the intro is remembered: a "tutorial finished" flag
+    // is kept in the browser (with the local accounts), and a user
+    // who has it never sees the tutorial again — the three flags
+    // below start finished and the corner UI is there from the
+    // start. (lsGet/lsSet are defined with the accounts code; they
+    // are hoisted and safe to call here.)
+    const tutorialFinished = !!lsGet('hg.tutorialDone.v1');
+    let hasPlantedFirstPlant = tutorialFinished;
+    let hasWateredFirstPlant = tutorialFinished;
+    let hasMovedFirstPot = tutorialFinished;
 
     function updateHint() {
       const hint = document.querySelector('.hint');
       const hintArrow = document.querySelector('.hint-arrow');
       if (hasMovedFirstPot) {
+        // Remember the finished tutorial for future visits.
+        lsSet('hg.tutorialDone.v1', true);
         if (hint) hint.remove();
         if (hintArrow) hintArrow.remove();
         // The intro is finished: reveal the corner stack — the
@@ -606,6 +615,11 @@
       }
       positionHint();
     }
+
+    // A returning user who finished the tutorial on an earlier
+    // visit: apply it right away — no hint, and the corner UI is
+    // revealed from the start.
+    if (hasMovedFirstPot) updateHint();
 
     // Keep the hint text centred on the arrow. The hint itself never
     // moves: it stays at its fixed spot (CSS top 23, arrow top 29,
