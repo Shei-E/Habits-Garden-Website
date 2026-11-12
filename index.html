@@ -1916,9 +1916,7 @@
 
       // Several drops: they start stacked on top of each other
       // where the icon sat (a little pile, edges peeking out),
-      // then shoot to the pill while bursting — each drop's
-      // path bows out through its own fan offset, so the pile
-      // spreads apart as it travels and converges on the pill.
+      // burst apart in a fan, then each one shoots to the pill.
       // The count ticks up by one as each drop lands.
       const totalBefore = collectedDewTotal() - amount;
       const size = from.width * 0.62;
@@ -1959,22 +1957,20 @@
         // The shot: to the pill's centre, arcing on the way.
         const tx = pillCx - (baseLeft + size / 2);
         const ty = pillCy - (baseTop + size / 2);
-        // One motion at x0.8 speed: halfway to the pill the
-        // drop is pushed out by its full fan offset (bx, by),
-        // so the burst happens on the way, not before it.
-        const mx = tx * 0.5 + bx;
-        const my = ty * 0.5 + by - (30 + Math.random() * 25);
+        const mx = bx + (tx - bx) * 0.55;
+        const my = by + (ty - by) * 0.55 - (30 + Math.random() * 25);
         const land = () => { flyer.remove(); onLand(); };
         if (typeof flyer.animate === 'function') {
           const anim = flyer.animate([
             { transform: `translate(${stackX.toFixed(1)}px, ${stackY.toFixed(1)}px) scale(1)`, easing: 'cubic-bezier(0.333, 0.5, 0.667, 1)' },
-            { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.7)`, offset: 0.45, easing: 'cubic-bezier(.45,.02,.65,.6)' },
+            { transform: `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px) scale(0.92)`, offset: 0.18, easing: 'cubic-bezier(.45,.02,.65,.6)' },
+            { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.55)`, offset: 0.62 },
             { transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(0.28)` },
-          ], { duration: 1000 + Math.random() * 175, fill: 'forwards' });
+          ], { duration: 800 + Math.random() * 140, fill: 'forwards' });
           if (anim && anim.finished && typeof anim.finished.then === 'function') {
             anim.finished.then(land).catch(land);
           } else {
-            setTimeout(land, 1200);
+            setTimeout(land, 950);
           }
         } else {
           land();
