@@ -50,6 +50,12 @@
          pot to the first free shelf slot. -->
     <button class="ui-addplant" id="ui-addplant" type="button" aria-label="Add a pot"></button>
 
+    <!-- Sign-in text: below the add-a-pot button, right edge lined
+         up with the two pills above it. Appears together with them
+         when the intro hint flow finishes. Clicking it opens the
+         sign-in page; while signed in it shows the account instead. -->
+    <button class="ui-signin" id="ui-signin" type="button">sign in to save your plants</button>
+
     <!-- Drag-to-delete marker: while a pot is dragged, this X floats
          above the spot the drag started from; dropping the pot on it
          deletes the pot. Positioned by the drag code. -->
@@ -69,6 +75,35 @@
           <p class="dd-line">Flowers reward 2 drops per day and a bonus on the day after watering your flower.</p>
           <p class="dd-line">Dead plants subtract 2 from your dew drops.</p>
           <p class="dd-line">Dew drops are reset every day, and can never go below 0.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign In page: opened from the sign-in text under the pills.
+         Built on the same panel as the Dew Drops card. Signing in
+         ties the garden to the account: while signed in, every
+         change is saved and the garden is rebuilt on the next
+         visit (see the accounts code further down). -->
+    <div class="si-modal" id="signin-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="si-title">
+      <div class="si-container">
+        <img class="si-panel" src="assets/ui-plant-1.png" alt="">
+        <h2 class="si-title" id="si-title">Sign In</h2>
+        <button class="si-close" id="si-close" type="button" aria-label="Close"></button>
+        <div class="si-form" id="si-form">
+          <label class="si-label" for="si-email">Email</label>
+          <input class="si-input" id="si-email" type="email" autocomplete="email" placeholder="you@example.com">
+          <label class="si-label si-label--pw" for="si-password">Password</label>
+          <input class="si-input" id="si-password" type="password" autocomplete="current-password"
+            placeholder="password">
+          <p class="si-status" id="si-status"></p>
+          <button class="si-btn" id="si-signin" type="button">sign in</button>
+          <button class="si-btn" id="si-create" type="button">create account</button>
+        </div>
+        <div class="si-account" id="si-account" hidden>
+          <p class="si-line">signed in as <span id="si-account-email"></span></p>
+          <p class="si-line">your plants are saved to your account.</p>
+          <button class="si-btn" id="si-signout" type="button">sign out</button>
         </div>
       </div>
     </div>
@@ -479,6 +514,10 @@
       }
       pot.classList.remove('pot--top', 'pot--bottom');
       pot.classList.add(`pot--${row}`);
+      // Every move (drag, arrow keys, reset, add-a-pot) goes through
+      // here, so this is the one place that keeps a signed-in
+      // account's saved garden up to date on positions.
+      saveGarden();
     }
 
     // Each pot's home slot, recorded once at load from its initial
@@ -537,9 +576,15 @@
       if (hasMovedFirstPot) {
         if (hint) hint.remove();
         if (hintArrow) hintArrow.remove();
-        // The intro is finished: reveal the add-a-pot button.
+        // The intro is finished: reveal the corner stack — the
+        // currency pill, the add-a-pot button and the sign-in text
+        // all appear together.
         const addPotBtn = document.getElementById('ui-addplant');
         if (addPotBtn) addPotBtn.classList.add('is-visible');
+        const currencyBtn = document.getElementById('ui-currency');
+        if (currencyBtn) currencyBtn.classList.add('is-visible');
+        const signInText = document.getElementById('ui-signin');
+        if (signInText) signInText.classList.add('is-visible');
         return;
       }
       if (hasWateredFirstPlant && hint) {
@@ -793,6 +838,7 @@
       if (activePot === pot) activePot = null;
       pot.remove();
       updateDewDrops();
+      saveGarden();
     }
 
     // Wires one pot's drag + arrow-key handlers. Called for the
@@ -1511,6 +1557,277 @@
       if (e.target === dewModal) closeDewModal();
     });
 
+    // ---- Accounts & saving ----
+    // Signing in ties the garden to an account: while signed in,
+    // every change (planting, watering, moving, adding or deleting
+    // a pot) is saved, and on the next visit the saved garden is
+    // rebuilt exactly as it was — pots, positions, plant kinds,
+    // schedules and watering history, which is everything the game
+    // itself runs on. For now the accounts and gardens are kept in
+    // this browser's local storage: the sign-in page, the saved
+    // format and the restore flow are the real ones — only where
+    // the data is kept would change if a hosted account service is
+    // connected later, so gardens could follow the account across
+    // devices.
+    const ACCOUNTS_KEY = 'hg.accounts.v1';
+    const SESSION_KEY = 'hg.session.v1';
+    const GARDEN_KEY_PREFIX = 'hg.garden.v1.';
+    let signedInEmail = null;
+    let restoringGarden = false;
+
+    function lsGet(key) {
+      try {
+        const v = window.localStorage.getItem(key);
+        return v === null ? null : JSON.parse(v);
+      } catch (e) { return null; }
+    }
+    function lsSet(key, value) {
+      try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { }
+    }
+    function lsRemove(key) {
+      try { window.localStorage.removeItem(key); } catch (e) { }
+    }
+
+    // Passwords are never kept as typed — only a scrambled form is
+    // stored, and signing in scrambles what was typed and compares
+    // the scrambles. (This small local scramble is a stand-in: a
+    // hosted account service does this properly on its server.)
+    function hashPassword(pw) {
+      let h = 0x811c9dc5;
+      const s = 'hg:' + pw;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16);
+    }
+
+    let accountsCache = null;
+    function loadAccounts() {
+      if (!accountsCache) accountsCache = lsGet(ACCOUNTS_KEY) || {};
+      return accountsCache;
+    }
+
+    // The dataset fields that carry a plant. Streak, dead/healthy
+    // state and dew drops are all worked out from these, so they
+    // do not need saving of their own.
+    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory'];
+
+    function serializeGarden() {
+      return pots.map(pot => {
+        const pos = getPotPos(pot);
+        const entry = {
+          left: pos.left,
+          row: pos.row,
+          homeLeft: pot.dataset.homeLeft !== undefined ? pot.dataset.homeLeft : String(pos.left),
+          homeRow: pot.dataset.homeRow || pos.row,
+          potType: pot.dataset.potType || null,
+          plant: null,
+        };
+        if (pot.classList.contains('has-plant')) {
+          const plant = {};
+          PLANT_DATA_KEYS.forEach(k => { if (pot.dataset[k] !== undefined) plant[k] = pot.dataset[k]; });
+          entry.plant = plant;
+        }
+        return entry;
+      });
+    }
+
+    function saveGarden() {
+      if (!signedInEmail || restoringGarden) return;
+      lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+    }
+
+    // Apply a saved pot style: the same end state the Add Plant
+    // COMMIT produces (sprite, size classes, paint order).
+    function applyPotType(pot, id) {
+      const potData = potOptions.find(p => p.id === id);
+      if (!potData) return;
+      pot.dataset.potType = potData.id;
+      updatePotZOrder(pot);
+      pot.style.backgroundImage = `url("${potData.src}")`;
+      pot.classList.remove('pot--white', 'pot--blue', 'pot--yellow', 'pot--white-smallest', 'pot--orange', 'pot--grey', 'pot--orange-smaller', 'pot--white-smaller', 'pot--blue-smaller', 'pot--yellow-smaller', 'pot--grey-smaller', 'pot--orange-smallest', 'pot--yellow-smallest', 'pot--blue-smallest', 'pot--grey-smallest');
+      if (potData.id === 'white') pot.classList.add('pot--white');
+      if (potData.id === 'blue') pot.classList.add('pot--blue');
+      if (potData.id === 'yellow') pot.classList.add('pot--yellow');
+      if (potData.id === 'white-smallest') pot.classList.add('pot--white-smallest');
+      if (potData.id === 'orange') pot.classList.add('pot--orange');
+      if (potData.id === 'grey') pot.classList.add('pot--grey');
+      if (potData.id === 'orange-smaller') pot.classList.add('pot--orange-smaller');
+      if (potData.id === 'white-smaller') pot.classList.add('pot--white-smaller');
+      if (potData.id === 'blue-smaller') pot.classList.add('pot--blue-smaller');
+      if (potData.id === 'yellow-smaller') pot.classList.add('pot--yellow-smaller');
+      if (potData.id === 'grey-smaller') pot.classList.add('pot--grey-smaller');
+      if (potData.id === 'orange-smallest') pot.classList.add('pot--orange-smallest');
+      if (potData.id === 'yellow-smallest') pot.classList.add('pot--yellow-smallest');
+      if (potData.id === 'blue-smallest') pot.classList.add('pot--blue-smallest');
+      if (potData.id === 'grey-smallest') pot.classList.add('pot--grey-smallest');
+    }
+
+    // Rebuild a saved garden (see serializeGarden). The first saved
+    // pot reuses the pot already on the shelf; extra pots come from
+    // the add-a-pot code, then everything is put back in place.
+    function restoreGarden(entries) {
+      if (!Array.isArray(entries) || entries.length === 0) return;
+      restoringGarden = true;
+      while (pots.length > entries.length) {
+        const extra = pots[pots.length - 1];
+        pots.splice(pots.length - 1, 1);
+        extra.remove();
+      }
+      while (pots.length < entries.length) {
+        const before = pots.length;
+        addPot();
+        if (pots.length === before) break; // both shelves are full
+      }
+      let anyPlant = false;
+      entries.forEach((entry, i) => {
+        const pot = pots[i];
+        if (!pot) return;
+        setPotPos(pot, entry.left, entry.row);
+        pot.dataset.homeLeft = entry.homeLeft;
+        pot.dataset.homeRow = entry.homeRow;
+        if (entry.potType) applyPotType(pot, entry.potType);
+        if (entry.plant) {
+          anyPlant = true;
+          pot.classList.add('has-plant');
+          let potPlant = pot.querySelector('.pot-plant');
+          if (!potPlant) {
+            potPlant = document.createElement('img');
+            potPlant.className = 'pot-plant';
+            pot.appendChild(potPlant);
+          }
+          PLANT_DATA_KEYS.forEach(k => {
+            if (entry.plant[k] !== undefined) pot.dataset[k] = entry.plant[k];
+          });
+          pot.setAttribute('aria-label', `${entry.plant.plantName || 'Plant'} plant`);
+          pot.dataset.streak = JSON.stringify(calculateStreak(pot));
+          updatePotVisuals(pot);
+        }
+      });
+      restoringGarden = false;
+      if (anyPlant) {
+        // A saved garden means the intro is long finished: skip
+        // the hint flow and reveal the corner stack right away.
+        hasPlantedFirstPlant = true;
+        hasWateredFirstPlant = true;
+        hasMovedFirstPot = true;
+        updateHint();
+      }
+    }
+
+    // ---- Sign-in page ----
+    const signInModal = document.getElementById('signin-modal');
+    const siForm = document.getElementById('si-form');
+    const siAccount = document.getElementById('si-account');
+    const siEmail = document.getElementById('si-email');
+    const siPassword = document.getElementById('si-password');
+    const siStatus = document.getElementById('si-status');
+    const siAccountEmail = document.getElementById('si-account-email');
+    const signInText = document.getElementById('ui-signin');
+
+    function setSiStatus(msg, isError) {
+      if (!siStatus) return;
+      siStatus.textContent = msg || '';
+      siStatus.classList.toggle('is-error', !!isError);
+    }
+
+    function refreshSignInUI() {
+      if (signInText) {
+        signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'sign in to save your plants';
+      }
+      if (siForm) siForm.hidden = !!signedInEmail;
+      if (siAccount) siAccount.hidden = !signedInEmail;
+      if (siAccountEmail) siAccountEmail.textContent = signedInEmail || '';
+    }
+
+    function openSignInModal() {
+      if (!signInModal) return;
+      refreshSignInUI();
+      setSiStatus('');
+      signInModal.classList.remove('is-closing');
+      signInModal.classList.add('is-open');
+      signInModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSignInModal() {
+      if (!signInModal || !signInModal.classList.contains('is-open') || signInModal.classList.contains('is-closing')) return;
+      signInModal.classList.remove('is-open');
+      signInModal.classList.add('is-closing');
+      signInModal.setAttribute('aria-hidden', 'true');
+      function onAnimationEnd(e) {
+        if (e.animationName === 'ap-fall-fade-out') {
+          signInModal.classList.remove('is-closing');
+          signInModal.removeEventListener('animationend', onAnimationEnd);
+        }
+      }
+      signInModal.addEventListener('animationend', onAnimationEnd);
+    }
+
+    function handleCreateAccount() {
+      const email = (siEmail.value || '').trim().toLowerCase();
+      const pw = siPassword.value || '';
+      if (!email.includes('@')) { setSiStatus('that email does not look right', true); return; }
+      if (pw.length < 4) { setSiStatus('password needs at least 4 characters', true); return; }
+      const accounts = loadAccounts();
+      if (accounts[email]) { setSiStatus('that email already has an account — sign in instead', true); return; }
+      accounts[email] = { pw: hashPassword(pw) };
+      lsSet(ACCOUNTS_KEY, accounts);
+      signedInEmail = email;
+      lsSet(SESSION_KEY, email);
+      // The garden on the shelf right now becomes the account's
+      // garden, and is saved from here on.
+      saveGarden();
+      refreshSignInUI();
+      closeSignInModal();
+    }
+
+    function handleSignIn() {
+      const email = (siEmail.value || '').trim().toLowerCase();
+      const pw = siPassword.value || '';
+      const accounts = loadAccounts();
+      if (!accounts[email]) { setSiStatus('no account for that email yet — create one first', true); return; }
+      if (accounts[email].pw !== hashPassword(pw)) { setSiStatus('wrong password', true); return; }
+      signedInEmail = email;
+      lsSet(SESSION_KEY, email);
+      const saved = lsGet(GARDEN_KEY_PREFIX + email);
+      if (saved) {
+        restoreGarden(saved);
+      } else {
+        saveGarden();
+      }
+      refreshSignInUI();
+      closeSignInModal();
+    }
+
+    function handleSignOut() {
+      signedInEmail = null;
+      lsRemove(SESSION_KEY);
+      refreshSignInUI();
+      closeSignInModal();
+    }
+
+    document.getElementById('ui-signin')?.addEventListener('click', openSignInModal);
+    document.getElementById('si-close')?.addEventListener('click', closeSignInModal);
+    signInModal?.addEventListener('click', (e) => {
+      if (e.target === signInModal) closeSignInModal();
+    });
+    document.getElementById('si-create')?.addEventListener('click', handleCreateAccount);
+    document.getElementById('si-signin')?.addEventListener('click', handleSignIn);
+    document.getElementById('si-signout')?.addEventListener('click', handleSignOut);
+
+    // A returning visit: if this browser is still signed in, put
+    // the account's garden back BEFORE the day's dew drops are
+    // granted (the updateDewDrops call right below), so the grant
+    // is worked out from the restored shelf.
+    const savedSession = lsGet(SESSION_KEY);
+    if (savedSession && loadAccounts()[savedSession]) {
+      signedInEmail = savedSession;
+      const savedGarden = lsGet(GARDEN_KEY_PREFIX + savedSession);
+      if (savedGarden) restoreGarden(savedGarden);
+    }
+    refreshSignInUI();
+
     updateDewDrops();
 
     // Reset-position button: always shows "reset position" when the popup
@@ -1768,6 +2085,7 @@
 
       pot.setAttribute('aria-label', 'Add a plant');
       updateDewDrops();
+      saveGarden();
     }
 
     apRemove?.addEventListener('click', () => {
@@ -1881,6 +2199,7 @@
           updateHint();
         }
       }
+      saveGarden();
       closeModal();
     });
 
@@ -1951,6 +2270,7 @@
         }, 450);
       }
       updateDewDrops();
+      saveGarden();
     });
 
     pdEdit?.addEventListener('click', () => {

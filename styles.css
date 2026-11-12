@@ -326,7 +326,10 @@ body {
    (pill -1, add-pot 13; were 4/18), so the pill's element starts
    1 unit above the window top and its ink sits 4.25 units down.
    Clicking opens the dew drops info card; hovering grows the pill
-   a touch (like the add-a-pot button) to show it is clickable. */
+   a touch (like the add-a-pot button) to show it is clickable.
+   Like the add-a-pot button and the sign-in text below it, the
+   pill stays hidden until the intro hint flow finishes, then all
+   three fade in together. */
 .ui-currency {
   position: fixed;
   top: calc(-1px * var(--scale));
@@ -337,7 +340,14 @@ body {
   border: 0;
   background: none;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.ui-currency.is-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .ui-currency:hover {
@@ -410,6 +420,42 @@ body {
    show it is clickable. */
 .ui-addplant:hover {
   transform: scale(1.1);
+}
+
+/* Sign-in text: below the add-a-pot button, completing the corner
+   stack. Its right edge lines up with the two pills' visible right
+   edges (5 units in from the screen's right edge), and its top
+   leaves the same 2-unit gap below the add-pot button's ink as
+   the gap between the two pills (add-pot ink bottom is at 29.5,
+   so the text starts at 31). Hidden with the pills until the
+   intro hint flow finishes, then all three fade in together.
+   Clicking opens the sign-in page; while signed in, the text
+   shows the account instead (set by the accounts code). */
+.ui-signin {
+  position: fixed;
+  top: calc(31px * var(--scale));
+  right: calc(5px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.ui-signin.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ui-signin:hover {
+  text-decoration: underline;
 }
 
 /* Drag-to-delete marker: floats above the dragged pot's starting
@@ -527,6 +573,152 @@ body {
 
 .dd-line {
   margin: 0 0 calc(5px * var(--scale));
+}
+
+/* Sign In page: opened from the sign-in text under the pills.
+   Same panel, geometry and animations as the Dew Drops card. */
+.si-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.si-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  animation: ap-rise-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.si-modal.is-closing,
+.si-modal.is-closing * {
+  pointer-events: none !important;
+}
+
+.si-modal.is-closing {
+  visibility: visible;
+  animation: ap-fall-fade-out 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.si-container {
+  position: absolute;
+  inset: 0;
+}
+
+.si-panel {
+  position: absolute;
+  left: calc(10px * var(--scale));
+  top: calc(10px * var(--scale));
+  width: calc(236px * var(--scale));
+  height: calc(124px * var(--scale));
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.si-title {
+  position: absolute;
+  left: calc(21px * var(--scale));
+  top: calc(17px * var(--scale));
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(10px * var(--scale));
+  line-height: normal;
+  white-space: nowrap;
+  color: #000;
+  z-index: 2;
+}
+
+.si-close {
+  position: absolute;
+  left: calc(var(--stage-w) * 0.8 + 23.42px * var(--scale));
+  top: calc(16.53px * var(--scale));
+  width: calc(11px * var(--scale));
+  height: calc(11px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: url("assets/ui-tiny-x.png") center / contain no-repeat;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.si-form,
+.si-account {
+  position: absolute;
+  left: calc(21px * var(--scale));
+  top: calc(34px * var(--scale));
+  width: calc(214px * var(--scale));
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  line-height: 1.45;
+  color: #000;
+  z-index: 2;
+}
+
+.si-form[hidden],
+.si-account[hidden] {
+  display: none;
+}
+
+.si-label {
+  display: block;
+  margin: 0 0 calc(2px * var(--scale));
+}
+
+.si-label--pw {
+  margin-top: calc(5px * var(--scale));
+}
+
+.si-input {
+  display: block;
+  width: calc(130px * var(--scale));
+  height: calc(11px * var(--scale));
+  padding: 0 calc(3px * var(--scale));
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  color: #000;
+}
+
+.si-status {
+  height: calc(10px * var(--scale));
+  margin: calc(4px * var(--scale)) 0;
+  color: #000;
+}
+
+.si-status.is-error {
+  color: #e05656;
+}
+
+.si-btn {
+  padding: calc(2px * var(--scale)) calc(8px * var(--scale));
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.4);
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  color: #000;
+  cursor: pointer;
+}
+
+.si-btn + .si-btn {
+  margin-left: calc(6px * var(--scale));
+}
+
+.si-line {
+  margin: 0 0 calc(5px * var(--scale));
+}
+
+.si-account .si-btn {
+  margin-top: calc(4px * var(--scale));
 }
 
 /* ---------- Home Screen 2 (Figma node 184:110) ----------
