@@ -1788,9 +1788,9 @@
     // pill, and the count goes up when it lands.
     // The dew scatter's send-off when its plant is collected:
     // each little drop drifts away from the plant's centre
-    // while a separate slow fade, starting immediately, runs
-    // across the whole drift; then the effect element is
-    // removed. The drift is added on top of the drops' pulsing
+    // while a separate slow fade, starting immediately,
+    // finishes 0.4s before the drift does; then the effect
+    // element is removed. The drift is added on top of the drops' pulsing
     // (composite: 'add'), so they keep their gentle
     // grow-shrink while they leave. Movement and fade are two
     // animations so each keeps its own easing (one shared
@@ -1812,6 +1812,7 @@
       const rect = pot.getBoundingClientRect();
       const unit = rect && rect.width ? rect.width / POT_SIZE : 1; // px per design unit
       const DURATION = 1067; // the 800ms drift at x0.75 speed
+      const FADE = DURATION - 400; // the fade finishes 0.4s before the drift does
       let remaining = drops.length * 2; // a move and a fade per drop
       const done = () => { remaining -= 1; if (remaining <= 0) effect.remove(); };
       const watch = (anim) => {
@@ -1838,7 +1839,7 @@
           watch(d.animate([
             { opacity: 1 },
             { opacity: 0 },
-          ], { duration: DURATION, easing: 'linear', fill: 'forwards' }));
+          ], { duration: FADE, easing: 'linear', fill: 'forwards' }));
         } catch (e) { done(); }
       });
       // Sweep up in case a finish never reports back.
