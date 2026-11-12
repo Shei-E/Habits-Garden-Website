@@ -1787,12 +1787,16 @@
     // Collect one plant's drops: the icon flies to the currency
     // pill, and the count goes up when it lands.
     // The dew scatter's send-off when its plant is collected:
-    // each little drop bursts away from the plant's centre —
-    // fast at first, then gradually slowing down — and fades
-    // out well before the drift ends, then the effect element
-    // is removed. The drift is added on top of the drops'
-    // pulsing (composite: 'add'), so they keep their gentle
-    // grow-shrink while they leave.
+    // each little drop drifts away from the plant's centre —
+    // fast at first, then gradually slowing down — while a
+    // separate slow fade, starting immediately, runs across
+    // the whole drift; then the effect element is removed.
+    // The drift is added on top of the drops' pulsing
+    // (composite: 'add'), so they keep their gentle
+    // grow-shrink while they leave. Movement and fade are two
+    // animations so each keeps its own easing: the strong
+    // fast-then-slow curve for the move, plain linear for the
+    // fade (one shared easing would rush the fade's start).
     function animateDewScatterOut(pot, effect) {
       const drops = Array.from(effect.children || []);
       if (!drops.length || typeof drops[0].animate !== 'function') { effect.remove(); return; }
@@ -1803,8 +1807,12 @@
       const centreY = seat + ink.h * pScale / 2; // bottom-based design units
       const rect = pot.getBoundingClientRect();
       const unit = rect && rect.width ? rect.width / POT_SIZE : 1; // px per design unit
-      let remaining = drops.length;
+      let remaining = drops.length * 2; // a move and a fade per drop
       const done = () => { remaining -= 1; if (remaining <= 0) effect.remove(); };
+      const watch = (anim) => {
+        if (anim && anim.finished && typeof anim.finished.then === 'function') anim.finished.then(done, done);
+        else done();
+      };
       drops.forEach((d, i) => {
         const x = parseFloat(d.dataset.x || '16');
         const y = parseFloat(d.dataset.y || String(centreY));
@@ -1813,20 +1821,23 @@
         const len = Math.hypot(dx, dy);
         if (len < 0.01) { dx = i % 2 ? 1 : -1; dy = 1; } else { dx /= len; dy /= len; }
         const dist = 3.5 + Math.random() * 3; // design units further out
+        // CSS transforms are top-based, so an outward move in
+        // bottom-based y is a negative translateY.
         try {
-          // CSS transforms are top-based, so an outward move in
-          // bottom-based y is a negative translateY.
-          const anim = d.animate([
-            { transform: 'translate(0px, 0px)', opacity: 1, offset: 0 },
-            { opacity: 0, offset: 0.5 },
-            { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)`, opacity: 0, offset: 1 },
-          ], { duration: 480, delay: i * 25, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards', composite: 'add' });
-          if (anim && anim.finished && typeof anim.finished.then === 'function') anim.finished.then(done, done);
-          else done();
+          watch(d.animate([
+            { transform: 'translate(0px, 0px)' },
+            { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)` },
+          ], { duration: 800, delay: i * 30, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards', composite: 'add' }));
+        } catch (e) { done(); }
+        try {
+          watch(d.animate([
+            { opacity: 1 },
+            { opacity: 0 },
+          ], { duration: 800, delay: i * 30, easing: 'linear', fill: 'forwards' }));
         } catch (e) { done(); }
       });
       // Sweep up in case a finish never reports back.
-      setTimeout(() => { if (effect.parentNode) effect.remove(); }, 1200);
+      setTimeout(() => { if (effect.parentNode) effect.remove(); }, 1600);
     }
 
     function collectDew(pot, iconEl) {
