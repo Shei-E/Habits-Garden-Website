@@ -422,20 +422,66 @@ body {
   transform: scale(1.1);
 }
 
-/* Sign-in text: centred at the top of the screen, its top margin
-   matching the currency pill's (the pill's ink starts 4.25 units
-   down; the text's glyphs start ~0.45 units below the element's
-   top, so the element sits at 3.8). Shusuke first had it under
-   the add-pot button, right-aligned with the pills, then pointed
-   it to the top centre instead (2026-11-12). Hidden with the
-   pills until the intro hint flow finishes, then all three fade
-   in together. Clicking opens the sign-in page; while signed in,
-   the text shows the account instead (set by the accounts code). */
-.ui-signin {
+/* Account pill: top left of the SCREEN, mirroring the currency
+   pill at the top right — same element top (-1), and its ink sits
+   the same 5 units in from its screen edge and 4.25 units down
+   (the sprite is a 28x32 canvas shown at x0.75 like the add-pot
+   button; its 16x15 ink starts 7,7 in the canvas, i.e. 5.25
+   units into the element, so the element's left is -0.25).
+   Unlike the rest of the corner UI, the pill is visible from the
+   start. Clicking it opens the sign-in page; hovering grows it a
+   touch, like the other pills. */
+.ui-account {
   position: fixed;
+  top: calc(-1px * var(--scale));
+  left: calc(-0.25px * var(--scale));
+  width: calc(21px * var(--scale));
+  height: calc(24px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.ui-account:hover {
+  transform: scale(1.1);
+}
+
+.ui-account-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Sign-in text: beside the account pill, inside a slot clipped
+   at the pill's ink right edge (17 units), so the text can
+   scroll out of the pill and back into it. The text rests 2
+   units right of the pill's ink. It starts parked inside the
+   pill (translated left past the slot's edge, so the clip hides
+   it); when the intro hint flow finishes it scrolls left to
+   right into place, together with the pills appearing. Once
+   signed in, the "signed in as …" text scrolls right to left
+   back into the pill after 3 seconds (the accounts code adds
+   .is-out on a timer); hovering the pill scrolls it back out.
+   The scroll speed is constant — a linear transition, no easing
+   (Shusuke's request). Clicking the text opens the sign-in page;
+   while signed in, the text shows the account instead. */
+.ui-signin-slot {
+  position: fixed;
+  left: calc(17px * var(--scale));
   top: calc(3.8px * var(--scale));
-  left: 50%;
-  transform: translateX(-50%);
+  overflow: hidden;
+}
+
+.ui-signin {
+  display: block;
+  margin-left: calc(2px * var(--scale));
   padding: 0;
   border: 0;
   background: none;
@@ -447,29 +493,23 @@ body {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transform: translateX(calc(-100% - 2px * var(--scale)));
+  transition: transform 0.6s linear, opacity 0.2s ease;
 }
 
 .ui-signin.is-visible {
   opacity: 1;
   pointer-events: auto;
+  transform: translateX(0);
 }
 
 .ui-signin:hover {
   text-decoration: underline;
 }
 
-/* Once signed in, the "signed in as …" text fades away after a
-   few seconds (the accounts code adds .is-faded on a 3-second
-   timer) so it does not sit over the garden forever. It still
-   answers to hover: moving the mouse over its spot brings it
-   back, so it can still be clicked to open the account panel. */
-.ui-signin.is-faded {
-  opacity: 0;
-}
-
-.ui-signin.is-faded:hover {
-  opacity: 1;
+.ui-signin.is-out {
+  transform: translateX(calc(-100% - 2px * var(--scale)));
+  pointer-events: none;
 }
 
 /* Drag-to-delete marker: floats above the dragged pot's starting

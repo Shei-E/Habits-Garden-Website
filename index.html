@@ -50,12 +50,23 @@
          pot to the first free shelf slot. -->
     <button class="ui-addplant" id="ui-addplant" type="button" aria-label="Add a pot"></button>
 
-    <!-- Sign-in text: centred at the top of the screen, with the
-         same top margin as the currency pill. Appears together
-         with the pills when the intro hint flow finishes. Clicking
-         it opens the sign-in page; while signed in it shows the
-         account instead. -->
-    <button class="ui-signin" id="ui-signin" type="button">sign in to save your plants</button>
+    <!-- Account pill: top left of the screen, mirroring the
+         currency pill's margins. Unlike the rest of the corner
+         UI it is visible from the start. Clicking it opens the
+         sign-in page. -->
+    <button class="ui-account" id="ui-account" type="button" aria-label="Account">
+      <img class="ui-account-img" src="assets/ui-account.png" alt="">
+    </button>
+
+    <!-- Sign-in text: sits right of the account pill, inside a
+         clipped slot whose left edge is the pill's right edge, so
+         the text scrolls out of the pill when it appears (at the
+         end of the intro, together with the pills) and scrolls
+         back into it once signed in. Clicking it opens the
+         sign-in page; while signed in it shows the account. -->
+    <div class="ui-signin-slot">
+      <button class="ui-signin" id="ui-signin" type="button">sign in to save your plants</button>
+    </div>
 
     <!-- Drag-to-delete marker: while a pot is dragged, this X floats
          above the spot the drag started from; dropping the pot on it
@@ -1733,7 +1744,20 @@
       siStatus.classList.toggle('is-error', !!isError);
     }
 
-    let signInFadeTimer = null;
+    // The "signed in as …" text scrolls back into the account pill
+    // 3 seconds after it appears (signing in, or a visit that
+    // restores the session); hovering the pill scrolls it back
+    // out, and leaving starts the 3 seconds again. The signed-out
+    // invite never scrolls away — it is the way in.
+    let signInHideTimer = null;
+    function scheduleSignInTextHide() {
+      if (signInHideTimer) { clearTimeout(signInHideTimer); signInHideTimer = null; }
+      if (!signedInEmail) return;
+      signInHideTimer = setTimeout(() => {
+        if (signInText && signedInEmail) signInText.classList.add('is-out');
+      }, 3000);
+    }
+
     function refreshSignInUI() {
       if (signInText) {
         signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'sign in to save your plants';
@@ -1741,19 +1765,8 @@
       if (siForm) siForm.hidden = !!signedInEmail;
       if (siAccount) siAccount.hidden = !signedInEmail;
       if (siAccountEmail) siAccountEmail.textContent = signedInEmail || '';
-      // The "signed in as …" note fades out 3 seconds after it
-      // appears (signing in, or a visit that restores the session);
-      // hovering its spot brings it back. The signed-out invite
-      // never fades — it is the way in.
-      if (signInFadeTimer) { clearTimeout(signInFadeTimer); signInFadeTimer = null; }
-      if (signInText) {
-        signInText.classList.remove('is-faded');
-        if (signedInEmail) {
-          signInFadeTimer = setTimeout(() => {
-            signInText.classList.add('is-faded');
-          }, 3000);
-        }
-      }
+      if (signInText) signInText.classList.remove('is-out');
+      scheduleSignInTextHide();
     }
 
     function openSignInModal() {
@@ -1823,6 +1836,16 @@
     }
 
     document.getElementById('ui-signin')?.addEventListener('click', openSignInModal);
+    const accountBtn = document.getElementById('ui-account');
+    accountBtn?.addEventListener('click', openSignInModal);
+    // Hovering the account pill scrolls the signed-in text back
+    // out of the pill; leaving the pill or the text starts the
+    // 3-second scroll-back-in again.
+    accountBtn?.addEventListener('mouseenter', () => {
+      if (signedInEmail && signInText) signInText.classList.remove('is-out');
+    });
+    accountBtn?.addEventListener('mouseleave', scheduleSignInTextHide);
+    signInText?.addEventListener('mouseleave', scheduleSignInTextHide);
     document.getElementById('si-close')?.addEventListener('click', closeSignInModal);
     signInModal?.addEventListener('click', (e) => {
       if (e.target === signInModal) closeSignInModal();
