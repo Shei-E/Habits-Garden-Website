@@ -422,23 +422,20 @@ body {
   transform: scale(1.1);
 }
 
-/* Sign-in text: below the add-a-pot button, completing the corner
-   stack. Its right edge lines up with the two pills' visible right
-   edges (5 units in from the screen's right edge): the button's
-   own right offset is 4.2, not 5, because the last letter's glyph
-   leaves ~0.8 units of clear space inside the text's width
-   (measured live 2026-11-12: at right 5 the glyphs sat ~5px
-   further in than the pills). Its top leaves the same 2-unit gap
-   below the add-pot button's ink as the gap between the two
-   pills (add-pot ink bottom is at 29.5, so the text starts at
-   31). Hidden with the pills until the intro hint flow finishes,
-   then all three fade in together. Clicking opens the sign-in
-   page; while signed in, the text shows the account instead (set
-   by the accounts code). */
+/* Sign-in text: centred at the top of the screen, its top margin
+   matching the currency pill's (the pill's ink starts 4.25 units
+   down; the text's glyphs start ~0.45 units below the element's
+   top, so the element sits at 3.8). Shusuke first had it under
+   the add-pot button, right-aligned with the pills, then pointed
+   it to the top centre instead (2026-11-12). Hidden with the
+   pills until the intro hint flow finishes, then all three fade
+   in together. Clicking opens the sign-in page; while signed in,
+   the text shows the account instead (set by the accounts code). */
 .ui-signin {
   position: fixed;
-  top: calc(31px * var(--scale));
-  right: calc(4.2px * var(--scale));
+  top: calc(3.8px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
   padding: 0;
   border: 0;
   background: none;
@@ -579,7 +576,7 @@ body {
   margin: 0 0 calc(5px * var(--scale));
 }
 
-/* Sign In page: opened from the sign-in text under the pills.
+/* Sign In page: opened from the sign-in text at the top centre.
    Same panel, geometry and animations as the Dew Drops card. */
 .si-modal {
   position: absolute;
