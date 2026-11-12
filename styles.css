@@ -754,6 +754,9 @@ body {
 .si-status {
   height: calc(10px * var(--scale));
   margin: calc(4px * var(--scale)) 0;
+  /* Aligned with the body text and the button: the same
+     6.3-unit indent. */
+  margin-left: calc(6.3px * var(--scale));
   color: #000;
 }
 
