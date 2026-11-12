@@ -1690,8 +1690,31 @@ body {
 .pd-title {
   left: calc(61px * var(--scale));
   top: calc(42px * var(--scale));
+  width: calc(122px * var(--scale));
+  overflow: hidden;
   font-size: calc(10px * var(--scale));
   color: #000;
+}
+
+.pd-title-line {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.pd-title-line.is-scrolling {
+  animation: pd-name-scroll 6s ease-in-out infinite alternate;
+}
+
+@keyframes pd-name-scroll {
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+
+  80%,
+  100% {
+    transform: translateX(var(--pd-scroll-dist, 0px));
+  }
 }
 
 .pd-title-status {

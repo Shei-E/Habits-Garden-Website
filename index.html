@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 
 <body>
@@ -2007,17 +2007,29 @@
       const isBud = pot.dataset.stage !== 'grown';
 
       pdTitle.textContent = '';
-      pdTitle.appendChild(document.createTextNode(plantName));
+      const titleLine = document.createElement('span');
+      titleLine.className = 'pd-title-line';
+      titleLine.appendChild(document.createTextNode(plantName));
       if (isDead) {
         const span = document.createElement('span');
         span.className = 'pd-title-status pd-title-status--dead';
         span.textContent = '(dead)';
-        pdTitle.appendChild(span);
+        titleLine.appendChild(span);
       } else if (isBud) {
         const span = document.createElement('span');
         span.className = 'pd-title-status pd-title-status--bud';
         span.textContent = '(bud)';
-        pdTitle.appendChild(span);
+        titleLine.appendChild(span);
+      }
+      pdTitle.appendChild(titleLine);
+
+      // If the name is too long to fit in the popup, scroll the
+      // title line back and forth so the whole name can be read
+      // (the .pd-title box clips it — see styles.css).
+      const titleOverflow = (titleLine.scrollWidth || 0) - (pdTitle.clientWidth || 0);
+      if (titleOverflow > 1) {
+        titleLine.style.setProperty('--pd-scroll-dist', `${-titleOverflow}px`);
+        titleLine.classList.add('is-scrolling');
       }
 
       pdStreak.innerHTML = '';
@@ -2346,8 +2358,20 @@
       const todayStr = getGameDayStr();
       const isFirstWaterToday = (pot.dataset.wateredToday !== 'true') || (pot.dataset.lastWateredDate !== todayStr);
 
+      // Decide BEFORE this watering is recorded whether it counts
+      // towards growth. A watering only counts on one of the
+      // plant's watering days — today is a scheduled opportunity,
+      // which calculateStreak reports as the streak bar's last
+      // slot being "today". The exception: watering a dead plant
+      // always counts, even when it is past its due date — that
+      // watering is the one that revives it.
+      const isDead = getMissedOpportunitiesCount(pot) >= 1;
+      calculateStreak(pot);
+      const isDueToday = pot.dataset.streakLastOppLabel === 'today';
+      const countsForGrowth = isFirstWaterToday && (isDueToday || isDead);
+
       // If missed watering opportunities occurred, reset growth counter
-      if (getMissedOpportunitiesCount(pot) >= 1) {
+      if (isDead) {
         pot.dataset.waterCount = '0';
       }
 
@@ -2371,9 +2395,10 @@
       pot.dataset.streak = JSON.stringify(streakData);
       updatePotVisuals(pot);
 
-      // Only the first water each day counts towards growing the plant
+      // Only a counting watering (first water of the day, on a due
+      // day or into a dead plant) grows the plant
       let shouldGrow = false;
-      if (isFirstWaterToday) {
+      if (countsForGrowth) {
         let waterCount = parseInt(pot.dataset.waterCount || '0', 10);
         waterCount++;
         pot.dataset.waterCount = waterCount.toString();
