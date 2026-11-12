@@ -722,20 +722,19 @@ body {
   z-index: 2;
 }
 
-/* The form reaches the panel's bottom edge (34 + 100 = 134) so
-   the action buttons can anchor to it: centred on the panel (the
-   form is centred on it too), 4 units up from the bottom. */
-.si-form {
+/* The account view reaches the panel's bottom edge (34 + 100 =
+   134) so the sign-out button can anchor to it: centred on the
+   panel (the view is centred on it too), 4 units up from the
+   bottom. */
+.si-account {
   height: calc(100px * var(--scale));
 }
 
-.si-actions {
+.si-account .si-btn {
   position: absolute;
   left: 50%;
   bottom: calc(4px * var(--scale));
   transform: translateX(-50%);
-  white-space: nowrap;
-  z-index: 2;
 }
 
 .si-form[hidden],
@@ -791,13 +790,11 @@ body {
 
 .si-line {
   margin: 0 0 calc(5px * var(--scale));
-  /* A tab space before the body text (about 4 characters). */
-  text-indent: calc(13px * var(--scale));
+  /* A tab space before the body text (2 characters wide). */
+  text-indent: calc(6.3px * var(--scale));
 }
 
-.si-account .si-btn {
-  margin-top: calc(4px * var(--scale));
-}
+
 
 /* ---------- Home Screen 2 (Figma node 184:110) ----------
    Narrower shelf, pots re-spaced and shifted toward the centre. */
