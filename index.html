@@ -1996,9 +1996,13 @@
         pdStreak.appendChild(li);
       }
 
+      // The small text above the streak bar always says "today".
+      // (streakLastOppLabel itself still records what the bar's
+      // last slot really is — the missed-watering count reads it —
+      // only the displayed text is fixed.)
       const pdToday = document.querySelector('.pd-today');
-      if (pdToday && pot.dataset.streakLastOppLabel) {
-        pdToday.textContent = pot.dataset.streakLastOppLabel;
+      if (pdToday) {
+        pdToday.textContent = 'today';
       }
 
       updateResetPosButton();
