@@ -409,7 +409,11 @@
     // their detection widths: clay-clay 14, clay-mid 12, clay-smaller
     // 11, mid-mid 10, mid-smaller 9, smaller-smaller 8, clay-small
     // 10, mid-small 8, smaller-small 7, small-small 6.
-    // The click zone is the same shrunk sprite, in both dimensions.
+    // Pointer hit zones are a separate thing (see the hit-test
+    // helpers below): dragging uses the pot's full sprite,
+    // clicking uses the pot sprite plus the plant's artwork, and
+    // collecting dew uses that same pot+plant zone and always
+    // takes precedence over the other two.
     const POT_SPRITE = {
       clay: { w: 16, h: 13 },
       white: { w: 12, h: 11 }, blue: { w: 12, h: 11 }, yellow: { w: 12, h: 11 },
@@ -429,35 +433,114 @@
       return getPotSprite(pot).w - 2;
     }
 
-    // Is a pointer position inside a pot's click zone — the visible
-    // sprite shrunk by 1 unit on each side? The pot button is 32 units
-    // square but the sprite only fills the bottom of it, so without
-    // this a click on the empty space above a pot — or, now that pots
-    // can sit 6 units apart, on a neighbour's sprite — would hit the
-    // wrong pot.
-    function isInPotHitZone(pot, clientX, clientY) {
+    // ---- Pointer hit zones ----
+    // Three zones, one per action:
+    // - dragging: the pot's own sprite, at its full size;
+    // - clicking: the pot's sprite plus the plant's artwork, so a
+    //   click on the leaves counts as a click on that plant;
+    // - collecting dew: the same pot+plant zone, and it always
+    //   wins — a press or click landing on a plant with drops
+    //   waiting collects them instead of dragging or opening
+    //   anything (see wirePotDrag / wirePotClick).
+    // Without zones at all, a press on the empty part of a pot's
+    // 32-unit button box — or, now that pots can sit close
+    // together, on a neighbour's sprite — would hit the wrong
+    // pot. Zones are tested in each pot's own box coordinates,
+    // topmost pot first (later in the DOM paints above earlier
+    // pots). The drop-overlap detection above is separate and
+    // keeps its shrunk widths.
+
+    // A pointer position in a pot's own 32-unit box coordinates,
+    // or null when the pot has no size (not laid out).
+    function potBoxPoint(pot, clientX, clientY) {
       const rect = pot.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return false;
+      if (rect.width <= 0 || rect.height <= 0) return null;
       const scale = rect.width / POT_SIZE;
-      const x = (clientX - rect.left) / scale;
-      const y = (clientY - rect.top) / scale;
-      const sprite = getPotSprite(pot);
-      const hitLeft = (POT_SIZE - sprite.w) / 2 + 1;
-      const hitTop = POT_SIZE - sprite.h + 1;
-      return x >= hitLeft && x <= hitLeft + sprite.w - 2 && y >= hitTop && y <= POT_SIZE - 1;
+      return {
+        x: (clientX - rect.left) / scale,
+        y: (clientY - rect.top) / scale,
+      };
     }
 
-    // The pot whose click zone contains a pointer position, topmost
-    // first (later in the DOM paints above earlier pots), or null when
-    // the point is on no pot's sprite. Zones of neighbouring pots never
-    // overlap — at the closest allowed gap they sit 2 units apart — so
-    // at most one pot matches.
-    function potAtPoint(clientX, clientY) {
+    // The pot sprite's full ink box: bottom-centred in the
+    // 32-unit box, exactly the visible sprite (no shrink).
+    function potInkBox(pot) {
+      const s = getPotSprite(pot);
+      return { left: (POT_SIZE - s.w) / 2, top: POT_SIZE - s.h, w: s.w, h: s.h };
+    }
+
+    // The plant artwork's ink box in the same coordinates, or
+    // null when the pot is empty. The plant image sits on the
+    // pot's rim (its bottom is the sprite height) and renders at
+    // the pot size's scale; the ink starts at ink.left inside the
+    // image, and the image itself is offset by the .pot-plant
+    // CSS left for the pot's size, plus the bud / peace-lily
+    // centring nudges (which scale with the plant).
+    function plantInkBox(pot) {
+      if (!pot.classList.contains('has-plant')) return null;
+      const src = plantSpriteSrc(pot);
+      const ink = plantInkSize(pot);
+      const pScale = plantRenderScale(pot);
+      const seat = getPotSprite(pot).h;
+      let imgLeft = pScale === 0.5 ? 8 : pScale === 0.75 ? 4 : 0;
+      if (src.includes('bud')) imgLeft += 0.5 * pScale;
+      if (src.includes('peace-lily')) imgLeft -= 1 * pScale;
+      return {
+        left: imgLeft + ink.left * pScale,
+        top: POT_SIZE - seat - ink.h * pScale,
+        w: ink.w * pScale,
+        h: ink.h * pScale,
+      };
+    }
+
+    function inBox(box, x, y) {
+      return !!box && x >= box.left && x <= box.left + box.w && y >= box.top && y <= box.top + box.h;
+    }
+
+    // Dragging starts on the pot itself: its full visible sprite.
+    function isInDragZone(pot, clientX, clientY) {
+      const p = potBoxPoint(pot, clientX, clientY);
+      return !!p && inBox(potInkBox(pot), p.x, p.y);
+    }
+
+    // Clicking and collecting work on the pot or the plant.
+    function isInPlantZone(pot, clientX, clientY) {
+      const p = potBoxPoint(pot, clientX, clientY);
+      if (!p) return false;
+      return inBox(potInkBox(pot), p.x, p.y) || inBox(plantInkBox(pot), p.x, p.y);
+    }
+
+    // The topmost pot whose given zone contains the pointer, or
+    // null when the point is in no pot's zone.
+    function potAtPoint(clientX, clientY, zoneFn) {
       for (let i = pots.length - 1; i >= 0; i--) {
-        if (isInPotHitZone(pots[i], clientX, clientY)) return pots[i];
+        if (zoneFn(pots[i], clientX, clientY)) return pots[i];
       }
       return null;
     }
+
+    // Does this plant have dew drops waiting to be collected?
+    function potHasDew(pot) {
+      return pot.classList.contains('has-plant')
+        && !!pot.dataset.dewToday
+        && pot.dataset.dewCollected !== 'true';
+    }
+
+    // The topmost plant with drops waiting whose pot+plant zone
+    // contains the pointer. Collecting takes precedence over
+    // every other action on that press.
+    function dewPotAtPoint(clientX, clientY) {
+      for (let i = pots.length - 1; i >= 0; i--) {
+        if (potHasDew(pots[i]) && isInPlantZone(pots[i], clientX, clientY)) return pots[i];
+      }
+      return null;
+    }
+
+    // Set when a pointer press collects dew: the click the same
+    // press produces must not then open the plant's popup.
+    // wirePotClick checks and clears it, and any new press clears
+    // it too, so it can only ever eat its own press's click.
+    let dewSwallowPot = null;
 
     // Paint order by pot size, then by last drag within a size: the
     // smallest pot goes on top, so a tiny pot tucked against a big one
@@ -739,12 +822,12 @@
     function beginPotDrag(pot, e) {
       if (dragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
-      // Start the drag on the pot whose click zone contains the pointer,
+      // Start the drag on the pot whose sprite contains the pointer,
       // not necessarily the pot whose (larger, overlapping) button box
       // was on top — otherwise a drag starting on a neighbour's sprite
-      // would move the wrong pot. Nothing starts when the pointer is on
-      // no pot's sprite.
-      const target = potAtPoint(e.clientX, e.clientY);
+      // would move the wrong pot. The drag zone is the pot's full
+      // sprite only: a press on the plant above it does not drag.
+      const target = potAtPoint(e.clientX, e.clientY, isInDragZone);
       if (!target) return;
       const stageRect = stageEl.getBoundingClientRect();
       dragState = {
@@ -869,7 +952,21 @@
     // Wires one pot's drag + arrow-key handlers. Called for the
     // starting pot at load and for each pot the button adds.
     function wirePotDrag(pot) {
-      pot.addEventListener('pointerdown', (e) => beginPotDrag(pot, e));
+      pot.addEventListener('pointerdown', (e) => {
+        // Collecting dew has first precedence: a press anywhere
+        // on a plant (or its pot) with drops waiting collects
+        // them instead of starting a drag. The click the press
+        // goes on to produce is swallowed in wirePotClick, so the
+        // popup doesn't open on top of the collection.
+        const dewTarget = dewPotAtPoint(e.clientX, e.clientY);
+        if (dewTarget) {
+          dewSwallowPot = dewTarget;
+          collectDew(dewTarget, dewTarget._dewIconEl);
+          return;
+        }
+        dewSwallowPot = null; // a fresh press supersedes a pending swallow
+        beginPotDrag(pot, e);
+      });
       pot.addEventListener('pointermove', (e) => {
         if (dragState && dragState.pot === pot) movePotDrag(e);
       });
@@ -1533,8 +1630,8 @@
     // drop to the currency pill, and only when it lands does the
     // count go up. Uncollected drops are gone when the next day
     // starts, and a plant added today is assigned nothing until
-    // tomorrow (planting clears its dew stamps — see the commit
-    // handler).
+    // tomorrow (planting stamps it decided-for-today with no
+    // amount — see the commit handler).
 
     function collectedDewTotal() {
       let total = 0;
@@ -1577,28 +1674,37 @@
     }
 
     // How far each plant's visible artwork reaches, in design
-    // units at full size — [width, height] of the sprite's ink,
-    // measured from the PNGs (not the canvas: the bud's canvas is
-    // 48 tall but its ink is a 3x2 sprout at the bottom). Used to
-    // sit the dew icon and the dew scatter on the plant itself.
-    // Keyed by a substring of the plant sprite's file name.
+    // units at full size — [width, height, left edge] of the
+    // sprite's ink, measured from the PNGs (not the canvas: the
+    // bud's canvas is 48 tall but its ink is a 3x2 sprout at the
+    // bottom). Used to sit the dew icon and the dew scatter on
+    // the plant itself, and for the plant's click/collect zone
+    // (plantInkBox). Keyed by a substring of the plant sprite's
+    // file name; the dead-plant row covers all four dead-plant
+    // variants with their union box.
     const PLANT_INK = [
-      ['bud-4', 3, 2],
-      ['cactus', 16, 9],
-      ['daisy', 22, 17],
-      ['lavender', 24, 28],
-      ['peace-lily', 28, 24],
-      ['droopy', 19, 18],
-      ['tree', 18, 14],
+      ['bud-4', 3, 2, 14],
+      ['cactus', 16, 9, 8],
+      ['daisy', 22, 17, 5],
+      ['lavender', 24, 28, 3],
+      ['peace-lily', 28, 24, 3],
+      ['droopy', 19, 18, 6],
+      ['tree', 18, 14, 7],
+      ['dead-bud', 3, 2, 14],
+      ['dead-plant', 13, 13, 9],
     ];
 
-    function plantInkSize(pot) {
+    function plantSpriteSrc(pot) {
       const img = pot.querySelector('.pot-plant');
-      const src = img ? (img.src || '') : '';
-      for (const [key, w, h] of PLANT_INK) {
-        if (src.includes(key)) return { w, h };
+      return img ? (img.src || '') : '';
+    }
+
+    function plantInkSize(pot) {
+      const src = plantSpriteSrc(pot);
+      for (const [key, w, h, left] of PLANT_INK) {
+        if (src.includes(key)) return { w, h, left };
       }
-      return { w: 20, h: 16 };
+      return { w: 20, h: 16, left: 6 };
     }
 
     // Plants render smaller on the smaller pot sizes (the same
@@ -2357,12 +2463,31 @@
           suppressNextPotClick = false;
           return; // was a drag, not a click
         }
-        // Route the click to the pot whose click zone contains the
-        // pointer — the visible sprite shrunk by 1 unit per side —
-        // not necessarily the pot whose button box was on top.
-        // Keyboard clicks have no pointer position (0, 0) and use the
-        // focused pot as before. A click on no pot's sprite is ignored.
-        const target = (e.clientX === 0 && e.clientY === 0) ? pot : potAtPoint(e.clientX, e.clientY);
+        const isKeyboard = (e.clientX === 0 && e.clientY === 0);
+        // The click half of a press that collected dew on
+        // pointerdown: already handled — don't open anything.
+        if (!isKeyboard && dewSwallowPot) {
+          const swallowedPot = dewSwallowPot;
+          dewSwallowPot = null;
+          if (isInPlantZone(swallowedPot, e.clientX, e.clientY)) return;
+        }
+        // Collecting has first precedence for clicks too. This is
+        // the path keyboard clicks take (they have no
+        // pointerdown), and any click landing on a plant with
+        // drops waiting collects them instead of opening the
+        // popup.
+        const dewTarget = isKeyboard
+          ? (potHasDew(pot) ? pot : null)
+          : dewPotAtPoint(e.clientX, e.clientY);
+        if (dewTarget) {
+          collectDew(dewTarget, dewTarget._dewIconEl);
+          return;
+        }
+        // Route the click to the pot whose pot-or-plant zone
+        // contains the pointer, not necessarily the pot whose
+        // button box was on top. Keyboard clicks use the focused
+        // pot. A click in no pot's zone is ignored.
+        const target = isKeyboard ? pot : potAtPoint(e.clientX, e.clientY, isInPlantZone);
         if (!target) return;
         if (target.classList.contains('has-plant')) {
           openPlantDetailsModal(target);
@@ -2431,10 +2556,13 @@
           activePot.classList.add('has-plant');
           if (isNewPlant) {
             // A plant planted today starts earning tomorrow: no
-            // drops to collect until the next day starts.
+            // drops to collect until the next day starts. Stamp
+            // it decided-for-today with nothing assigned, so the
+            // assignment pass below (updatePotVisuals) leaves it
+            // alone until tomorrow.
             delete activePot.dataset.dewToday;
             delete activePot.dataset.dewCollected;
-            delete activePot.dataset.dewDay;
+            activePot.dataset.dewDay = getLocalDateStr(getGameDate());
           }
           let potPlant = activePot.querySelector('.pot-plant');
           if (!potPlant) {
