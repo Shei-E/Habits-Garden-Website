@@ -1529,16 +1529,40 @@
       return Math.max(0, total);
     }
 
+    // The day's grant is also kept in the browser, so it is
+    // decided exactly once: drops are rewarded from the plants as
+    // they stood when the day began (the garden of the day
+    // before). Planting or watering during the day — or reloading
+    // the page — can never change today's amount; it only counts
+    // from tomorrow. (lsGet/lsSet/lsRemove live with the accounts
+    // code below and are hoisted.)
+    const DEW_GRANT_KEY = 'hg.dewGrant.v1';
+
     function updateDewDrops() {
       const todayStr = getLocalDateStr(getGameDate());
       if (dewRewardDayStr !== todayStr) {
-        // Start of a new game day: grant today's reward from the
-        // shelf as it stands now, then freeze it for the day.
         dewRewardDayStr = todayStr;
-        dewRewardAmount = calculateDewDrops();
+        const saved = lsGet(DEW_GRANT_KEY);
+        if (saved && saved.day === todayStr && typeof saved.amount === 'number') {
+          // Already granted earlier today (before a reload, say):
+          // keep that amount exactly as it was.
+          dewRewardAmount = saved.amount;
+        } else {
+          dewRewardAmount = calculateDewDrops();
+          lsSet(DEW_GRANT_KEY, { day: todayStr, amount: dewRewardAmount });
+        }
       }
       const el = document.getElementById('ui-currency-count');
       if (el) el.textContent = String(dewRewardAmount);
+    }
+
+    // Forget today's grant so the next updateDewDrops() decides it
+    // again from the current shelf. Used when the signed-in
+    // identity changes: the new identity's day is granted from
+    // their own plants as saved before, not the previous one's.
+    function resetDewGrant() {
+      lsRemove(DEW_GRANT_KEY);
+      dewRewardDayStr = null;
     }
 
     // Runs when the game day may have rolled over (the 4am timer
@@ -1830,6 +1854,8 @@
       // The garden on the shelf right now becomes the account's
       // garden, and is saved from here on.
       saveGarden();
+      resetDewGrant();
+      updateDewDrops();
       refreshSignInUI();
       showSignInText();
       closeSignInModal();
@@ -1849,6 +1875,10 @@
       } else {
         saveGarden();
       }
+      // Today's drops are now decided from this account's garden
+      // as it was saved before — not the signed-out shelf's grant.
+      resetDewGrant();
+      updateDewDrops();
       refreshSignInUI();
       showSignInText();
       closeSignInModal();
@@ -1857,6 +1887,7 @@
     function handleSignOut() {
       signedInEmail = null;
       lsRemove(SESSION_KEY);
+      lsRemove(DEW_GRANT_KEY); // the fresh page grants its own day
       // Signing out resets the page: the reload brings back the
       // fresh signed-out state (one empty pot, the intro hint, the
       // corner pills hidden again). The account's saved garden is
