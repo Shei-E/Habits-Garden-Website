@@ -1520,21 +1520,21 @@
     // ---- Dew collection ----
     // Drops are not handed out automatically any more: at the
     // start of a game day each plant is assigned the drops it can
-    // pay that day (dewDropRate, from the shelf as it stands
-    // then), kept on the plant itself (dataset.dewToday, saved
-    // with the garden), so a reload — or the same account on
-    // another device — keeps the same assignment. A plant with
-    // drops waiting wears the drop icon above it (see renderDew);
-    // clicking the icon flies a drop to the currency pill, and
-    // only when it lands does the count go up (dewCollected).
-    // Uncollected drops are gone when the next day starts.
-    // The day itself is remembered in the browser, so the
-    // assignment is decided exactly once per day: planting or
-    // watering during the day — or reloading the page — can never
-    // change today's assignment; it only counts from tomorrow.
-    // (lsGet/lsSet/lsRemove live with the accounts code below and
-    // are hoisted.)
-    const DEW_GRANT_KEY = 'hg.dewGrant.v1';
+    // pay that day (dewDropRate, from the plant as it stands
+    // then). The assignment is kept on the plant itself and saved
+    // with the garden: dataset.dewToday is the amount waiting,
+    // dataset.dewCollected marks it taken, and dataset.dewDay is
+    // the game day the assignment was decided for. A plant whose
+    // dewDay is today is NEVER reassigned that day — so collected
+    // drops stay collected across refreshes, sign-ins and
+    // devices, and only a new game day (a different dewDay)
+    // decides afresh. A plant with drops waiting wears the drop
+    // icon above it (see renderDew); clicking the icon flies a
+    // drop to the currency pill, and only when it lands does the
+    // count go up. Uncollected drops are gone when the next day
+    // starts, and a plant added today is assigned nothing until
+    // tomorrow (planting clears its dew stamps — see the commit
+    // handler).
 
     function collectedDewTotal() {
       let total = 0;
@@ -1548,27 +1548,29 @@
 
     function updateDewDrops() {
       const todayStr = getLocalDateStr(getGameDate());
-      if (dewRewardDayStr !== todayStr) {
-        dewRewardDayStr = todayStr;
-        const saved = lsGet(DEW_GRANT_KEY);
-        if (!saved || saved.day !== todayStr) {
-          // A new day: assign each plant its collectible drops
-          // from the shelf as it stands now. Only plants that pay
-          // something get an assignment (dead plants pay nothing
-          // and wear no icon).
-          pots.forEach(pot => {
-            const rate = pot.classList.contains('has-plant') ? dewDropRate(pot) : 0;
-            if (rate > 0) {
-              pot.dataset.dewToday = String(rate);
-            } else {
-              delete pot.dataset.dewToday;
-            }
-            delete pot.dataset.dewCollected;
-          });
-          lsSet(DEW_GRANT_KEY, { day: todayStr });
-          saveGarden();
+      dewRewardDayStr = todayStr;
+      let assigned = false;
+      pots.forEach(pot => {
+        if (!pot.classList.contains('has-plant')) return;
+        if (pot.dataset.dewDay === todayStr) return; // decided for today — collected stays collected
+        // This plant's day has not been decided yet: a new game
+        // day, a freshly restored garden from an earlier day, or
+        // a plant that was not there at day start (those are
+        // stamped too, with nothing to collect, so they cannot
+        // be assigned again until tomorrow). Only plants that
+        // pay something get an amount — dead plants pay nothing
+        // and wear no icon.
+        const rate = dewDropRate(pot);
+        if (rate > 0) {
+          pot.dataset.dewToday = String(rate);
+        } else {
+          delete pot.dataset.dewToday;
         }
-      }
+        delete pot.dataset.dewCollected;
+        pot.dataset.dewDay = todayStr;
+        assigned = true;
+      });
+      if (assigned) saveGarden();
       const el = document.getElementById('ui-currency-count');
       if (el) el.textContent = String(collectedDewTotal());
       pots.forEach(pot => renderDew(pot));
@@ -1723,20 +1725,22 @@
       }
     }
 
-    // Forget today's grant so the next updateDewDrops() decides it
-    // again from the current shelf. Used when the signed-in
-    // identity changes: the new identity's day is granted from
-    // their own plants as saved before, not the previous one's.
+    // Called when the signed-in identity changes. There is no
+    // shared grant to forget any more: each garden's plants carry
+    // their own dew day stamps, so a restored garden simply keeps
+    // the assignment it was saved with (today's stamps stay
+    // decided — collected stays collected — and older stamps are
+    // re-decided per plant by updateDewDrops). Just make the next
+    // updateDewDrops() re-check the day from scratch.
     function resetDewGrant() {
-      lsRemove(DEW_GRANT_KEY);
       dewRewardDayStr = null;
     }
 
     // Runs when the game day may have rolled over (the 4am timer
     // below, dev date changes): first re-judge every plant against
     // the new day — a plant whose watering was due yesterday and
-    // was missed is dead from 4am — then grant the new day's dew
-    // drops (updatePotVisuals/updateDewDrops do the granting).
+    // was missed is dead from 4am — then assign the new day's
+    // dew drops (updatePotVisuals/updateDewDrops do the assigning).
     function checkDayRollover() {
       if (dewRewardDayStr === getLocalDateStr(getGameDate())) return;
       updateAllPotVisuals();
@@ -1814,7 +1818,7 @@
     // The dataset fields that carry a plant. Streak, dead/healthy
     // state and dew drops are all worked out from these, so they
     // do not need saving of their own.
-    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected'];
+    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay'];
 
     function serializeGarden() {
       return pots.map(pot => {
@@ -2105,7 +2109,6 @@
       cloudUid = null;
       signedInEmail = null;
       lsRemove(CLOUD_EMAIL_KEY);
-      lsRemove(DEW_GRANT_KEY); // the fresh page grants its own day
       // Signing out resets the page: the reload brings back the
       // fresh signed-out state (one empty pot, the intro hint, the
       // corner pills hidden again). The account's saved garden is
@@ -2124,8 +2127,8 @@
 
     // A returning visit: Firebase restores the session by itself
     // and reports in through the cloud hook, which puts the
-    // account's garden back and re-decides the day's dew grant
-    // from it. Until then the shelf starts fresh.
+    // account's garden back (its plants keep the dew assignment
+    // they were saved with). Until then the shelf starts fresh.
     refreshSignInUI();
 
     updateDewDrops();
@@ -2400,6 +2403,7 @@
       delete pot.dataset.deadPlantImg;
       delete pot.dataset.dewToday;
       delete pot.dataset.dewCollected;
+      delete pot.dataset.dewDay;
 
       pot.setAttribute('aria-label', 'Add a plant');
       updateDewDrops();
@@ -2430,6 +2434,7 @@
             // drops to collect until the next day starts.
             delete activePot.dataset.dewToday;
             delete activePot.dataset.dewCollected;
+            delete activePot.dataset.dewDay;
           }
           let potPlant = activePot.querySelector('.pot-plant');
           if (!potPlant) {
@@ -2811,7 +2816,7 @@
           updatePotVisuals(pot);
         }
       });
-      // A new dev day is a new game day: grant its dew drops.
+      // A new dev day is a new game day: assign its dew drops.
       checkDayRollover();
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
