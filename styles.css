@@ -722,6 +722,22 @@ body {
   z-index: 2;
 }
 
+/* The form reaches the panel's bottom edge (34 + 100 = 134) so
+   the action buttons can anchor to it: centred on the panel (the
+   form is centred on it too), 4 units up from the bottom. */
+.si-form {
+  height: calc(100px * var(--scale));
+}
+
+.si-actions {
+  position: absolute;
+  left: 50%;
+  bottom: calc(4px * var(--scale));
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 2;
+}
+
 .si-form[hidden],
 .si-account[hidden] {
   display: none;
@@ -775,6 +791,8 @@ body {
 
 .si-line {
   margin: 0 0 calc(5px * var(--scale));
+  /* A tab space before the body text (about 4 characters). */
+  text-indent: calc(13px * var(--scale));
 }
 
 .si-account .si-btn {
