@@ -1733,6 +1733,7 @@
       siStatus.classList.toggle('is-error', !!isError);
     }
 
+    let signInFadeTimer = null;
     function refreshSignInUI() {
       if (signInText) {
         signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'sign in to save your plants';
@@ -1740,6 +1741,19 @@
       if (siForm) siForm.hidden = !!signedInEmail;
       if (siAccount) siAccount.hidden = !signedInEmail;
       if (siAccountEmail) siAccountEmail.textContent = signedInEmail || '';
+      // The "signed in as …" note fades out 3 seconds after it
+      // appears (signing in, or a visit that restores the session);
+      // hovering its spot brings it back. The signed-out invite
+      // never fades — it is the way in.
+      if (signInFadeTimer) { clearTimeout(signInFadeTimer); signInFadeTimer = null; }
+      if (signInText) {
+        signInText.classList.remove('is-faded');
+        if (signedInEmail) {
+          signInFadeTimer = setTimeout(() => {
+            signInText.classList.add('is-faded');
+          }, 3000);
+        }
+      }
     }
 
     function openSignInModal() {

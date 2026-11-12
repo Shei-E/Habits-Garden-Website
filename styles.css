@@ -459,6 +459,19 @@ body {
   text-decoration: underline;
 }
 
+/* Once signed in, the "signed in as …" text fades away after a
+   few seconds (the accounts code adds .is-faded on a 3-second
+   timer) so it does not sit over the garden forever. It still
+   answers to hover: moving the mouse over its spot brings it
+   back, so it can still be clicked to open the account panel. */
+.ui-signin.is-faded {
+  opacity: 0;
+}
+
+.ui-signin.is-faded:hover {
+  opacity: 1;
+}
+
 /* Drag-to-delete marker: floats above the dragged pot's starting
    spot for the length of a drag; dropping the pot on it deletes the
    pot. The sprite is a 55x55 canvas with a centred 25x25 X, shown
