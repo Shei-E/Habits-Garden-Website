@@ -1843,9 +1843,11 @@
     function handleSignOut() {
       signedInEmail = null;
       lsRemove(SESSION_KEY);
-      refreshSignInUI();
-      showSignInText();
-      closeSignInModal();
+      // Signing out resets the page: the reload brings back the
+      // fresh signed-out state (one empty pot, the intro hint, the
+      // corner pills hidden again). The account's saved garden is
+      // NOT deleted — signing back in restores it.
+      window.location.reload();
     }
 
     document.getElementById('ui-signin')?.addEventListener('click', openSignInModal);
