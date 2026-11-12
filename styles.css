@@ -625,13 +625,111 @@ body {
   width: calc(214px * var(--scale));
   font-family: "Tiny5", monospace;
   font-size: calc(7px * var(--scale));
-  line-height: 1.45;
+  line-height: 1.25;
   color: #000;
   z-index: 2;
 }
 
 .dd-line {
-  margin: 0 0 calc(5px * var(--scale));
+  display: flex;
+  align-items: flex-start;
+  gap: calc(2px * var(--scale));
+  margin: 0 0 calc(2.5px * var(--scale));
+}
+
+/* The drop1 sprite is a 4x4 drop in a 16x16 canvas, so the box is
+   drawn 14 units wide for a ~3.5-unit visible drop. */
+.dd-bullet {
+  flex: none;
+  width: calc(14px * var(--scale));
+  height: calc(14px * var(--scale));
+  margin-top: calc(-3.5px * var(--scale));
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Dew collection: the drop icon hovering over a plant that has
+   drops waiting, the little drops scattered on it, the drop that
+   flies to the currency pill when collected, and the pill's pop
+   when it lands. The icon's visible drop is ~1/4 of its box
+   (4x4 ink in a 16x16 canvas), so the box is 16 units for a
+   ~4-unit drop; the scatter drops are single pixels in 16x16
+   canvases and are sized per-drop from JS (16x the dot size). */
+.dew-icon {
+  position: absolute;
+  left: 50%;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  cursor: pointer;
+  z-index: 5;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: dew-bob 2.2s ease-in-out infinite;
+}
+
+@keyframes dew-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-1.5px * var(--scale)));
+  }
+}
+
+.dew-effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.dew-drop {
+  position: absolute;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation-name: dew-pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes dew-pulse {
+  from {
+    transform: scale(0.8);
+  }
+
+  to {
+    transform: scale(1.2);
+  }
+}
+
+.dew-flyer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 200;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ui-currency.is-pop {
+  animation: dew-pill-pop 0.35s ease;
+}
+
+@keyframes dew-pill-pop {
+  40% {
+    transform: scale(1.22);
+  }
 }
 
 /* Sign In page: opened from the sign-in text at the top centre.

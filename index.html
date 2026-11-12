@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 
 <body>
@@ -82,11 +82,11 @@
         <h2 class="dd-title" id="dd-title">Dew Drops</h2>
         <button class="dd-close" id="dd-close" type="button" aria-label="Close"></button>
         <div class="dd-body">
-          <p class="dd-line">Dew drops can be collected from healthy buds and plants at the start of each day.</p>
-          <p class="dd-line">Buds reward 1 drop per day</p>
-          <p class="dd-line">Flowers reward 2 drops per day and a bonus on the day after watering your flower.</p>
-          <p class="dd-line">Dead plants subtract 2 from your dew drops.</p>
-          <p class="dd-line">Dew drops are reset every day, and can never go below 0.</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1.png" alt="">Dew drops can be collected from healthy buds and plants at the start of each day.</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1.png" alt="">Buds reward 1 drop per day</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1.png" alt="">Flowers reward 2 drops per day and a bonus on the day after watering your flower.</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1.png" alt="">Dead plants subtract 2 from your dew drops.</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1.png" alt="">Dew drops are reset every day, and can never go below 0.</p>
         </div>
       </div>
     </div>
@@ -1494,11 +1494,10 @@
     //   flower .... 5 (daily/weekly), 10 (monthly) or 20 (yearly)
     //               on the day after it was watered, 2 a day after
     const dewModal = document.getElementById('dew-modal');
-    // The game day the current reward was granted for (an ISO date
-    // string), and the granted amount. null = nothing granted yet,
-    // so the first updateDewDrops() of a day grants that day.
+    // The game day the current dew assignment was decided for (an
+    // ISO date string). null = not decided yet this session, so
+    // the first updateDewDrops() of a day decides that day.
     let dewRewardDayStr = null;
-    let dewRewardAmount = 0;
 
     function dewDropRate(pot) {
       if (!pot.classList.contains('has-plant')) return 0;
@@ -1518,41 +1517,210 @@
       return 5; // daily and weekly
     }
 
-    // What the shelf would earn if a reward were granted right
-    // now. updateDewDrops() only takes this number at the start
-    // of a game day; the rest of the day it is not used for the
-    // pill, however much the shelf changes.
-    function calculateDewDrops() {
-      let total = 0;
-      pots.forEach(pot => { total += dewDropRate(pot); });
-      return Math.max(0, total);
-    }
-
-    // The day's grant is also kept in the browser, so it is
-    // decided exactly once: drops are rewarded from the plants as
-    // they stood when the day began (the garden of the day
-    // before). Planting or watering during the day — or reloading
-    // the page — can never change today's amount; it only counts
-    // from tomorrow. (lsGet/lsSet/lsRemove live with the accounts
-    // code below and are hoisted.)
+    // ---- Dew collection ----
+    // Drops are not handed out automatically any more: at the
+    // start of a game day each plant is assigned the drops it can
+    // pay that day (dewDropRate, from the shelf as it stands
+    // then), kept on the plant itself (dataset.dewToday, saved
+    // with the garden), so a reload — or the same account on
+    // another device — keeps the same assignment. A plant with
+    // drops waiting wears the drop icon above it (see renderDew);
+    // clicking the icon flies a drop to the currency pill, and
+    // only when it lands does the count go up (dewCollected).
+    // Uncollected drops are gone when the next day starts.
+    // The day itself is remembered in the browser, so the
+    // assignment is decided exactly once per day: planting or
+    // watering during the day — or reloading the page — can never
+    // change today's assignment; it only counts from tomorrow.
+    // (lsGet/lsSet/lsRemove live with the accounts code below and
+    // are hoisted.)
     const DEW_GRANT_KEY = 'hg.dewGrant.v1';
+
+    function collectedDewTotal() {
+      let total = 0;
+      pots.forEach(pot => {
+        if (pot.dataset.dewCollected === 'true') {
+          total += parseInt(pot.dataset.dewToday || '0', 10) || 0;
+        }
+      });
+      return total;
+    }
 
     function updateDewDrops() {
       const todayStr = getLocalDateStr(getGameDate());
       if (dewRewardDayStr !== todayStr) {
         dewRewardDayStr = todayStr;
         const saved = lsGet(DEW_GRANT_KEY);
-        if (saved && saved.day === todayStr && typeof saved.amount === 'number') {
-          // Already granted earlier today (before a reload, say):
-          // keep that amount exactly as it was.
-          dewRewardAmount = saved.amount;
-        } else {
-          dewRewardAmount = calculateDewDrops();
-          lsSet(DEW_GRANT_KEY, { day: todayStr, amount: dewRewardAmount });
+        if (!saved || saved.day !== todayStr) {
+          // A new day: assign each plant its collectible drops
+          // from the shelf as it stands now. Only plants that pay
+          // something get an assignment (dead plants pay nothing
+          // and wear no icon).
+          pots.forEach(pot => {
+            const rate = pot.classList.contains('has-plant') ? dewDropRate(pot) : 0;
+            if (rate > 0) {
+              pot.dataset.dewToday = String(rate);
+            } else {
+              delete pot.dataset.dewToday;
+            }
+            delete pot.dataset.dewCollected;
+          });
+          lsSet(DEW_GRANT_KEY, { day: todayStr });
+          saveGarden();
         }
       }
       const el = document.getElementById('ui-currency-count');
-      if (el) el.textContent = String(dewRewardAmount);
+      if (el) el.textContent = String(collectedDewTotal());
+      pots.forEach(pot => renderDew(pot));
+    }
+
+    // How far each plant's visible artwork reaches, in design
+    // units at full size — [width, height] of the sprite's ink,
+    // measured from the PNGs (not the canvas: the bud's canvas is
+    // 48 tall but its ink is a 3x2 sprout at the bottom). Used to
+    // sit the dew icon and the dew scatter on the plant itself.
+    // Keyed by a substring of the plant sprite's file name.
+    const PLANT_INK = [
+      ['bud-4', 3, 2],
+      ['cactus', 16, 9],
+      ['daisy', 22, 17],
+      ['lavender', 24, 28],
+      ['peace-lily', 28, 24],
+      ['droopy', 19, 18],
+      ['tree', 18, 14],
+    ];
+
+    function plantInkSize(pot) {
+      const img = pot.querySelector('.pot-plant');
+      const src = img ? (img.src || '') : '';
+      for (const [key, w, h] of PLANT_INK) {
+        if (src.includes(key)) return { w, h };
+      }
+      return { w: 20, h: 16 };
+    }
+
+    // Plants render smaller on the smaller pot sizes (the same
+    // 0.75 / 0.5 the .pot-plant CSS rules use).
+    function plantRenderScale(pot) {
+      const type = pot.dataset.potType || '';
+      if (type.endsWith('smallest')) return 0.5;
+      if (type.endsWith('smaller')) return 0.75;
+      return 1;
+    }
+
+    // Show or hide a pot's dew icon and dew-drop scatter so they
+    // match its collection state. Rebuilds only when the state
+    // actually changes, so the scatter stays put while you look
+    // at it (this runs on every pot-visuals refresh).
+    function renderDew(pot) {
+      if (!pot) return;
+      const show = pot.classList.contains('has-plant')
+        && !!pot.dataset.dewToday
+        && pot.dataset.dewCollected !== 'true';
+      const state = show
+        ? `on:${pot.dataset.dewToday}:${pot.dataset.stage || ''}:${pot.dataset.plantType || ''}:${pot.dataset.potType || ''}`
+        : 'off';
+      if (pot._dewState === state) return;
+      pot._dewState = state;
+      if (pot._dewIconEl) { pot._dewIconEl.remove(); pot._dewIconEl = null; }
+      if (pot._dewEffectEl) { pot._dewEffectEl.remove(); pot._dewEffectEl = null; }
+      if (!show) return;
+
+      const seat = getPotSprite(pot).h;
+      const ink = plantInkSize(pot);
+      const pScale = plantRenderScale(pot);
+
+      // The dew effect: little drops (the drop2/drop3 sprites —
+      // a single light pixel in a 16px canvas, so each is drawn
+      // 16x the size its dot should appear) scattered on and
+      // around the plant, each pulsing bigger and smaller at its
+      // own random pace.
+      const effect = document.createElement('div');
+      effect.className = 'dew-effect';
+      for (let i = 0; i < 8; i++) {
+        const d = document.createElement('img');
+        d.src = i % 2 ? 'assets/drop3.png' : 'assets/drop2.png';
+        d.className = 'dew-drop';
+        d.alt = '';
+        const box = (1.5 + Math.random() * 2) * 16;
+        const x = 16 + (Math.random() * 2 - 1) * (ink.w * pScale / 2 + 3);
+        const y = seat + 1 + Math.random() * (ink.h * pScale + 1);
+        d.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
+        d.style.height = `calc(${box.toFixed(1)}px * var(--scale))`;
+        d.style.left = `calc(${(x - box / 2).toFixed(1)}px * var(--scale))`;
+        d.style.bottom = `calc(${(y - box / 2).toFixed(1)}px * var(--scale))`;
+        d.style.animationDuration = `${(1.4 + Math.random() * 1.8).toFixed(2)}s`;
+        d.style.animationDelay = `${(-Math.random() * 2).toFixed(2)}s`;
+        effect.appendChild(d);
+      }
+      pot.appendChild(effect);
+      pot._dewEffectEl = effect;
+
+      // The collect icon, hovering just above the plant.
+      const icon = document.createElement('img');
+      icon.src = 'assets/drop1.png';
+      icon.className = 'dew-icon';
+      icon.alt = 'collect dew drops';
+      icon.style.bottom = `calc(${(seat + ink.h * pScale + 2).toFixed(1)}px * var(--scale))`;
+      icon.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+      icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collectDew(pot, icon);
+      });
+      pot.appendChild(icon);
+      pot._dewIconEl = icon;
+    }
+
+    // Collect one plant's drops: the icon flies to the currency
+    // pill, and the count goes up when it lands.
+    function collectDew(pot, iconEl) {
+      if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
+      const from = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+      pot.dataset.dewCollected = 'true';
+      renderDew(pot);
+      saveGarden();
+
+      const finish = () => {
+        updateDewDrops();
+        const pill = document.getElementById('ui-currency');
+        if (pill) {
+          pill.classList.remove('is-pop');
+          void pill.offsetWidth;
+          pill.classList.add('is-pop');
+        }
+      };
+
+      const pill = document.getElementById('ui-currency');
+      const to = pill && pill.getBoundingClientRect ? pill.getBoundingClientRect() : null;
+      if (!from || !to || !from.width || !to.width) { finish(); return; }
+      const flyer = document.createElement('img');
+      flyer.src = 'assets/drop1.png';
+      flyer.className = 'dew-flyer';
+      flyer.alt = '';
+      flyer.style.left = `${from.left}px`;
+      flyer.style.top = `${from.top}px`;
+      flyer.style.width = `${from.width}px`;
+      flyer.style.height = `${from.height}px`;
+      const host = document.body || document.querySelector('.home-screen');
+      if (!host) { finish(); return; }
+      host.appendChild(flyer);
+      const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+      const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+      if (typeof flyer.animate === 'function') {
+        const anim = flyer.animate([
+          { transform: 'translate(0px, 0px) scale(1)' },
+          { transform: `translate(${(dx * 0.5).toFixed(1)}px, ${(dy * 0.5 - 44).toFixed(1)}px) scale(0.8)`, offset: 0.55 },
+          { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0.3)` },
+        ], { duration: 650, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+        if (anim && anim.finished && typeof anim.finished.then === 'function') {
+          anim.finished.then(() => { flyer.remove(); finish(); }).catch(() => { flyer.remove(); finish(); });
+        } else {
+          setTimeout(() => { flyer.remove(); finish(); }, 680);
+        }
+      } else {
+        flyer.remove();
+        finish();
+      }
     }
 
     // Forget today's grant so the next updateDewDrops() decides it
@@ -1646,7 +1814,7 @@
     // The dataset fields that carry a plant. Streak, dead/healthy
     // state and dew drops are all worked out from these, so they
     // do not need saving of their own.
-    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory'];
+    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected'];
 
     function serializeGarden() {
       return pots.map(pot => {
@@ -2230,6 +2398,8 @@
       delete pot.dataset.streakLastOppLabel;
       delete pot.dataset.plantState;
       delete pot.dataset.deadPlantImg;
+      delete pot.dataset.dewToday;
+      delete pot.dataset.dewCollected;
 
       pot.setAttribute('aria-label', 'Add a plant');
       updateDewDrops();
@@ -2255,6 +2425,12 @@
         const plantImg = selectedPlantBtn.querySelector('img');
         if (plantImg) {
           activePot.classList.add('has-plant');
+          if (isNewPlant) {
+            // A plant planted today starts earning tomorrow: no
+            // drops to collect until the next day starts.
+            delete activePot.dataset.dewToday;
+            delete activePot.dataset.dewCollected;
+          }
           let potPlant = activePot.querySelector('.pot-plant');
           if (!potPlant) {
             potPlant = document.createElement('img');
@@ -2411,24 +2587,26 @@
       closePlantDetailsModal();
       playWateringAnimation(pot);
 
-      if (isFirstWaterToday) {
-        setTimeout(() => {
-          playSparkleAnimation(pot);
-        }, 700);
-      }
-
       if (shouldGrow) {
         pot.dataset.stage = 'grown';
+      }
+
+      if (isFirstWaterToday) {
+        // The sparkles — and, when this watering grows the plant,
+        // the grow animation — start at the same moment.
         setTimeout(() => {
-          const potPlant = pot.querySelector('.pot-plant');
-          if (potPlant && pot.dataset.grownPlantImg) {
-            potPlant.src = pot.dataset.grownPlantImg;
-            potPlant.alt = pot.dataset.plantName || '';
-            potPlant.classList.remove('plant-growing');
-            void potPlant.offsetWidth;
-            potPlant.classList.add('plant-growing');
+          playSparkleAnimation(pot);
+          if (shouldGrow) {
+            const potPlant = pot.querySelector('.pot-plant');
+            if (potPlant && pot.dataset.grownPlantImg) {
+              potPlant.src = pot.dataset.grownPlantImg;
+              potPlant.alt = pot.dataset.plantName || '';
+              potPlant.classList.remove('plant-growing');
+              void potPlant.offsetWidth;
+              potPlant.classList.add('plant-growing');
+            }
           }
-        }, 450);
+        }, 700);
       }
       updateDewDrops();
       saveGarden();
