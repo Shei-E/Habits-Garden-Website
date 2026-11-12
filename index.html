@@ -1965,11 +1965,11 @@
             { transform: `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px) scale(0.92)`, offset: 0.18, easing: 'cubic-bezier(.45,.02,.65,.6)' },
             { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.55)`, offset: 0.62 },
             { transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(0.28)` },
-          ], { duration: 800 + Math.random() * 140, fill: 'forwards' });
+          ], { duration: 1000 + Math.random() * 175, fill: 'forwards' }); // x0.8 speed
           if (anim && anim.finished && typeof anim.finished.then === 'function') {
             anim.finished.then(land).catch(land);
           } else {
-            setTimeout(land, 950);
+            setTimeout(land, 1200);
           }
         } else {
           land();
