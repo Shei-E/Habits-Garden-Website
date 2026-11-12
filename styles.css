@@ -722,10 +722,11 @@ body {
   z-index: 2;
 }
 
-/* The account view reaches the panel's bottom edge (34 + 100 =
-   134) so the sign-out button can anchor to it: centred on the
-   panel (the view is centred on it too), 4 units up from the
+/* Both views reach the panel's bottom edge (34 + 100 = 134)
+   so their buttons can anchor to it: centred on the panel
+   (the views are centred on it too), 4 units up from the
    bottom. */
+.si-form,
 .si-account {
   height: calc(100px * var(--scale));
 }
@@ -742,10 +743,13 @@ body {
   display: none;
 }
 
-/* The Google button in the sign-in form gets a little air above
-   it, under the explanation line. */
+/* The Google button anchors to the form's bottom edge like
+   the sign-out button: centred, 4 units up. */
 #si-google {
-  margin-top: calc(5px * var(--scale));
+  position: absolute;
+  left: 50%;
+  bottom: calc(4px * var(--scale));
+  transform: translateX(-50%);
 }
 
 .si-status {
