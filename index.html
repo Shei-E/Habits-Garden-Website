@@ -1746,9 +1746,10 @@
 
     // The "signed in as …" text scrolls back into the account pill
     // 3 seconds after it appears (signing in, or a visit that
-    // restores the session); hovering the pill scrolls it back
-    // out, and leaving starts the 3 seconds again. The signed-out
-    // invite never scrolls away — it is the way in.
+    // restores the session) and stays there — hovering the pill
+    // does not bring it back (Shusuke's call); the pill itself is
+    // the way back into the account panel. The signed-out invite
+    // never scrolls away — it is the way in.
     let signInHideTimer = null;
     function scheduleSignInTextHide() {
       if (signInHideTimer) { clearTimeout(signInHideTimer); signInHideTimer = null; }
@@ -1836,16 +1837,7 @@
     }
 
     document.getElementById('ui-signin')?.addEventListener('click', openSignInModal);
-    const accountBtn = document.getElementById('ui-account');
-    accountBtn?.addEventListener('click', openSignInModal);
-    // Hovering the account pill scrolls the signed-in text back
-    // out of the pill; leaving the pill or the text starts the
-    // 3-second scroll-back-in again.
-    accountBtn?.addEventListener('mouseenter', () => {
-      if (signedInEmail && signInText) signInText.classList.remove('is-out');
-    });
-    accountBtn?.addEventListener('mouseleave', scheduleSignInTextHide);
-    signInText?.addEventListener('mouseleave', scheduleSignInTextHide);
+    document.getElementById('ui-account')?.addEventListener('click', openSignInModal);
     document.getElementById('si-close')?.addEventListener('click', closeSignInModal);
     signInModal?.addEventListener('click', (e) => {
       if (e.target === signInModal) closeSignInModal();

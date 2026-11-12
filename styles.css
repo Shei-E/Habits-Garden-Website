@@ -468,10 +468,11 @@ body {
    right into place, together with the pills appearing. Once
    signed in, the "signed in as …" text scrolls right to left
    back into the pill after 3 seconds (the accounts code adds
-   .is-out on a timer); hovering the pill scrolls it back out.
-   The scroll speed is constant — a linear transition, no easing
-   (Shusuke's request). Clicking the text opens the sign-in page;
-   while signed in, the text shows the account instead. */
+   .is-out on a timer) and stays there. The scroll speed is
+   constant — a linear transition, no easing — at x0.75 of the
+   first try (0.8s across the text's width; Shusuke's requests).
+   Clicking the text opens the sign-in page; while signed in,
+   the text shows the account instead. */
 .ui-signin-slot {
   position: fixed;
   left: calc(17px * var(--scale));
@@ -494,7 +495,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transform: translateX(calc(-100% - 2px * var(--scale)));
-  transition: transform 0.6s linear, opacity 0.2s ease;
+  transition: transform 0.8s linear, opacity 0.2s ease;
 }
 
 .ui-signin.is-visible {
