@@ -573,13 +573,17 @@
     // after that prompt makes the hint and arrow go away for good
     // (for the session). A move before anything is planted doesn't
     // count either.
-    // Finishing the intro is remembered: a "tutorial finished" flag
-    // is kept in the browser (with the local accounts), and a user
-    // who has it never sees the tutorial again — the three flags
-    // below start finished and the corner UI is there from the
-    // start. (lsGet/lsSet are defined with the accounts code; they
+    // Finishing the intro is remembered: a "tutorial finished"
+    // flag is kept in the browser, but the flag only counts for
+    // a signed-in account — signed-out visits always get the
+    // tutorial. So the three flags below start finished only
+    // when the flag is set AND this browser has an account on
+    // record (the hg.cloudEmail.v1 key; its const lives with
+    // the sign-in code below), and the sign-in hook applies
+    // the flag for real once a sign-in is confirmed.
+    // (lsGet/lsSet are defined with the accounts code; they
     // are hoisted and safe to call here.)
-    const tutorialFinished = !!lsGet('hg.tutorialDone.v1');
+    const tutorialFinished = !!lsGet('hg.tutorialDone.v1') && !!lsGet('hg.cloudEmail.v1');
     let hasPlantedFirstPlant = tutorialFinished;
     let hasWateredFirstPlant = tutorialFinished;
     let hasMovedFirstPot = tutorialFinished;
@@ -1840,6 +1844,12 @@
           cloudUid = null;
           signedInEmail = null;
           refreshSignInUI();
+        } else {
+          // No session behind the remembered account after all
+          // (it expired or was revoked): forget the account on
+          // record, so the next visit counts as signed out and
+          // gets the tutorial.
+          lsRemove(CLOUD_EMAIL_KEY);
         }
         return;
       }
@@ -1847,6 +1857,15 @@
       cloudUid = user.uid;
       signedInEmail = user.email;
       lsSet(CLOUD_EMAIL_KEY, user.email);
+      // The tutorial flag counts now that sign-in is confirmed:
+      // a user who finished the tutorial on this browser before
+      // never sees it again.
+      if (!hasMovedFirstPot && lsGet('hg.tutorialDone.v1')) {
+        hasPlantedFirstPlant = true;
+        hasWateredFirstPlant = true;
+        hasMovedFirstPot = true;
+        updateHint();
+      }
       const bridge = window.hgCloud;
       Promise.resolve(bridge && bridge.load ? bridge.load() : null).then(cloudGarden => {
         if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length) {
