@@ -2722,7 +2722,11 @@
         signIn() {
           signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
             const code = err && err.code ? err.code : '';
-            if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+            if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+              // Cancelled: just clear the "opening…" note.
+              if (window.hgCloudStatus) window.hgCloudStatus('', false);
+              return;
+            }
             if (window.hgCloudStatus) window.hgCloudStatus('Google sign-in did not work — please try again', true);
           });
         },
