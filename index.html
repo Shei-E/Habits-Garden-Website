@@ -1787,10 +1787,12 @@
     // Collect one plant's drops: the icon flies to the currency
     // pill, and the count goes up when it lands.
     // The dew scatter's send-off when its plant is collected:
-    // each little drop drifts away from the plant's centre and
-    // fades out, then the effect element is removed. The drift is
-    // added on top of the drops' pulsing (composite: 'add'), so
-    // they keep their gentle grow-shrink while they leave.
+    // each little drop bursts away from the plant's centre —
+    // fast at first, then gradually slowing down — and fades
+    // out well before the drift ends, then the effect element
+    // is removed. The drift is added on top of the drops'
+    // pulsing (composite: 'add'), so they keep their gentle
+    // grow-shrink while they leave.
     function animateDewScatterOut(pot, effect) {
       const drops = Array.from(effect.children || []);
       if (!drops.length || typeof drops[0].animate !== 'function') { effect.remove(); return; }
@@ -1815,9 +1817,10 @@
           // CSS transforms are top-based, so an outward move in
           // bottom-based y is a negative translateY.
           const anim = d.animate([
-            { transform: 'translate(0px, 0px)', opacity: 1 },
-            { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)`, opacity: 0 },
-          ], { duration: 480, delay: i * 25, easing: 'ease-out', fill: 'forwards', composite: 'add' });
+            { transform: 'translate(0px, 0px)', opacity: 1, offset: 0 },
+            { opacity: 0, offset: 0.5 },
+            { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)`, opacity: 0, offset: 1 },
+          ], { duration: 480, delay: i * 25, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards', composite: 'add' });
           if (anim && anim.finished && typeof anim.finished.then === 'function') anim.finished.then(done, done);
           else done();
         } catch (e) { done(); }
