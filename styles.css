@@ -703,7 +703,7 @@ body {
 
 .si-btn {
   padding: calc(2px * var(--scale)) calc(8px * var(--scale));
-  border: 1px solid rgba(0, 0, 0, 0.4);
+  border: calc(1px * var(--scale)) solid rgba(0, 0, 0, 0.4);
   background: rgba(255, 255, 255, 0.4);
   font-family: "Tiny5", monospace;
   font-size: calc(7px * var(--scale));
