@@ -722,11 +722,10 @@ body {
   z-index: 2;
 }
 
-/* Both views reach the panel's bottom edge (34 + 100 = 134)
-   so their buttons can anchor to it: centred on the panel
-   (the views are centred on it too), 4 units up from the
+/* The account view reaches the panel's bottom edge (34 + 100 =
+   134) so the sign-out button can anchor to it: centred on the
+   panel (the view is centred on it too), 4 units up from the
    bottom. */
-.si-form,
 .si-account {
   height: calc(100px * var(--scale));
 }
@@ -743,13 +742,10 @@ body {
   display: none;
 }
 
-/* The Google button anchors to the form's bottom edge like
-   the sign-out button: centred, 4 units up. */
+/* The Google button sits in the flow under the "Already have
+   a garden?" line, with a little air above it. */
 #si-google {
-  position: absolute;
-  left: 50%;
-  bottom: calc(4px * var(--scale));
-  transform: translateX(-50%);
+  margin-top: calc(5px * var(--scale));
 }
 
 .si-status {
