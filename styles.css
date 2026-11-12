@@ -743,9 +743,12 @@ body {
 }
 
 /* The Google button sits in the flow under the "Already have
-   a garden?" line, with a little air above it. */
+   a garden?" line, with a little air above it and its left
+   edge aligned with the text (the body lines are indented by
+   the 2-character tab, 6.3 units). */
 #si-google {
   margin-top: calc(5px * var(--scale));
+  margin-left: calc(6.3px * var(--scale));
 }
 
 .si-status {
