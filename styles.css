@@ -476,7 +476,11 @@ body {
 .ui-signin-slot {
   position: fixed;
   left: calc(17px * var(--scale));
-  top: calc(3.8px * var(--scale));
+  /* The text is centred on the pill: the pill's ink centre is at
+     4.25 + 11.25/2 = 9.875 units, the text's glyphs are ~6.06
+     tall starting ~0.45 below the element's top, so the element
+     sits at 9.875 - 6.06/2 - 0.45 = 6.4. */
+  top: calc(6.4px * var(--scale));
   overflow: hidden;
 }
 
