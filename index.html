@@ -1642,7 +1642,7 @@
         d.src = i % 2 ? 'assets/drop3.png' : 'assets/drop2.png';
         d.className = 'dew-drop';
         d.alt = '';
-        const box = (1.5 + Math.random() * 2) * 16;
+        const box = (0.5 + Math.random() * 1) * 16;
         const x = 16 + (Math.random() * 2 - 1) * (ink.w * pScale / 2 + 3);
         const y = seat + 1 + Math.random() * (ink.h * pScale + 1);
         d.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
