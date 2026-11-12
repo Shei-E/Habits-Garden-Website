@@ -1759,6 +1759,17 @@
       }, 3000);
     }
 
+    // Bring the corner text out of the pill and (when signed in)
+    // start its 3-second scroll back in. Only called when the
+    // sign-in state itself changes — signing in, creating an
+    // account, signing out, or a visit that restores the session.
+    // Just opening the panel (the pill press) must NOT bring the
+    // text out, so openSignInModal does not call this.
+    function showSignInText() {
+      if (signInText) signInText.classList.remove('is-out');
+      scheduleSignInTextHide();
+    }
+
     function refreshSignInUI() {
       if (signInText) {
         signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'sign in to save your plants';
@@ -1766,8 +1777,6 @@
       if (siForm) siForm.hidden = !!signedInEmail;
       if (siAccount) siAccount.hidden = !signedInEmail;
       if (siAccountEmail) siAccountEmail.textContent = signedInEmail || '';
-      if (signInText) signInText.classList.remove('is-out');
-      scheduleSignInTextHide();
     }
 
     function openSignInModal() {
@@ -1808,6 +1817,7 @@
       // garden, and is saved from here on.
       saveGarden();
       refreshSignInUI();
+      showSignInText();
       closeSignInModal();
     }
 
@@ -1826,6 +1836,7 @@
         saveGarden();
       }
       refreshSignInUI();
+      showSignInText();
       closeSignInModal();
     }
 
@@ -1833,6 +1844,7 @@
       signedInEmail = null;
       lsRemove(SESSION_KEY);
       refreshSignInUI();
+      showSignInText();
       closeSignInModal();
     }
 
@@ -1855,6 +1867,7 @@
       signedInEmail = savedSession;
       const savedGarden = lsGet(GARDEN_KEY_PREFIX + savedSession);
       if (savedGarden) restoreGarden(savedGarden);
+      showSignInText();
     }
     refreshSignInUI();
 
