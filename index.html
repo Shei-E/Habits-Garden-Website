@@ -1753,6 +1753,11 @@
         const box = (0.5 + Math.random() * 1) * 16;
         const x = 16 + (Math.random() * 2 - 1) * (ink.w * pScale / 2 + 3);
         const y = seat + 1 + Math.random() * (ink.h * pScale + 1);
+        // Remember where this drop sits (its centre, in pot-box
+        // units): when the dew is collected, the scatter drifts
+        // outwards from the plant — see animateDewScatterOut.
+        d.dataset.x = x.toFixed(1);
+        d.dataset.y = y.toFixed(1);
         d.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
         d.style.height = `calc(${box.toFixed(1)}px * var(--scale))`;
         d.style.left = `calc(${(x - box / 2).toFixed(1)}px * var(--scale))`;
@@ -1781,9 +1786,56 @@
 
     // Collect one plant's drops: the icon flies to the currency
     // pill, and the count goes up when it lands.
+    // The dew scatter's send-off when its plant is collected:
+    // each little drop drifts away from the plant's centre and
+    // fades out, then the effect element is removed. The drift is
+    // added on top of the drops' pulsing (composite: 'add'), so
+    // they keep their gentle grow-shrink while they leave.
+    function animateDewScatterOut(pot, effect) {
+      const drops = Array.from(effect.children || []);
+      if (!drops.length || typeof drops[0].animate !== 'function') { effect.remove(); return; }
+      const seat = getPotSprite(pot).h;
+      const ink = plantInkSize(pot);
+      const pScale = plantRenderScale(pot);
+      const centreX = 16;
+      const centreY = seat + ink.h * pScale / 2; // bottom-based design units
+      const rect = pot.getBoundingClientRect();
+      const unit = rect && rect.width ? rect.width / POT_SIZE : 1; // px per design unit
+      let remaining = drops.length;
+      const done = () => { remaining -= 1; if (remaining <= 0) effect.remove(); };
+      drops.forEach((d, i) => {
+        const x = parseFloat(d.dataset.x || '16');
+        const y = parseFloat(d.dataset.y || String(centreY));
+        let dx = x - centreX;
+        let dy = y - centreY;
+        const len = Math.hypot(dx, dy);
+        if (len < 0.01) { dx = i % 2 ? 1 : -1; dy = 1; } else { dx /= len; dy /= len; }
+        const dist = 3.5 + Math.random() * 3; // design units further out
+        try {
+          // CSS transforms are top-based, so an outward move in
+          // bottom-based y is a negative translateY.
+          const anim = d.animate([
+            { transform: 'translate(0px, 0px)', opacity: 1 },
+            { transform: `translate(${(dx * dist * unit).toFixed(1)}px, ${(-dy * dist * unit).toFixed(1)}px)`, opacity: 0 },
+          ], { duration: 480, delay: i * 25, easing: 'ease-out', fill: 'forwards', composite: 'add' });
+          if (anim && anim.finished && typeof anim.finished.then === 'function') anim.finished.then(done, done);
+          else done();
+        } catch (e) { done(); }
+      });
+      // Sweep up in case a finish never reports back.
+      setTimeout(() => { if (effect.parentNode) effect.remove(); }, 1200);
+    }
+
     function collectDew(pot, iconEl) {
       if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
       const from = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+      // Take the scatter out of renderDew's hands so it can
+      // drift out and fade instead of vanishing on the spot.
+      const effect = pot._dewEffectEl;
+      if (effect) {
+        pot._dewEffectEl = null;
+        animateDewScatterOut(pot, effect);
+      }
       pot.dataset.dewCollected = 'true';
       renderDew(pot);
       saveGarden();
