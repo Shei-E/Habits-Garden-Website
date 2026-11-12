@@ -103,18 +103,14 @@
         <h2 class="si-title" id="si-title">Sign In</h2>
         <button class="si-close" id="si-close" type="button" aria-label="Close"></button>
         <div class="si-form" id="si-form">
-          <label class="si-label" for="si-email">Email</label>
-          <input class="si-input" id="si-email" type="email" autocomplete="email" placeholder="you@example.com">
-          <label class="si-label si-label--pw" for="si-password">Password</label>
-          <input class="si-input" id="si-password" type="password" autocomplete="current-password"
-            placeholder="password">
+          <p class="si-line">Sign in with your Google account, and your garden is saved to your account — it opens on
+            any device you sign in on.</p>
+          <button class="si-btn" id="si-google" type="button">sign in with Google</button>
           <p class="si-status" id="si-status"></p>
-          <button class="si-btn" id="si-signin" type="button">sign in</button>
-          <button class="si-btn" id="si-create" type="button">create account</button>
         </div>
         <div class="si-account" id="si-account" hidden>
           <p class="si-line">signed in as <span id="si-account-email"></span></p>
-          <p class="si-line">your plants are saved to your account.</p>
+          <p class="si-line si-line--saved">your plants are saved to your account.</p>
           <button class="si-btn" id="si-signout" type="button">sign out</button>
         </div>
       </div>
@@ -1608,20 +1604,19 @@
     });
 
     // ---- Accounts & saving ----
-    // Signing in ties the garden to an account: while signed in,
-    // every change (planting, watering, moving, adding or deleting
-    // a pot) is saved, and on the next visit the saved garden is
-    // rebuilt exactly as it was — pots, positions, plant kinds,
-    // schedules and watering history, which is everything the game
-    // itself runs on. For now the accounts and gardens are kept in
-    // this browser's local storage: the sign-in page, the saved
-    // format and the restore flow are the real ones — only where
-    // the data is kept would change if a hosted account service is
-    // connected later, so gardens could follow the account across
-    // devices.
-    const ACCOUNTS_KEY = 'hg.accounts.v1';
-    const SESSION_KEY = 'hg.session.v1';
+    // Signing in (with Google, through Firebase) ties the garden
+    // to an account: while signed in, every change (planting,
+    // watering, moving, adding or deleting a pot) is saved to the
+    // account's row in the cloud database, and on any device the
+    // saved garden is rebuilt exactly as it was — pots, positions,
+    // plant kinds, schedules and watering history, which is
+    // everything the game itself runs on.
     const GARDEN_KEY_PREFIX = 'hg.garden.v1.';
+    // The email of the last Google account signed in on this
+    // browser. Firebase keeps the real session itself; this flag
+    // only tells a fresh page load "a garden restore is coming"
+    // (the cloud hook below does it when Firebase reports in).
+    const CLOUD_EMAIL_KEY = 'hg.cloudEmail.v1';
     let signedInEmail = null;
     let restoringGarden = false;
 
@@ -1638,25 +1633,12 @@
       try { window.localStorage.removeItem(key); } catch (e) { }
     }
 
-    // Passwords are never kept as typed — only a scrambled form is
-    // stored, and signing in scrambles what was typed and compares
-    // the scrambles. (This small local scramble is a stand-in: a
-    // hosted account service does this properly on its server.)
-    function hashPassword(pw) {
-      let h = 0x811c9dc5;
-      const s = 'hg:' + pw;
-      for (let i = 0; i < s.length; i++) {
-        h ^= s.charCodeAt(i);
-        h = Math.imul(h, 0x01000193);
-      }
-      return (h >>> 0).toString(16);
-    }
-
-    let accountsCache = null;
-    function loadAccounts() {
-      if (!accountsCache) accountsCache = lsGet(ACCOUNTS_KEY) || {};
-      return accountsCache;
-    }
+    // Accounts live with Firebase now (Google sign-in + a cloud
+    // database — the small bridge script at the end of the page).
+    // Gardens are still mirrored into this browser's storage under
+    // the keys above: the mirror is the adoption source the first
+    // time an account signs in here (see hgCloudHook below) and a
+    // handy local copy after that.
 
     // The dataset fields that carry a plant. Streak, dead/healthy
     // state and dew drops are all worked out from these, so they
@@ -1685,7 +1667,13 @@
 
     function saveGarden() {
       if (!signedInEmail || restoringGarden) return;
-      lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+      const bundle = serializeGarden();
+      lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
+      // The same bundle goes to the account's cloud row, so the
+      // garden follows the account to any device.
+      if (window.hgCloud && window.hgCloud.save) {
+        try { window.hgCloud.save(bundle); } catch (e) { }
+      }
     }
 
     // Apply a saved pot style: the same end state the Add Plant
@@ -1770,8 +1758,6 @@
     const signInModal = document.getElementById('signin-modal');
     const siForm = document.getElementById('si-form');
     const siAccount = document.getElementById('si-account');
-    const siEmail = document.getElementById('si-email');
-    const siPassword = document.getElementById('si-password');
     const siStatus = document.getElementById('si-status');
     const siAccountEmail = document.getElementById('si-account-email');
     const signInText = document.getElementById('ui-signin');
@@ -1840,53 +1826,99 @@
       signInModal.addEventListener('animationend', onAnimationEnd);
     }
 
-    function handleCreateAccount() {
-      const email = (siEmail.value || '').trim().toLowerCase();
-      const pw = siPassword.value || '';
-      if (!email.includes('@')) { setSiStatus('that email does not look right', true); return; }
-      if (pw.length < 4) { setSiStatus('password needs at least 4 characters', true); return; }
-      const accounts = loadAccounts();
-      if (accounts[email]) { setSiStatus('that email already has an account — sign in instead', true); return; }
-      accounts[email] = { pw: hashPassword(pw) };
-      lsSet(ACCOUNTS_KEY, accounts);
-      signedInEmail = email;
-      lsSet(SESSION_KEY, email);
-      // The garden on the shelf right now becomes the account's
-      // garden, and is saved from here on.
-      saveGarden();
-      resetDewGrant();
-      updateDewDrops();
-      refreshSignInUI();
-      showSignInText();
-      closeSignInModal();
+    // ---- The cloud hook ----
+    // The Firebase bridge (the module script at the end of the
+    // page) reports sign-ins here. This is the one place a
+    // signed-in state begins: it fetches the account's garden row
+    // from the cloud and puts it on the shelf.
+    let cloudUid = null;
+    window.hgCloudStatus = function (msg, isError) { setSiStatus(msg, isError); };
+    window.hgCloudHook = function (user) {
+      if (!user) {
+        // Signed out (or no session): only the in-memory state
+        // clears. The sign-out BUTTON does the page reset itself.
+        if (cloudUid) {
+          cloudUid = null;
+          signedInEmail = null;
+          refreshSignInUI();
+        }
+        return;
+      }
+      if (cloudUid === user.uid) return; // already applied
+      cloudUid = user.uid;
+      signedInEmail = user.email;
+      lsSet(CLOUD_EMAIL_KEY, user.email);
+      const bridge = window.hgCloud;
+      Promise.resolve(bridge && bridge.load ? bridge.load() : null).then(cloudGarden => {
+        if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length) {
+          // The account's garden, from the cloud: it wins over
+          // whatever is on the shelf right now.
+          restoreGarden(cloudGarden);
+          lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+        } else {
+          // ADOPTION: the account has no garden in the cloud yet,
+          // so the garden already here becomes its first one —
+          // the shelf as it stands, or (if the shelf is empty) a
+          // garden this browser saved earlier under the old
+          // browser-only accounts. Nothing is lost by signing in.
+          let bundle = serializeGarden();
+          if (!bundle.some(e => e && e.plant)) {
+            const local = findLocalGarden();
+            if (local) {
+              restoreGarden(local);
+              bundle = serializeGarden();
+            }
+          }
+          lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
+          if (bridge && bridge.save) { try { bridge.save(bundle); } catch (e) { } }
+        }
+        // Today's drops are now decided from this account's
+        // garden as it was saved before — not the guest shelf's.
+        resetDewGrant();
+        updateDewDrops();
+        refreshSignInUI();
+        showSignInText();
+      }).catch(() => {
+        // The cloud could not be reached: stay signed in locally
+        // with the mirrored garden, if this browser has one.
+        const local = lsGet(GARDEN_KEY_PREFIX + signedInEmail) || findLocalGarden();
+        if (local) restoreGarden(local);
+        refreshSignInUI();
+        showSignInText();
+      });
+    };
+
+    // A garden this browser saved under the old browser-only
+    // accounts (any hg.garden.v1.* entry that has a plant).
+    function findLocalGarden() {
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && k.indexOf(GARDEN_KEY_PREFIX) === 0) {
+            const g = lsGet(k);
+            if (Array.isArray(g) && g.some(e => e && e.plant)) return g;
+          }
+        }
+      } catch (e) { }
+      return null;
     }
 
-    function handleSignIn() {
-      const email = (siEmail.value || '').trim().toLowerCase();
-      const pw = siPassword.value || '';
-      const accounts = loadAccounts();
-      if (!accounts[email]) { setSiStatus('no account for that email yet — create one first', true); return; }
-      if (accounts[email].pw !== hashPassword(pw)) { setSiStatus('wrong password', true); return; }
-      signedInEmail = email;
-      lsSet(SESSION_KEY, email);
-      const saved = lsGet(GARDEN_KEY_PREFIX + email);
-      if (saved) {
-        restoreGarden(saved);
+    function handleGoogleSignIn() {
+      if (window.hgCloud && window.hgCloud.signIn) {
+        setSiStatus('opening Google sign-in…');
+        try { window.hgCloud.signIn(); } catch (e) { setSiStatus('sign-in could not start — please try again', true); }
       } else {
-        saveGarden();
+        setSiStatus('the sign-in service is still loading — give it a moment and try again', true);
       }
-      // Today's drops are now decided from this account's garden
-      // as it was saved before — not the signed-out shelf's grant.
-      resetDewGrant();
-      updateDewDrops();
-      refreshSignInUI();
-      showSignInText();
-      closeSignInModal();
     }
 
     function handleSignOut() {
+      if (window.hgCloud && window.hgCloud.signOut) {
+        try { window.hgCloud.signOut(); } catch (e) { }
+      }
+      cloudUid = null;
       signedInEmail = null;
-      lsRemove(SESSION_KEY);
+      lsRemove(CLOUD_EMAIL_KEY);
       lsRemove(DEW_GRANT_KEY); // the fresh page grants its own day
       // Signing out resets the page: the reload brings back the
       // fresh signed-out state (one empty pot, the intro hint, the
@@ -1901,21 +1933,13 @@
     signInModal?.addEventListener('click', (e) => {
       if (e.target === signInModal) closeSignInModal();
     });
-    document.getElementById('si-create')?.addEventListener('click', handleCreateAccount);
-    document.getElementById('si-signin')?.addEventListener('click', handleSignIn);
+    document.getElementById('si-google')?.addEventListener('click', handleGoogleSignIn);
     document.getElementById('si-signout')?.addEventListener('click', handleSignOut);
 
-    // A returning visit: if this browser is still signed in, put
-    // the account's garden back BEFORE the day's dew drops are
-    // granted (the updateDewDrops call right below), so the grant
-    // is worked out from the restored shelf.
-    const savedSession = lsGet(SESSION_KEY);
-    if (savedSession && loadAccounts()[savedSession]) {
-      signedInEmail = savedSession;
-      const savedGarden = lsGet(GARDEN_KEY_PREFIX + savedSession);
-      if (savedGarden) restoreGarden(savedGarden);
-      showSignInText();
-    }
+    // A returning visit: Firebase restores the session by itself
+    // and reports in through the cloud hook, which puts the
+    // account's garden back and re-decides the day's dew grant
+    // from it. Until then the shelf starts fresh.
     refreshSignInUI();
 
     updateDewDrops();
@@ -2664,6 +2688,74 @@
     // /DEV OPTION: Date Setter
 
     updateAllPotVisuals();
+  </script>
+
+  <!-- Firebase bridge: Google sign-in + the cloud garden database.
+       This module talks to Firebase and exposes a small bridge
+       (window.hgCloud) that the game code above uses through its
+       cloud hook. The config below is the project's public web
+       config — it identifies the project; it is not a password.
+       Access to the data itself is controlled by the database's
+       security rules (each account can only touch its own row). -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDu0TofMptHrwVYgQqzowfZRFL8q48y9Dk',
+      authDomain: 'habits-garden-ee7af.firebaseapp.com',
+      projectId: 'habits-garden-ee7af',
+      storageBucket: 'habits-garden-ee7af.firebasestorage.app',
+      messagingSenderId: '615005752278',
+      appId: '1:615005752278:web:d2cb5923808d43d7a63277',
+    };
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      let user = null;
+      let saveTimer = null;
+
+      window.hgCloud = {
+        signIn() {
+          signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
+            const code = err && err.code ? err.code : '';
+            if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+            if (window.hgCloudStatus) window.hgCloudStatus('Google sign-in did not work — please try again', true);
+          });
+        },
+        signOut() { signOut(auth).catch(() => { }); },
+        load() {
+          if (!user) return Promise.resolve(null);
+          return getDoc(doc(db, 'gardens', user.uid)).then(snap => {
+            if (!snap.exists()) return null;
+            const data = snap.data();
+            return data && Array.isArray(data.garden) ? data.garden : null;
+          });
+        },
+        save(bundle) {
+          if (!user) return;
+          if (saveTimer) clearTimeout(saveTimer);
+          saveTimer = setTimeout(() => {
+            setDoc(doc(db, 'gardens', user.uid), { garden: bundle, updatedAt: serverTimestamp() })
+              .catch(() => { });
+          }, 1200);
+        },
+      };
+
+      onAuthStateChanged(auth, u => {
+        user = u;
+        if (window.hgCloudHook) {
+          window.hgCloudHook(u ? { email: u.email, uid: u.uid } : null);
+        }
+      });
+    } catch (e) {
+      // The cloud is unreachable (offline, blocked): the game
+      // simply runs signed-out, exactly as before.
+      if (window.hgCloudStatus) window.hgCloudStatus('', false);
+    }
   </script>
 </body>
 
