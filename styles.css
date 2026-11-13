@@ -650,12 +650,38 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* Dew collection: the little drops scattered on a plant that
-   has drops waiting, the drop(s) that fly to the currency pill
-   when collected, and the pill's pop when they land. (There is
-   no floating collect icon — the scatter is the cue.) The
-   scatter drops are single pixels in 16x16 canvases and are
-   sized per-drop from JS (16x the dot size). */
+/* Dew collection: the drop icon hovering over a plant that has
+   drops waiting, the little drops scattered on it, the drop(s)
+   that fly to the currency pill when collected, and the pill's
+   pop when they land. The icon's visible drop is ~1/4 of its
+   box (4x4 ink in a 16x16 canvas), so the box is 16 units for a
+   ~4-unit drop; the scatter drops are single pixels in 16x16
+   canvases and are sized per-drop from JS (16x the dot size). */
+.dew-icon {
+  position: absolute;
+  left: 50%;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  cursor: pointer;
+  z-index: 5;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: dew-bob 2.2s ease-in-out infinite;
+}
+
+@keyframes dew-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-1.5px * var(--scale)));
+  }
+}
+
 .dew-effect {
   position: absolute;
   inset: 0;

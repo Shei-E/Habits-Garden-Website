@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 
 <body>
@@ -1730,6 +1730,7 @@
         : 'off';
       if (pot._dewState === state) return;
       pot._dewState = state;
+      if (pot._dewIconEl) { pot._dewIconEl.remove(); pot._dewIconEl = null; }
       if (pot._dewEffectEl) { pot._dewEffectEl.remove(); pot._dewEffectEl = null; }
       if (!show) return;
 
@@ -1767,13 +1768,25 @@
       }
       pot.appendChild(effect);
       pot._dewEffectEl = effect;
+
+      // The collect icon, hovering just above the plant.
+      const icon = document.createElement('img');
+      icon.src = 'assets/drop1.png';
+      icon.className = 'dew-icon';
+      icon.alt = 'collect dew drops';
+      icon.style.bottom = `calc(${(seat + ink.h * pScale + 2).toFixed(1)}px * var(--scale))`;
+      icon.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+      icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collectDew(pot);
+      });
+      pot.appendChild(icon);
+      pot._dewIconEl = icon;
     }
 
     // Collect one plant's drops: drop(s) fly from the middle
     // of the plant to the currency pill, and the count goes up
-    // as they land. (There is no floating collect icon any
-    // more — the dew effect on the plant is the cue, and
-    // pressing the plant itself collects.)
+    // as they land.
     // The dew scatter's send-off when its plant is collected:
     // each little drop drifts away from the plant's centre
     // while a separate slow fade, starting immediately,
@@ -1928,13 +1941,27 @@
           const bow = (Math.random() - 0.5) * 90; // sideways curve, either way
           const mx = dx * (0.4 + Math.random() * 0.2) + (-dy / len) * bow;
           const my = dy * (0.4 + Math.random() * 0.2) + (dx / len) * bow - (20 + Math.random() * 50);
+          // Fly a smooth curve through the drop's mid point
+          // instead of two straight legs with a hard corner
+          // halfway: a quadratic curve whose control point is
+          // doubled out, so the path passes through the
+          // intended mid point, sampled into keyframes.
+          const qx = 2 * mx - dx / 2;
+          const qy = 2 * my - dy / 2;
+          const quadAt = (p0, p1, p2, t) => {
+            const u = 1 - t;
+            return u * u * p0 + 2 * u * t * p1 + t * t * p2;
+          };
+          const frames = [];
+          for (let s = 0; s <= 4; s++) {
+            const t = s / 4;
+            frames.push({
+              transform: `translate(${quadAt(0, qx, dx, t).toFixed(1)}px, ${quadAt(0, qy, dy, t).toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(t, 1.5)).toFixed(2)})`,
+            });
+          }
           const land = () => { drop.remove(); onLand(); };
           if (typeof drop.animate === 'function') {
-            const anim = drop.animate([
-              { transform: 'translate(0px, 0px) scale(1)' },
-              { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.8)`, offset: 0.55 },
-              { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0.3)` },
-            ], { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+            const anim = drop.animate(frames, { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
             if (anim && anim.finished && typeof anim.finished.then === 'function') {
               anim.finished.then(land).catch(land);
             } else {
