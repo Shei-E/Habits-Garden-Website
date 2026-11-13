@@ -1882,45 +1882,6 @@
       const host = document.body || document.querySelector('.home-screen');
       if (!host) { finish(); return; }
 
-      // Every drop first hops to a point ~3 units away in a
-      // random direction, then follows its trajectory to the
-      // pill. The whole flight is one smooth spline through
-      // the hop point and the drop's mid point (a Catmull-Rom
-      // spline: it passes through both, and its direction
-      // changes gradually, so the drop eases out of the hop
-      // and onto its path instead of snapping at the join).
-      // The hop gets the first ~22% of the flight time however
-      // short it is, so it reads as a hop, not a blink.
-      const buildFlightFrames = (midX, midY, ex, ey) => {
-        const pxPerUnit = from.width / 16; // the icon's box is 16 units wide
-        const hopAngle = Math.random() * Math.PI * 2;
-        const hopPx = 3 * pxPerUnit;
-        const hx = Math.cos(hopAngle) * hopPx;
-        const hy = Math.sin(hopAngle) * hopPx;
-        const pts = [[0, 0], [hx, hy], [midX, midY], [ex, ey]];
-        const segLen = [0, 1, 2].map(i => Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) || 1);
-        const segTime = [0.22, 0.78 * (segLen[1] / (segLen[1] + segLen[2])), 0.78 * (segLen[2] / (segLen[1] + segLen[2]))];
-        const splineAt = (g) => {
-          let seg = 0;
-          let acc = 0;
-          while (seg < 2 && acc + segTime[seg] < g) { acc += segTime[seg]; seg += 1; }
-          const t = Math.min(1, Math.max(0, (g - acc) / segTime[seg]));
-          const p0 = pts[Math.max(0, seg - 1)];
-          const p1 = pts[seg];
-          const p2 = pts[seg + 1];
-          const p3 = pts[Math.min(3, seg + 2)];
-          const cr = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
-          return [cr(p0[0], p1[0], p2[0], p3[0]), cr(p0[1], p1[1], p2[1], p3[1])];
-        };
-        const frames = [];
-        for (let s = 0; s <= 8; s++) {
-          const g = s / 8;
-          const [x, y] = splineAt(g);
-          frames.push({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(g, 1.5)).toFixed(2)})` });
-        }
-        return frames;
-      };
-
       // A plant paying several drops: that many drops shoot
       // out of the icon, each on its own trajectory — its own
       // bow, lift and timing — all converging on the pill.
@@ -1968,7 +1929,24 @@
           const bow = (Math.random() - 0.5) * 90; // sideways curve, either way
           const mx = dx * (0.4 + Math.random() * 0.2) + (-dy / len) * bow;
           const my = dy * (0.4 + Math.random() * 0.2) + (dx / len) * bow - (20 + Math.random() * 50);
-          const frames = buildFlightFrames(mx, my, dx, dy);
+          // Fly a smooth curve through the drop's mid point
+          // instead of two straight legs with a hard corner
+          // halfway: a quadratic curve whose control point is
+          // doubled out, so the path passes through the
+          // intended mid point, sampled into keyframes.
+          const qx = 2 * mx - dx / 2;
+          const qy = 2 * my - dy / 2;
+          const quadAt = (p0, p1, p2, t) => {
+            const u = 1 - t;
+            return u * u * p0 + 2 * u * t * p1 + t * t * p2;
+          };
+          const frames = [];
+          for (let s = 0; s <= 4; s++) {
+            const t = s / 4;
+            frames.push({
+              transform: `translate(${quadAt(0, qx, dx, t).toFixed(1)}px, ${quadAt(0, qy, dy, t).toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(t, 1.5)).toFixed(2)})`,
+            });
+          }
           const land = () => { drop.remove(); onLand(); };
           if (typeof drop.animate === 'function') {
             const anim = drop.animate(frames, { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
@@ -1996,7 +1974,11 @@
       const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
       const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
       if (typeof flyer.animate === 'function') {
-        const anim = flyer.animate(buildFlightFrames(dx * 0.5, dy * 0.5 - 44, dx, dy), { duration: 650, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+        const anim = flyer.animate([
+          { transform: 'translate(0px, 0px) scale(1)' },
+          { transform: `translate(${(dx * 0.5).toFixed(1)}px, ${(dy * 0.5 - 44).toFixed(1)}px) scale(0.8)`, offset: 0.55 },
+          { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0.3)` },
+        ], { duration: 650, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
           anim.finished.then(() => { flyer.remove(); finish(); }).catch(() => { flyer.remove(); finish(); });
         } else {
