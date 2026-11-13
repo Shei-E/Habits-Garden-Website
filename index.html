@@ -1916,7 +1916,11 @@
 
       // Several drops: they start stacked on top of each other
       // where the icon sat (a little pile, edges peeking out),
-      // burst apart in a fan, then each one shoots to the pill.
+      // then each follows one smooth swooping curve to the
+      // pill: it leaves along its own burst direction, then
+      // the path bends round and shoots into the pill — drops
+      // that burst away from the pill loop out and come back,
+      // like the curves in Shusuke's sketch (2026-11-13).
       // The count ticks up by one as each drop lands.
       const totalBefore = collectedDewTotal() - amount;
       const size = from.width * 0.62;
@@ -1954,19 +1958,33 @@
         const dist = 26 + Math.random() * 20;
         const bx = Math.cos(ang) * dist;
         const by = Math.sin(ang) * dist * 0.8;
-        // The shot: to the pill's centre, arcing on the way.
+        // The shot: to the pill's centre, along a cubic curve
+        // sampled into keyframes. The first control point sits
+        // out along the burst direction, so the drop leaves
+        // that way; the second sits just short of the pill on
+        // the straight line in, so it arrives on course.
         const tx = pillCx - (baseLeft + size / 2);
         const ty = pillCy - (baseTop + size / 2);
-        const mx = bx + (tx - bx) * 0.55;
-        const my = by + (ty - by) * 0.55 - (30 + Math.random() * 25);
+        const cubicAt = (p0, p1, p2, p3, t) => {
+          const u = 1 - t;
+          return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+        };
+        const c1x = stackX + bx * 1.6;
+        const c1y = stackY + by * 1.6;
+        const c2x = tx - (tx - stackX) * 0.22;
+        const c2y = ty - (ty - stackY) * 0.22;
+        const frames = [];
+        for (let s = 0; s <= 4; s++) {
+          const t = s / 4;
+          const frame = {
+            transform: `translate(${cubicAt(stackX, c1x, c2x, tx, t).toFixed(1)}px, ${cubicAt(stackY, c1y, c2y, ty, t).toFixed(1)}px) scale(${(1 - 0.72 * t).toFixed(2)})`,
+          };
+          if (s < 4) frame.easing = 'cubic-bezier(.45,.02,.65,.6)';
+          frames.push(frame);
+        }
         const land = () => { flyer.remove(); onLand(); };
         if (typeof flyer.animate === 'function') {
-          const anim = flyer.animate([
-            { transform: `translate(${stackX.toFixed(1)}px, ${stackY.toFixed(1)}px) scale(1)`, easing: 'cubic-bezier(0.333, 0.5, 0.667, 1)' },
-            { transform: `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px) scale(0.92)`, offset: 0.18, easing: 'cubic-bezier(.45,.02,.65,.6)' },
-            { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.55)`, offset: 0.62 },
-            { transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(0.28)` },
-          ], { duration: 1000 + Math.random() * 175, fill: 'forwards' }); // x0.8 speed
+          const anim = flyer.animate(frames, { duration: 1000 + Math.random() * 175, fill: 'forwards' }); // x0.8 speed
           if (anim && anim.finished && typeof anim.finished.then === 'function') {
             anim.finished.then(land).catch(land);
           } else {
