@@ -1784,8 +1784,8 @@
       pot._dewIconEl = icon;
     }
 
-    // Collect one plant's drops: drop(s) fly from the middle
-    // of the plant to the currency pill, and the count goes up
+    // Collect one plant's drops: drop(s) fly from the floating
+    // drop icon to the currency pill, and the count goes up
     // as they land.
     // The dew scatter's send-off when its plant is collected:
     // each little drop drifts away from the plant's centre
@@ -1850,23 +1850,11 @@
 
     function collectDew(pot) {
       if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
-      // The drops shoot from the middle of the plant: the
-      // plant ink's centre, in a box the size the old floating
-      // icon used to occupy.
-      let from = null;
-      const potRect = pot.getBoundingClientRect ? pot.getBoundingClientRect() : null;
-      if (potRect && potRect.width) {
-        const inkBox = plantInkBox(pot);
-        const cx = inkBox ? inkBox.left + inkBox.w / 2 : POT_SIZE / 2;
-        const cy = inkBox ? inkBox.top + inkBox.h / 2 : POT_SIZE / 2;
-        const sizePx = potRect.width / 2;
-        from = {
-          left: potRect.left + (cx / POT_SIZE) * potRect.width - sizePx / 2,
-          top: potRect.top + (cy / POT_SIZE) * potRect.height - sizePx / 2,
-          width: sizePx,
-          height: sizePx,
-        };
-      }
+      // The drops shoot from the floating drop icon above the
+      // plant (its rect, captured before collecting removes it).
+      const iconEl = pot._dewIconEl;
+      const iconRect = iconEl && typeof iconEl.getBoundingClientRect === 'function' ? iconEl.getBoundingClientRect() : null;
+      const from = iconRect && iconRect.width ? iconRect : null;
       // Take the scatter out of renderDew's hands so it can
       // drift out and fade instead of vanishing on the spot.
       const effect = pot._dewEffectEl;
