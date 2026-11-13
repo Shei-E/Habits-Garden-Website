@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 
 <body>
@@ -961,7 +961,7 @@
         const dewTarget = dewPotAtPoint(e.clientX, e.clientY);
         if (dewTarget) {
           dewSwallowPot = dewTarget;
-          collectDew(dewTarget, dewTarget._dewIconEl);
+          collectDew(dewTarget);
           return;
         }
         dewSwallowPot = null; // a fresh press supersedes a pending swallow
@@ -1730,7 +1730,6 @@
         : 'off';
       if (pot._dewState === state) return;
       pot._dewState = state;
-      if (pot._dewIconEl) { pot._dewIconEl.remove(); pot._dewIconEl = null; }
       if (pot._dewEffectEl) { pot._dewEffectEl.remove(); pot._dewEffectEl = null; }
       if (!show) return;
 
@@ -1768,24 +1767,13 @@
       }
       pot.appendChild(effect);
       pot._dewEffectEl = effect;
-
-      // The collect icon, hovering just above the plant.
-      const icon = document.createElement('img');
-      icon.src = 'assets/drop1.png';
-      icon.className = 'dew-icon';
-      icon.alt = 'collect dew drops';
-      icon.style.bottom = `calc(${(seat + ink.h * pScale + 2).toFixed(1)}px * var(--scale))`;
-      icon.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
-      icon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        collectDew(pot, icon);
-      });
-      pot.appendChild(icon);
-      pot._dewIconEl = icon;
     }
 
-    // Collect one plant's drops: the icon flies to the currency
-    // pill, and the count goes up when it lands.
+    // Collect one plant's drops: drop(s) fly from the middle
+    // of the plant to the currency pill, and the count goes up
+    // as they land. (There is no floating collect icon any
+    // more — the dew effect on the plant is the cue, and
+    // pressing the plant itself collects.)
     // The dew scatter's send-off when its plant is collected:
     // each little drop drifts away from the plant's centre
     // while a separate slow fade, starting immediately,
@@ -1847,9 +1835,25 @@
       setTimeout(() => { if (effect.parentNode) effect.remove(); }, DURATION + 400);
     }
 
-    function collectDew(pot, iconEl) {
+    function collectDew(pot) {
       if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
-      const from = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+      // The drops shoot from the middle of the plant: the
+      // plant ink's centre, in a box the size the old floating
+      // icon used to occupy.
+      let from = null;
+      const potRect = pot.getBoundingClientRect ? pot.getBoundingClientRect() : null;
+      if (potRect && potRect.width) {
+        const inkBox = plantInkBox(pot);
+        const cx = inkBox ? inkBox.left + inkBox.w / 2 : POT_SIZE / 2;
+        const cy = inkBox ? inkBox.top + inkBox.h / 2 : POT_SIZE / 2;
+        const sizePx = potRect.width / 2;
+        from = {
+          left: potRect.left + (cx / POT_SIZE) * potRect.width - sizePx / 2,
+          top: potRect.top + (cy / POT_SIZE) * potRect.height - sizePx / 2,
+          width: sizePx,
+          height: sizePx,
+        };
+      }
       // Take the scatter out of renderDew's hands so it can
       // drift out and fade instead of vanishing on the spot.
       const effect = pot._dewEffectEl;
@@ -1930,11 +1934,11 @@
               { transform: 'translate(0px, 0px) scale(1)' },
               { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.8)`, offset: 0.55 },
               { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0.3)` },
-            ], { duration: 600 + Math.random() * 350, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+            ], { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
             if (anim && anim.finished && typeof anim.finished.then === 'function') {
               anim.finished.then(land).catch(land);
             } else {
-              setTimeout(land, 1000);
+              setTimeout(land, 1250);
             }
           } else {
             land();
@@ -2620,7 +2624,7 @@
           ? (potHasDew(pot) ? pot : null)
           : dewPotAtPoint(e.clientX, e.clientY);
         if (dewTarget) {
-          collectDew(dewTarget, dewTarget._dewIconEl);
+          collectDew(dewTarget);
           return;
         }
         // Route the click to the pot whose pot-or-plant zone
