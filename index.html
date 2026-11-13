@@ -1976,8 +1976,11 @@
         const frames = [];
         for (let s = 0; s <= 4; s++) {
           const t = s / 4;
+          // Full size through the burst and halfway in; the
+          // shrink happens only on the final approach.
+          const sc = t <= 0.6 ? '1.00' : (1 - 0.72 * ((t - 0.6) / 0.4)).toFixed(2);
           const frame = {
-            transform: `translate(${cubicAt(stackX, c1x, c2x, tx, t).toFixed(1)}px, ${cubicAt(stackY, c1y, c2y, ty, t).toFixed(1)}px) scale(${(1 - 0.72 * t).toFixed(2)})`,
+            transform: `translate(${cubicAt(stackX, c1x, c2x, tx, t).toFixed(1)}px, ${cubicAt(stackY, c1y, c2y, ty, t).toFixed(1)}px) scale(${sc})`,
           };
           if (s < 4) frame.easing = 'cubic-bezier(.45,.02,.65,.6)';
           frames.push(frame);
