@@ -1874,6 +1874,75 @@
       const pill = document.getElementById('ui-currency');
       const to = pill && pill.getBoundingClientRect ? pill.getBoundingClientRect() : null;
       if (!from || !to || !from.width || !to.width) { finish(); return; }
+      const host = document.body || document.querySelector('.home-screen');
+      if (!host) { finish(); return; }
+
+      // A plant paying several drops: that many drops shoot
+      // out of the icon, each on its own trajectory — its own
+      // bow, lift and timing — all converging on the pill.
+      // The count ticks up by one as each drop lands. (One
+      // drop keeps the single flight below.)
+      const amount = parseInt(pot.dataset.dewToday || '1', 10) || 1;
+      if (amount > 1) {
+        const totalBefore = collectedDewTotal() - amount;
+        const pillCx = to.left + to.width / 2;
+        const pillCy = to.top + to.height / 2;
+        const fromCx = from.left + from.width / 2;
+        const fromCy = from.top + from.height / 2;
+        let landed = 0;
+        let settled = false;
+        const settle = () => { if (settled) return; settled = true; updateDewDrops(); };
+        const onLand = () => {
+          landed += 1;
+          const el = document.getElementById('ui-currency-count');
+          if (el) el.textContent = String(totalBefore + landed);
+          const pillEl = document.getElementById('ui-currency');
+          if (pillEl) {
+            pillEl.classList.remove('is-pop');
+            void pillEl.offsetWidth;
+            pillEl.classList.add('is-pop');
+          }
+          if (landed >= amount) settle();
+        };
+        setTimeout(settle, 1800); // sweep: never leave the count mid-flight
+        for (let i = 0; i < amount; i++) {
+          const drop = document.createElement('img');
+          drop.src = 'assets/drop1.png';
+          drop.className = 'dew-flyer';
+          drop.alt = '';
+          const jx = (Math.random() - 0.5) * 6;
+          const jy = (Math.random() - 0.5) * 6;
+          drop.style.left = `${from.left + jx}px`;
+          drop.style.top = `${from.top + jy}px`;
+          drop.style.width = `${from.width}px`;
+          drop.style.height = `${from.height}px`;
+          host.appendChild(drop);
+          setTimeout(() => { drop.remove(); }, 1700); // sweep, in case a finish never reports
+          const dx = pillCx - (fromCx + jx);
+          const dy = pillCy - (fromCy + jy);
+          const len = Math.hypot(dx, dy) || 1;
+          const bow = (Math.random() - 0.5) * 90; // sideways curve, either way
+          const mx = dx * (0.4 + Math.random() * 0.2) + (-dy / len) * bow;
+          const my = dy * (0.4 + Math.random() * 0.2) + (dx / len) * bow - (20 + Math.random() * 50);
+          const land = () => { drop.remove(); onLand(); };
+          if (typeof drop.animate === 'function') {
+            const anim = drop.animate([
+              { transform: 'translate(0px, 0px) scale(1)' },
+              { transform: `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) scale(0.8)`, offset: 0.55 },
+              { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(0.3)` },
+            ], { duration: 600 + Math.random() * 350, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+            if (anim && anim.finished && typeof anim.finished.then === 'function') {
+              anim.finished.then(land).catch(land);
+            } else {
+              setTimeout(land, 1000);
+            }
+          } else {
+            land();
+          }
+        }
+        return;
+      }
+
       const flyer = document.createElement('img');
       flyer.src = 'assets/drop1.png';
       flyer.className = 'dew-flyer';
@@ -1882,8 +1951,6 @@
       flyer.style.top = `${from.top}px`;
       flyer.style.width = `${from.width}px`;
       flyer.style.height = `${from.height}px`;
-      const host = document.body || document.querySelector('.home-screen');
-      if (!host) { finish(); return; }
       host.appendChild(flyer);
       const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
       const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
