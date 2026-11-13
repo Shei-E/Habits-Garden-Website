@@ -1940,16 +1940,41 @@
             const u = 1 - t;
             return u * u * p0 + 2 * u * t * p1 + t * t * p2;
           };
-          const frames = [];
+          let duration = Math.max(850 + Math.random() * 300, len * 0.7);
+          let frames = [];
           for (let s = 0; s <= 4; s++) {
             const t = s / 4;
             frames.push({
               transform: `translate(${quadAt(0, qx, dx, t).toFixed(1)}px, ${quadAt(0, qy, dy, t).toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(t, 1.5)).toFixed(2)})`,
             });
           }
+          // Some drops first shoot out in a random direction —
+          // left, right, up or down — before curving to the
+          // pill: those fly a cubic curve whose first control
+          // point is the burst point, so the drop sets off that
+          // way and then bends smoothly onto its path to the
+          // pill (through its own mid point, as ever).
+          if (Math.random() < 0.5) {
+            const dir = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(Math.random() * 4)];
+            const burstDist = 30 + Math.random() * 30;
+            const bx = dir[0] * burstDist;
+            const by = dir[1] * burstDist;
+            const cubicAt = (p0, p1, p2, p3, t) => {
+              const u = 1 - t;
+              return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+            };
+            frames = [];
+            for (let s = 0; s <= 6; s++) {
+              const t = s / 6;
+              frames.push({
+                transform: `translate(${cubicAt(0, bx, mx, dx, t).toFixed(1)}px, ${cubicAt(0, by, my, dy, t).toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(t, 1.5)).toFixed(2)})`,
+              });
+            }
+            duration = Math.max(duration, (len + burstDist) * 0.7);
+          }
           const land = () => { drop.remove(); onLand(); };
           if (typeof drop.animate === 'function') {
-            const anim = drop.animate(frames, { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+            const anim = drop.animate(frames, { duration, easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
             if (anim && anim.finished && typeof anim.finished.then === 'function') {
               anim.finished.then(land).catch(land);
             } else {
