@@ -3045,6 +3045,7 @@
     // Secret dev commands listener:
     // - type 'devdate' to toggle dev date popup
     // - type 'devgrw' to instantly grow all plants
+    // - type 'devdew' to give every plant its dew drops
     let secretBuffer = '';
     const MAX_BUFFER_LEN = 10;
 
@@ -3072,6 +3073,25 @@
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
       }
+    }
+
+    // Give every plant its dew drops right now, at the usual
+    // rates (dead plants still get none), clearing any
+    // collected state — so collection can be tested on demand
+    // instead of waiting for the next day start.
+    function devGiveAllDew() {
+      const todayStr = getLocalDateStr(getGameDate());
+      document.querySelectorAll('.pot.has-plant').forEach(pot => {
+        const rate = dewDropRate(pot);
+        if (rate > 0) {
+          pot.dataset.dewToday = String(rate);
+          delete pot.dataset.dewCollected;
+          pot.dataset.dewDay = todayStr;
+        }
+        renderDew(pot);
+      });
+      updateDewDrops();
+      saveGarden();
     }
 
     document.addEventListener('keydown', (e) => {
@@ -3102,6 +3122,9 @@
         } else if (secretBuffer.endsWith('devgrw')) {
           secretBuffer = '';
           devGrowAllPlants();
+        } else if (secretBuffer.endsWith('devdew')) {
+          secretBuffer = '';
+          devGiveAllDew();
         }
       }
     });
