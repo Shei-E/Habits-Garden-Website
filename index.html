@@ -2105,9 +2105,22 @@
       });
     }
 
+    // A canonical print of a garden bundle (object keys sorted),
+    // so two copies of the same garden compare equal however
+    // the database ordered the fields. Used to tell another
+    // device's changes apart from the echo of our own saves.
+    const bundleJson = (b) => JSON.stringify(b, (k, v) => {
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        return Object.keys(v).sort().reduce((o, key) => { o[key] = v[key]; return o; }, {});
+      }
+      return v;
+    });
+    let lastSavedBundleJson = '';
+
     function saveGarden() {
       if (!signedInEmail || restoringGarden) return;
       const bundle = serializeGarden();
+      lastSavedBundleJson = bundleJson(bundle);
       lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
       // The same bundle goes to the account's cloud row, so the
       // garden follows the account to any device.
@@ -2325,6 +2338,7 @@
             }
           }
           lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
+          lastSavedBundleJson = bundleJson(bundle);
           if (bridge && bridge.save) { try { bridge.save(bundle); } catch (e) { } }
         }
         // Today's drops are now decided from this account's
@@ -2342,6 +2356,33 @@
         showSignInText();
       });
     };
+
+    // ---- Live sync between devices ----
+    // The bridge watches the account's cloud row. When another
+    // device changes it — collecting dew there, say — the new
+    // garden arrives here and goes on the shelf, so every
+    // device shows the same garden. Our own saves echo back
+    // too; those are recognised (the bundle matches the last
+    // one we sent) and ignored. If a pot is mid-drag when a
+    // change arrives, it waits until the drag ends.
+    let pendingRemoteGarden = null;
+    window.hgRemoteGarden = function (bundle) {
+      if (!signedInEmail || !Array.isArray(bundle) || !bundle.length) return;
+      if (bundleJson(bundle) === lastSavedBundleJson) return; // our own echo
+      pendingRemoteGarden = bundle;
+      applyPendingRemoteGarden();
+    };
+    function applyPendingRemoteGarden() {
+      if (!pendingRemoteGarden) return;
+      if (dragState) { setTimeout(applyPendingRemoteGarden, 1200); return; }
+      const bundle = pendingRemoteGarden;
+      pendingRemoteGarden = null;
+      lastSavedBundleJson = bundleJson(bundle);
+      restoreGarden(bundle);
+      lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+      resetDewGrant();
+      updateDewDrops();
+    }
 
     // A garden this browser saved under the old browser-only
     // accounts (any hg.garden.v1.* entry that has a plant).
@@ -3236,7 +3277,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: 'AIzaSyDu0TofMptHrwVYgQqzowfZRFL8q48y9Dk',
@@ -3285,10 +3326,24 @@
         },
       };
 
+      let unwatch = null;
       onAuthStateChanged(auth, u => {
         user = u;
         if (window.hgCloudHook) {
           window.hgCloudHook(u ? { email: u.email, uid: u.uid } : null);
+        }
+        // Watch the account's garden row: when another device
+        // saves (collecting dew there, say), the new garden is
+        // handed to the game code to put on this shelf too.
+        if (unwatch) { unwatch(); unwatch = null; }
+        if (u) {
+          unwatch = onSnapshot(doc(db, 'gardens', u.uid), snap => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            if (data && Array.isArray(data.garden) && window.hgRemoteGarden) {
+              window.hgRemoteGarden(data.garden);
+            }
+          }, () => { });
         }
       });
     } catch (e) {
