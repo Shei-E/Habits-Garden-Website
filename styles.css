@@ -2103,3 +2103,202 @@ body {
 
 /* No fixed responsive scale steps: fitStage() in index.html sets
    --scale from the real window size, so every window size fits. */
+
+/* Add-a-bin button: below the add-a-pot button in the corner
+   stack. Same 28x32 canvas shown at x0.75 (21x24); its ink is
+   19x15 with 7 units of clear canvas on the right (= 5.25 at
+   this scale), so the right offset is -0.25 to keep the ink's
+   right edge the same 5 units in from the screen's right edge,
+   and the top leaves the same 2-unit visible gap below the
+   add-a-pot button's ink. Hidden until the intro hint flow
+   finishes, like the rest of the corner stack. */
+.ui-addbin {
+  position: fixed;
+  top: calc(26.25px * var(--scale));
+  right: calc(-0.25px * var(--scale));
+  width: calc(21px * var(--scale));
+  height: calc(24px * var(--scale));
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  background-image: url("assets/ui-addbin.png");
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.ui-addbin.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ui-addbin:hover {
+  transform: scale(1.1);
+}
+
+/* Bins on the shelf: a 32x48 jar sprite (the position is set
+   from JS: left on a shelf slot, top 14 above the row so the
+   jar lands on the shelf line). A bin with a flower wears the
+   placeholder flower sprite (the jar with its stem) instead. */
+.bin {
+  position: absolute;
+  width: calc(32px * var(--scale));
+  height: calc(48px * var(--scale));
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  background-image: url("assets/bin1.png");
+  background-position: bottom center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+}
+
+.bin.has-flower {
+  background-image: url("assets/placeholder1.png");
+}
+
+.bin:focus-visible {
+  outline: 2px dashed #000;
+  outline-offset: 2px;
+}
+
+/* Add Flower menu: the Add Plant modal's frame with its own
+   spacing — no repeat row, so "Customize flower" sits where
+   the repeat row would be, and the picker arrows drop to the
+   flower row. */
+.af-modal .ap-label--choose {
+  top: calc(44px * var(--scale));
+}
+
+.af-modal .ap-arrow {
+  top: calc(84px * var(--scale));
+}
+
+/* Flower choices in the picker: one 32x48 jar-and-flower
+   sprite per type, centred in the carousel viewport. The
+   selected flower lifts, like the plants do. */
+.af-flower {
+  position: absolute;
+  left: calc(72px * var(--scale));
+  top: calc(56px * var(--scale));
+  width: calc(32px * var(--scale));
+  height: calc(62px * var(--scale));
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.af-flower.is-selected {
+  transform: translateY(calc(-5px * var(--scale)));
+}
+
+.af-flower-sprite {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Bin flower page: full-panel layers (the jar drawing and one
+   layer per petal still on the flower), the month/day columns
+   on either side, and an invisible button over the jar that
+   drops a petal when clicked. Positions follow the bad-habits
+   design: the panel sits at 10,10 and the layers on top of it. */
+.bh-layer {
+  position: absolute;
+  left: calc(10.49px * var(--scale));
+  top: calc(10px * var(--scale));
+  width: calc(236px * var(--scale));
+  height: calc(124px * var(--scale));
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+.bh-days {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bh-t {
+  position: absolute;
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  white-space: nowrap;
+}
+
+.bh-petal {
+  position: absolute;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+.bh-centre {
+  position: absolute;
+  left: calc(104px * var(--scale));
+  top: calc(20px * var(--scale));
+  width: calc(48px * var(--scale));
+  height: calc(112px * var(--scale));
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Page arrows for the day columns: the carousel's tiny arrow,
+   at the panel's bottom corners, shown only when there is a
+   page in that direction (the code hides them otherwise). */
+.bh-arrow {
+  position: absolute;
+  top: calc(117px * var(--scale));
+  width: calc(11px * var(--scale));
+  height: calc(11px * var(--scale));
+  background: url("assets/ui-tiny-arrow-1.png") center / contain no-repeat;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.bh-arrow--prev {
+  left: calc(16px * var(--scale));
+  transform: scaleX(-1);
+}
+
+.bh-arrow--next {
+  left: calc(229px * var(--scale));
+}

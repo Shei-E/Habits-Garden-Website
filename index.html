@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 
 <body>
@@ -49,6 +49,11 @@
          until the intro hint flow finishes. Each press adds an empty
          pot to the first free shelf slot. -->
     <button class="ui-addplant" id="ui-addplant" type="button" aria-label="Add a pot"></button>
+
+    <!-- Add-a-bin button: below the add-a-pot button, same reveal.
+         Each press adds an empty bin (a jar for a bad-habit flower)
+         to the first free shelf slot. -->
+    <button class="ui-addbin" id="ui-addbin" type="button" aria-label="Add a bin"></button>
 
     <!-- Account pill: top left of the screen, mirroring the
          currency pill's margins. Unlike the rest of the corner
@@ -238,6 +243,77 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Flower Popup Modal (for bins): mirrors the Add Plant
+         modal — a name field and a scrolling flower picker. No
+         flower artwork exists yet, so the picker offers the
+         placeholder flower only. -->
+    <div class="ap-modal af-modal" id="add-flower-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="af-title">
+      <div class="ap-container">
+        <img class="ap-panel" src="assets/ui-plant-1.png" alt="">
+
+        <div class="ap-header">
+          <h2 class="ap-title" id="af-title">Add Flower</h2>
+          <button class="ap-remove" id="af-remove" type="button" hidden>remove</button>
+        </div>
+        <button class="ap-close" id="af-close" type="button" aria-label="Close"></button>
+
+        <!-- Flower name -->
+        <label class="ap-label ap-label--name" for="flower-name">Flower name:</label>
+        <input class="ap-input" id="flower-name" type="text" placeholder="type here..." autocomplete="off">
+
+        <!-- Customize flower -->
+        <p class="ap-label ap-label--choose">Customize flower</p>
+        <button class="ap-arrow ap-arrow--prev" id="af-flower-prev" type="button"
+          aria-label="Previous flowers"></button>
+        <div class="ap-carousel-viewport">
+          <div class="ap-carousel-track" id="af-carousel-track">
+            <button class="af-flower is-selected" type="button" aria-label="Placeholder flower"
+              data-flower="placeholder">
+              <img class="af-flower-sprite" src="assets/placeholder1.png" alt="">
+            </button>
+          </div>
+        </div>
+        <button class="ap-arrow ap-arrow--next" id="af-flower-next" type="button"
+          aria-label="Next flowers"></button>
+
+        <!-- Commit button -->
+        <button class="ap-commit" id="af-commit" type="button" disabled>COMMIT</button>
+      </div>
+    </div>
+
+    <!-- Bin Flower Page: opened by clicking a bin that has a
+         flower. The flower stands in its jar in the middle; the
+         days from the flower's creation to today run down the
+         columns on either side (a new month always starts a new
+         column, two columns to a page, tiny arrows switch pages),
+         and every petal the flower has lost sits next to the date
+         it fell on. Clicking the flower drops another petal. -->
+    <div class="ap-modal bh-modal" id="bin-page-modal" aria-hidden="true" role="dialog" aria-modal="true"
+      aria-labelledby="bh-name">
+      <div class="ap-container">
+        <img class="ap-panel" src="assets/ui-plant-1.png" alt="">
+        <img class="bh-layer" src="assets/bin-flower-drawing.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-1" data-petal="1" src="assets/petal1.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-2" data-petal="2" src="assets/petal2.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-3" data-petal="3" src="assets/petal3.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-4" data-petal="4" src="assets/petal4.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-5" data-petal="5" src="assets/petal5.png" alt="">
+        <img class="bh-layer bh-petal-layer" id="bh-petal-6" data-petal="6" src="assets/petal6.png" alt="">
+        <div class="bh-days" id="bh-days"></div>
+        <button class="bh-centre" id="bh-centre" type="button" aria-label="Drop a petal"></button>
+        <div class="ap-header">
+          <h2 class="ap-title" id="bh-name">Flower Name</h2>
+          <button class="ap-remove" id="bh-edit" type="button">edit</button>
+          <button class="ap-remove" id="bh-remove" type="button">remove</button>
+        </div>
+        <button class="ap-close" id="bh-close" type="button" aria-label="Close"></button>
+        <button class="bh-arrow bh-arrow--prev" id="bh-page-prev" type="button"
+          aria-label="Previous page"></button>
+        <button class="bh-arrow bh-arrow--next" id="bh-page-next" type="button" aria-label="Next page"></button>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -308,6 +384,9 @@
     // A plain array (not the live NodeList) so the add-a-pot button
     // can push new pots into every loop below at runtime.
     const pots = Array.from(document.querySelectorAll('.pot'));
+    // Bins (bad-habit flower jars) share the shelf with the pots;
+    // the bins code lives further down, past the garden saving.
+    const bins = [];
     const repeatVal = document.getElementById('ap-repeat-val');
     const daysPicker = document.getElementById('ap-days-picker');
     const monthlyPicker = document.getElementById('ap-monthly-picker');
@@ -683,6 +762,8 @@
         // all appear together.
         const addPotBtn = document.getElementById('ui-addplant');
         if (addPotBtn) addPotBtn.classList.add('is-visible');
+        const addBinBtn = document.getElementById('ui-addbin');
+        if (addBinBtn) addBinBtn.classList.add('is-visible');
         const currencyBtn = document.getElementById('ui-currency');
         if (currencyBtn) currencyBtn.classList.add('is-visible');
         const signInText = document.getElementById('ui-signin');
@@ -2112,7 +2193,7 @@
     const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay'];
 
     function serializeGarden() {
-      return pots.map(pot => {
+      const entries = pots.map(pot => {
         const pos = getPotPos(pot);
         const entry = {
           left: pos.left,
@@ -2129,6 +2210,18 @@
         }
         return entry;
       });
+      // Bins ride along in the same bundle, after the pots, so a
+      // saved garden (and the live sync) carries them too.
+      for (const bin of bins) {
+        const f = getBinFlower(bin);
+        entries.push({
+          bin: true,
+          left: Number(bin.dataset.binLeft),
+          row: bin.dataset.binRow,
+          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, drops: f.drops } : null,
+        });
+      }
+      return entries;
     }
 
     // A canonical print of a garden bundle (object keys sorted),
@@ -2186,19 +2279,22 @@
     // the add-a-pot code, then everything is put back in place.
     function restoreGarden(entries) {
       if (!Array.isArray(entries) || entries.length === 0) return;
+      // The bundle is the pot entries followed by any bin entries.
+      const binEntries = entries.filter(e => e && e.bin);
+      const potEntries = entries.filter(e => !(e && e.bin));
       restoringGarden = true;
-      while (pots.length > entries.length) {
+      while (pots.length > potEntries.length) {
         const extra = pots[pots.length - 1];
         pots.splice(pots.length - 1, 1);
         extra.remove();
       }
-      while (pots.length < entries.length) {
+      while (pots.length < potEntries.length) {
         const before = pots.length;
         addPot();
         if (pots.length === before) break; // both shelves are full
       }
       let anyPlant = false;
-      entries.forEach((entry, i) => {
+      potEntries.forEach((entry, i) => {
         const pot = pots[i];
         if (!pot) return;
         setPotPos(pot, entry.left, entry.row);
@@ -2222,6 +2318,20 @@
           updatePotVisuals(pot);
         }
       });
+      // Bins are rebuilt from scratch to match the bundle.
+      while (bins.length) removeBin(bins[bins.length - 1]);
+      for (const be of binEntries) {
+        const bin = createBin(be.left, be.row);
+        if (bin && be.flower) {
+          setBinFlower(bin, {
+            name: be.flower.name || '',
+            type: be.flower.type || 'placeholder',
+            created: be.flower.created || '',
+            petalsLeft: be.flower.petalsLeft !== undefined ? be.flower.petalsLeft : BIN_PETALS,
+            drops: be.flower.drops || {},
+          });
+        }
+      }
       restoringGarden = false;
       if (anyPlant) {
         // A saved garden means the intro is long finished: skip
@@ -2231,6 +2341,492 @@
         hasMovedFirstPot = true;
         updateHint();
       }
+    }
+
+    // ---------- Bins: bad-habit flowers ----------
+    // A bin is a jar on the shelf, added with the add-a-bin
+    // button under add-a-pot. Bins sit on the designed slots
+    // like pots but never move. An empty bin opens the Add
+    // Flower menu; a bin with a flower opens the flower's own
+    // page, where clicking the flower drops one of its six
+    // petals next to today's date (see the bin page below).
+    // The flower types the picker offers — only the placeholder
+    // until real flower artwork exists.
+    const BIN_FLOWER_TYPES = [
+      { id: 'placeholder', name: 'Placeholder flower', src: 'assets/placeholder1.png' },
+    ];
+    const BIN_PETALS = 6;
+
+    // A spot is free for a bin when no bin is near it and no pot
+    // blocks it (the bin's visible jar is 10 units wide, so its
+    // detection width is 8, like the pots' shrunk sprites).
+    function binSpotFree(left, row) {
+      for (const b of bins) {
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 10) return false;
+      }
+      for (const p of pots) {
+        const s = getPotPos(p);
+        if (s.row === row && Math.abs(s.left - left) < (8 + getPotDetectWidth(p)) / 2) return false;
+      }
+      return true;
+    }
+
+    // The first free designed slot (top row left to right, then
+    // the bottom row); if dragged pots block every slot, the
+    // nearest free spot to the first slot, like add-a-pot.
+    function findBinSpot() {
+      for (const row of ['top', 'bottom']) {
+        for (const left of SLOT_COL_LEFT) {
+          if (binSpotFree(left, row)) return { left, row };
+        }
+      }
+      for (const row of ['top', 'bottom']) {
+        const lo = SLOT_COL_LEFT[0];
+        for (let d = 0; d <= POT_MAX_LEFT - POT_MIN_LEFT; d++) {
+          if (lo - d >= POT_MIN_LEFT && binSpotFree(lo - d, row)) return { left: lo - d, row };
+          if (lo + d <= POT_MAX_LEFT && binSpotFree(lo + d, row)) return { left: lo + d, row };
+        }
+      }
+      return null; // both shelves are full
+    }
+
+    function createBin(left, row) {
+      const bin = document.createElement('button');
+      bin.classList.add('bin');
+      bin.setAttribute('type', 'button');
+      bin.dataset.binLeft = String(left);
+      bin.dataset.binRow = row;
+      // The bin is 48 tall where a pot is 32; its jar ink ends 2
+      // units above the sprite's bottom edge, so the top sits 14
+      // above the row for the jar to land on the shelf line.
+      bin.style.left = `calc(${left}px * var(--scale))`;
+      bin.style.top = `calc(${SLOT_ROW_TOP[row] - 14}px * var(--scale))`;
+      bin.style.zIndex = row === 'top' ? '3' : '13';
+      bin.setAttribute('aria-label', 'Add a flower');
+      bin.addEventListener('click', () => {
+        if (bin.classList.contains('has-flower')) openBinPage(bin);
+        else openFlowerModal(bin);
+      });
+      stageEl.appendChild(bin);
+      bins.push(bin);
+      return bin;
+    }
+
+    function addBin() {
+      const spot = findBinSpot();
+      if (!spot) return;
+      createBin(spot.left, spot.row);
+      saveGarden();
+    }
+
+    document.getElementById('ui-addbin')?.addEventListener('click', addBin);
+
+    function removeBin(bin) {
+      const i = bins.indexOf(bin);
+      if (i >= 0) bins.splice(i, 1);
+      bin.remove();
+    }
+
+    // The flower living in a bin, read from / written to the
+    // bin's dataset (and so into the garden bundle). drops maps
+    // a date string to { n, b }: how many normal petals and how
+    // many blank petals fell that day.
+    function getBinFlower(bin) {
+      if (!bin || !bin.classList.contains('has-flower')) return null;
+      let drops = {};
+      try { drops = JSON.parse(bin.dataset.drops || '{}'); } catch (e) { drops = {}; }
+      return {
+        name: bin.dataset.flowerName || '',
+        type: bin.dataset.flowerType || 'placeholder',
+        created: bin.dataset.flowerCreated || '',
+        petalsLeft: parseInt(bin.dataset.petalsLeft, 10) || 0,
+        drops,
+      };
+    }
+
+    function setBinFlower(bin, f) {
+      if (!f) {
+        bin.classList.remove('has-flower');
+        delete bin.dataset.flowerName;
+        delete bin.dataset.flowerType;
+        delete bin.dataset.flowerCreated;
+        delete bin.dataset.petalsLeft;
+        delete bin.dataset.drops;
+        bin.setAttribute('aria-label', 'Add a flower');
+        return;
+      }
+      bin.classList.add('has-flower');
+      bin.dataset.flowerName = f.name;
+      bin.dataset.flowerType = f.type;
+      bin.dataset.flowerCreated = f.created;
+      bin.dataset.petalsLeft = String(f.petalsLeft);
+      bin.dataset.drops = JSON.stringify(f.drops || {});
+      bin.setAttribute('aria-label', `${f.name || 'Flower'} flower`);
+    }
+
+    // ---- Add Flower menu ----
+    const flowerModal = document.getElementById('add-flower-modal');
+    const afTitle = document.getElementById('af-title');
+    const afRemove = document.getElementById('af-remove');
+    const flowerInput = document.getElementById('flower-name');
+    const afCommit = document.getElementById('af-commit');
+    const afTrack = document.getElementById('af-carousel-track');
+    let activeBin = null;
+    let selectedFlower = 'placeholder';
+    let flowerCarouselOffset = 0;
+
+    function checkFlowerCommitReady() {
+      const ready = !!selectedFlower;
+      if (afCommit) {
+        if (ready) {
+          afCommit.classList.add('is-ready');
+          afCommit.removeAttribute('disabled');
+        } else {
+          afCommit.classList.remove('is-ready');
+          afCommit.setAttribute('disabled', 'true');
+        }
+      }
+      return ready;
+    }
+
+    function selectFlower(id) {
+      selectedFlower = id;
+      document.querySelectorAll('.af-flower').forEach(b => {
+        b.classList.toggle('is-selected', b.dataset.flower === id);
+      });
+      checkFlowerCommitReady();
+    }
+
+    function updateFlowerCarousel() {
+      if (afTrack) {
+        afTrack.style.transform = `translateX(calc(${-flowerCarouselOffset * 36}px * var(--scale)))`;
+      }
+    }
+
+    document.querySelectorAll('.af-flower').forEach(btn => {
+      btn.addEventListener('click', () => selectFlower(btn.dataset.flower));
+    });
+    document.getElementById('af-flower-prev')?.addEventListener('click', () => {
+      const count = document.querySelectorAll('.af-flower').length;
+      const maxOffset = Math.max(0, count - 5);
+      flowerCarouselOffset = flowerCarouselOffset > 0 ? flowerCarouselOffset - 1 : maxOffset;
+      updateFlowerCarousel();
+    });
+    document.getElementById('af-flower-next')?.addEventListener('click', () => {
+      const count = document.querySelectorAll('.af-flower').length;
+      const maxOffset = Math.max(0, count - 5);
+      flowerCarouselOffset = flowerCarouselOffset < maxOffset ? flowerCarouselOffset + 1 : 0;
+      updateFlowerCarousel();
+    });
+
+    function openFlowerModal(bin) {
+      activeBin = bin;
+      const f = getBinFlower(bin);
+      if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Add Flower';
+      if (afRemove) {
+        afRemove.hidden = !f;
+        afRemove.classList.remove('is-confirming');
+        afRemove.textContent = 'remove';
+      }
+      if (flowerInput) flowerInput.value = f ? f.name : '';
+      flowerCarouselOffset = 0;
+      updateFlowerCarousel();
+      selectFlower(f ? f.type : 'placeholder');
+      flowerModal.classList.remove('is-closing');
+      flowerModal.classList.add('is-open');
+      flowerModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => flowerInput && flowerInput.focus(), 300);
+    }
+
+    function closeFlowerModal() {
+      if (!flowerModal.classList.contains('is-open') || flowerModal.classList.contains('is-closing')) return;
+      flowerModal.classList.remove('is-open');
+      flowerModal.classList.add('is-closing');
+      flowerModal.setAttribute('aria-hidden', 'true');
+      if (afRemove) {
+        afRemove.classList.remove('is-confirming');
+        afRemove.textContent = 'remove';
+      }
+      function onAnimationEnd(e) {
+        if (e.animationName === 'ap-fall-fade-out') {
+          flowerModal.classList.remove('is-closing');
+          flowerModal.removeEventListener('animationend', onAnimationEnd);
+        }
+      }
+      flowerModal.addEventListener('animationend', onAnimationEnd);
+    }
+
+    document.getElementById('af-close')?.addEventListener('click', closeFlowerModal);
+
+    afRemove?.addEventListener('click', () => {
+      if (!activeBin) return;
+      if (!afRemove.classList.contains('is-confirming')) {
+        afRemove.classList.add('is-confirming');
+        afRemove.textContent = 'confirm';
+        return;
+      }
+      setBinFlower(activeBin, null);
+      saveGarden();
+      closeFlowerModal();
+    });
+
+    afCommit?.addEventListener('click', () => {
+      if (!activeBin || !checkFlowerCommitReady()) return;
+      const typeData = BIN_FLOWER_TYPES.find(t => t.id === selectedFlower) || BIN_FLOWER_TYPES[0];
+      const name = (flowerInput && flowerInput.value.trim()) || typeData.name;
+      const existing = getBinFlower(activeBin);
+      if (existing) {
+        // Editing keeps the flower's history: only the name and
+        // the picked flower change.
+        existing.name = name;
+        existing.type = selectedFlower;
+        setBinFlower(activeBin, existing);
+      } else {
+        setBinFlower(activeBin, {
+          name,
+          type: selectedFlower,
+          created: getLocalDateStr(getGameDate()),
+          petalsLeft: BIN_PETALS,
+          drops: {},
+        });
+      }
+      saveGarden();
+      closeFlowerModal();
+    });
+
+    // ---- Bin flower page ----
+    const binPage = document.getElementById('bin-page-modal');
+    const bhName = document.getElementById('bh-name');
+    const bhDays = document.getElementById('bh-days');
+    const bhRemove = document.getElementById('bh-remove');
+    const bhPrev = document.getElementById('bh-page-prev');
+    const bhNext = document.getElementById('bh-page-next');
+    let pageBin = null;
+    let binPageIndex = 0;
+    let binPageCount = 1;
+    let binAnimating = false;
+    let bhDayNodes = [];
+    const BH_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function bhOrdinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    // Lay the flower's days out into pages of two columns. Days
+    // run from the creation day to today, downward in a column
+    // until the month ends — a new month always starts a new
+    // column — or the column fills up; two columns make a page.
+    // A day's row is taller when its petals wrap to more lines.
+    function binDayPages(f) {
+      const todayStr = getLocalDateStr(getGameDate());
+      let start = f.created || todayStr;
+      if (start > todayStr) start = todayStr;
+      const days = [];
+      const cur = new Date(start + 'T12:00:00');
+      const end = new Date(todayStr + 'T12:00:00');
+      while (cur <= end) {
+        const ds = getLocalDateStr(cur);
+        const drop = (f.drops && f.drops[ds]) || {};
+        const n = drop.n || 0;
+        const b = drop.b || 0;
+        days.push({
+          str: ds, month: cur.getMonth(), day: cur.getDate(), n, b,
+          lines: Math.max(1, Math.ceil((n + b) / 7)),
+        });
+        cur.setDate(cur.getDate() + 1);
+      }
+      const columns = [];
+      let col = null;
+      let cursorY = 40.17;
+      for (const d of days) {
+        const h = 10.6 + 8.4 * (d.lines - 1);
+        if (!col || col.month !== d.month || cursorY + (h - 10.6) > 120.5) {
+          col = { month: d.month, days: [] };
+          columns.push(col);
+          cursorY = 40.17;
+        }
+        col.days.push({ ...d, y: cursorY });
+        cursorY += h;
+      }
+      const pages = [];
+      for (let i = 0; i < columns.length; i += 2) pages.push(columns.slice(i, i + 2));
+      return pages.length ? pages : [[{ month: new Date(todayStr + 'T12:00:00').getMonth(), days: [] }]];
+    }
+
+    function renderBinPage() {
+      if (!pageBin) return;
+      const f = getBinFlower(pageBin);
+      if (!f) return;
+      if (bhName) bhName.textContent = f.name;
+      // The flower keeps the petals it has not lost: petal i is
+      // on the flower while i <= petalsLeft (petals fall from
+      // petal6 down to petal1).
+      for (let i = 1; i <= BIN_PETALS; i++) {
+        const img = document.getElementById('bh-petal-' + i);
+        if (!img) continue;
+        if (img.getAnimations) img.getAnimations().forEach(a => a.cancel());
+        img.style.display = i <= f.petalsLeft ? '' : 'none';
+      }
+      const pages = binDayPages(f);
+      binPageCount = pages.length;
+      if (binPageIndex > binPageCount - 1) binPageIndex = binPageCount - 1;
+      if (binPageIndex < 0) binPageIndex = 0;
+      const cols = pages[binPageIndex] || [];
+      for (const node of bhDayNodes) node.remove();
+      bhDayNodes = [];
+      const COLS = [
+        { monthX: 25.55, dayX: 32.3, petalX: 42.3 },
+        { monthX: 162.24, dayX: 168.24, petalX: 178.3 },
+      ];
+      const todayStr = getLocalDateStr(getGameDate());
+      let todayLastPetal = null;
+      cols.forEach((col, ci) => {
+        const C = COLS[ci];
+        const m = document.createElement('p');
+        m.className = 'bh-t';
+        m.textContent = BH_MONTHS[col.month];
+        m.style.left = `calc(${C.monthX}px * var(--scale))`;
+        m.style.top = 'calc(31.77px * var(--scale))';
+        bhDays.appendChild(m);
+        bhDayNodes.push(m);
+        for (const d of col.days) {
+          const label = document.createElement('p');
+          label.className = 'bh-t';
+          label.textContent = bhOrdinal(d.day);
+          label.style.left = `calc(${C.dayX}px * var(--scale))`;
+          label.style.top = `calc(${d.y}px * var(--scale))`;
+          bhDays.appendChild(label);
+          bhDayNodes.push(label);
+          const kinds = [...Array(d.n).fill('n'), ...Array(d.b).fill('b')];
+          kinds.forEach((kind, j) => {
+            const img = document.createElement('img');
+            img.className = 'bh-petal';
+            img.src = kind === 'n' ? 'assets/petal-icon1.png' : 'assets/petal-icon2.png';
+            img.alt = '';
+            img.style.left = `calc(${C.petalX + (j % 7) * 8}px * var(--scale))`;
+            img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4}px * var(--scale))`;
+            bhDays.appendChild(img);
+            bhDayNodes.push(img);
+            if (d.str === todayStr) todayLastPetal = img;
+          });
+        }
+      });
+      binPage._todayPetalEl = todayLastPetal;
+      if (bhPrev) bhPrev.style.display = binPageIndex > 0 ? '' : 'none';
+      if (bhNext) bhNext.style.display = binPageIndex < binPageCount - 1 ? '' : 'none';
+    }
+
+    function openBinPage(bin) {
+      pageBin = bin;
+      binPageIndex = 999; // opens on the last page: today's page
+      if (bhRemove) {
+        bhRemove.classList.remove('is-confirming');
+        bhRemove.textContent = 'remove';
+      }
+      renderBinPage();
+      binPage.classList.remove('is-closing');
+      binPage.classList.add('is-open');
+      binPage.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeBinPage() {
+      if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
+      binPage.classList.remove('is-open');
+      binPage.classList.add('is-closing');
+      binPage.setAttribute('aria-hidden', 'true');
+      if (bhRemove) {
+        bhRemove.classList.remove('is-confirming');
+        bhRemove.textContent = 'remove';
+      }
+      function onAnimationEnd(e) {
+        if (e.animationName === 'ap-fall-fade-out') {
+          binPage.classList.remove('is-closing');
+          binPage.removeEventListener('animationend', onAnimationEnd);
+        }
+      }
+      binPage.addEventListener('animationend', onAnimationEnd);
+    }
+
+    document.getElementById('bh-close')?.addEventListener('click', closeBinPage);
+    document.getElementById('bh-edit')?.addEventListener('click', () => {
+      if (!pageBin) return;
+      const bin = pageBin;
+      closeBinPage();
+      openFlowerModal(bin);
+    });
+    bhRemove?.addEventListener('click', () => {
+      if (!pageBin) return;
+      if (!bhRemove.classList.contains('is-confirming')) {
+        bhRemove.classList.add('is-confirming');
+        bhRemove.textContent = 'confirm';
+        return;
+      }
+      setBinFlower(pageBin, null);
+      saveGarden();
+      closeBinPage();
+    });
+    bhPrev?.addEventListener('click', () => {
+      if (binPageIndex > 0) { binPageIndex--; renderBinPage(); }
+    });
+    bhNext?.addEventListener('click', () => {
+      if (binPageIndex < binPageCount - 1) { binPageIndex++; renderBinPage(); }
+    });
+    document.getElementById('bh-centre')?.addEventListener('click', dropPetal);
+
+    // Run one WAAPI animation and wait for it; without WAAPI
+    // (or if it fails) the end state simply applies at once.
+    function animateOnce(el, keyframes, options) {
+      if (!el || typeof el.animate !== 'function') return Promise.resolve();
+      try {
+        const a = el.animate(keyframes, options);
+        return a && a.finished ? a.finished.catch(() => { }) : Promise.resolve();
+      } catch (e) { return Promise.resolve(); }
+    }
+
+    // Clicking the flower: one petal lifts off the flower and
+    // fades away, then a petal falls in next to today's date.
+    // Once all six petals are gone, the petal that falls in is
+    // a blank one (just the outline).
+    function dropPetal() {
+      if (!pageBin || binAnimating) return;
+      const f = getBinFlower(pageBin);
+      if (!f) return;
+      const todayStr = getLocalDateStr(getGameDate());
+      const isNormal = f.petalsLeft > 0;
+      const overlay = isNormal ? document.getElementById('bh-petal-' + f.petalsLeft) : null;
+      if (isNormal) f.petalsLeft -= 1;
+      const drop = f.drops[todayStr] || (f.drops[todayStr] = { n: 0, b: 0 });
+      if (isNormal) drop.n += 1; else drop.b += 1;
+      setBinFlower(pageBin, f);
+      saveGarden();
+      binAnimating = true;
+      const scale = (stageEl.getBoundingClientRect().width || 256) / 256;
+      (async () => {
+        if (overlay) {
+          // The petal rises off the flower, speeding up as it
+          // goes (ease-in), and it finishes fading exactly as
+          // it reaches its fastest — the end of an ease-in.
+          await animateOnce(overlay, [
+            { transform: 'translateY(0px)', opacity: 1, offset: 0 },
+            { opacity: 1, offset: 0.45 },
+            { transform: `translateY(${-18 * scale}px)`, opacity: 0, offset: 1 },
+          ], { duration: 650, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
+        }
+        binPageIndex = 999; // the petal lands on today's page
+        renderBinPage();
+        const target = binPage._todayPetalEl;
+        if (target) {
+          // The petal falls in next to today's date: fastest
+          // at the start, slowing down until it rests.
+          await animateOnce(target, [
+            { transform: `translateY(${-16 * scale}px)`, opacity: 0 },
+            { transform: 'translateY(0px)', opacity: 1 },
+          ], { duration: 550, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+        }
+        binAnimating = false;
+      })();
     }
 
     // ---- Sign-in page ----
