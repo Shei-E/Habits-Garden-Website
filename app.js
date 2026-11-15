@@ -1958,14 +1958,13 @@ body {
   color: #bda499;
 }
 
-/* "reset position" sits left of the water button, clear of the streak
-   row (y 70-81) and the title/repeat text above. Right-anchored so its
-   right edge stays just left of the water button whatever the label
-   reads ("reset position" / "cannot reset"), matching the space.
+/* "unwater" sits left of the water button, clear of the streak
+   row (y 70-81) and the title/repeat text above. Right-anchored so
+   its right edge stays just left of the water button.
    Explicit Tiny5 font: unlike edit/remove it is a direct child of
    .pd-content, not .pd-actions, so it cannot inherit the font from
    there — without this it fell back to the browser default serif. */
-.pd-reset-pos {
+.pd-unwater {
   position: absolute;
   right: calc(147px * var(--scale) - 4px);
   top: calc(98px * var(--scale));
@@ -2008,16 +2007,11 @@ body {
   color: #000;
 }
 
-.pd-reset-pos:hover {
+.pd-unwater:hover {
   color: #000;
 }
 
-.pd-reset-pos.is-blocked,
-.pd-reset-pos.is-blocked:hover {
-  color: #e05656;
-}
-
-.pd-reset-pos:focus-visible {
+.pd-unwater:focus-visible {
   outline: 1px dashed #000;
   outline-offset: 1px;
 }
@@ -2828,7 +2822,7 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
             <!-- 8 days rendered dynamically -->
           </ul>
 
-          <button class="pd-reset-pos" id="pd-reset-pos" type="button">reset position</button>
+          <button class="pd-unwater" id="pd-unwater" type="button">unwater</button>
           <button class="pd-water" id="pd-water" type="button" aria-label="Water plant"></button>
           <div class="pd-actions"><button class="pd-edit" id="pd-edit" type="button">edit</button>&nbsp;&nbsp;<button
               class="pd-remove" id="pd-remove" type="button">remove</button></div>
@@ -3021,7 +3015,7 @@ document.body.innerHTML = HG_MARKUP;
     const pdRepeat = document.getElementById('pd-repeat');
     const pdStreak = document.getElementById('pd-streak');
     const pdWater = document.getElementById('pd-water');
-    const pdResetPos = document.getElementById('pd-reset-pos');
+    const pdUnwater = document.getElementById('pd-unwater');
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
@@ -6426,16 +6420,6 @@ document.body.innerHTML = HG_MARKUP;
 
     updateDewDrops();
 
-    // Reset-position button: always shows "reset position" when the popup
-    // opens. "cannot reset" only appears after pressing the button while
-    // the home slot is taken (set in the click handler below), so the
-    // popup never opens already showing "cannot reset".
-    function updateResetPosButton() {
-      if (!pdResetPos || !currentDetailsPot) return;
-      pdResetPos.classList.remove('is-blocked');
-      pdResetPos.textContent = 'reset position';
-    }
-
     function openPlantDetailsModal(pot) {
       currentDetailsPot = pot;
 
@@ -6518,8 +6502,6 @@ document.body.innerHTML = HG_MARKUP;
       if (pdToday) {
         pdToday.textContent = 'today';
       }
-
-      updateResetPosButton();
 
       pdModal.classList.add('is-open');
       pdModal.setAttribute('aria-hidden', 'false');
@@ -6750,15 +6732,19 @@ document.body.innerHTML = HG_MARKUP;
     // one plant — and the page closes behind the click. A
     // plant that was not watered today cannot be unwatered:
     // the button does nothing at all.
-    apUnwater?.addEventListener('click', () => {
-      if (!activePot || !activePot.classList.contains('has-plant')) return;
-      const pot = activePot;
+    // Runs back everything today's watering did (see the
+    // unwater buttons on the Edit Plant page and the plant
+    // details popup). Only acts when the plant was watered
+    // today; otherwise it does nothing at all. Returns true
+    // when it unwatered.
+    function unwaterPlant(pot) {
+      if (!pot || !pot.classList.contains('has-plant')) return false;
       const todayIso = getLocalDateStr(getGameDate());
       let history = [];
       try {
         if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
       } catch (e) { }
-      if (!history.includes(todayIso)) return;
+      if (!history.includes(todayIso)) return false;
       history = history.filter(d => d !== todayIso);
       pot.dataset.waterHistory = JSON.stringify(history);
       pot.dataset.wateredToday = 'false';
@@ -6789,7 +6775,12 @@ document.body.innerHTML = HG_MARKUP;
       pot.dataset.streak = JSON.stringify(calculateStreak(pot));
       updatePotVisuals(pot);
       saveGarden();
-      closeModal();
+      return true;
+    }
+
+    apUnwater?.addEventListener('click', () => {
+      if (!activePot) return;
+      if (unwaterPlant(activePot)) closeModal();
     });
 
     commitBtn?.addEventListener('click', () => {
@@ -7026,23 +7017,16 @@ document.body.innerHTML = HG_MARKUP;
       closePlantDetailsModal();
     });
 
-    pdResetPos?.addEventListener('click', () => {
+    // The details popup's unwater button (it replaced the
+    // reset-position button): runs back today's watering,
+    // then re-opens the popup so the water button un-greys
+    // and the streak redraws — the popup stays open, ready
+    // to water again. Not watered today: nothing happens.
+    pdUnwater?.addEventListener('click', () => {
       if (!currentDetailsPot) return;
-      const pot = currentDetailsPot;
-      const homeLeft = parseFloat(pot.dataset.homeLeft);
-      const homeRow = pot.dataset.homeRow;
-      if (isNaN(homeLeft) || !homeRow) return;
-      const pos = getPotPos(pot);
-      if (pos.left === homeLeft && pos.row === homeRow) return; // already home — no-op
-      if (!posIsFree(homeLeft, homeRow, pot)) {
-        // Home taken: only now, after pressing, show "cannot reset" in red.
-        pdResetPos.classList.add('is-blocked');
-        pdResetPos.textContent = 'cannot reset';
-        return;
+      if (unwaterPlant(currentDetailsPot)) {
+        openPlantDetailsModal(currentDetailsPot);
       }
-      setPotPos(pot, homeLeft, homeRow);
-      // Re-open so the popup follows the pot and the button refreshes.
-      openPlantDetailsModal(pot);
     });
 
     plantInput?.addEventListener('input', checkCommitReady);
