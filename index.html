@@ -2946,12 +2946,14 @@
       ];
       // Each month's days live in their own scroll viewport
       // under the month label: the whole month is one column,
-      // and it scrolls to reach the month's end. The viewport
-      // starts lower (44) than the content's own top (36), so
-      // a column scrolled to its top still keeps its first
-      // days clear of the month name above.
-      const COL_TOP = 36;
-      const VIEW_TOP = 44;
+      // and it scrolls to reach the month's end. The top of
+      // the scroll matches the top of the first date (40.17):
+      // the viewport starts there, and the content is measured
+      // from there, so a column scrolled to its top shows its
+      // first date flush with the top, just under the month
+      // name.
+      const COL_TOP = 40.17;
+      const VIEW_TOP = 40.17;
       const todayStr = getLocalDateStr(getGameDate());
       let todayLastPetal = null;
       cols.forEach((col, ci) => {

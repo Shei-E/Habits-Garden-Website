@@ -2309,7 +2309,7 @@ body {
 .bh-col {
   position: absolute;
   width: calc(78px * var(--scale));
-  height: calc(84px * var(--scale));
+  height: calc(87.83px * var(--scale));
   overflow-y: auto;
   overflow-x: hidden;
   pointer-events: auto;
