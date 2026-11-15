@@ -2441,6 +2441,9 @@ body {
 .bh-petal-popup.is-flipped .bh-popup-card {
   transform: rotate(180deg);
   transform-origin: 51.48% 42.74%;
+  /* In the flipped case the sprite alone sits 5 lower;
+     the text does not move with it. */
+  top: calc(15px * var(--scale));
 }
 
 /* The pick time with the undo button right after it, on
