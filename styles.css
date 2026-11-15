@@ -2433,7 +2433,7 @@ body {
 .bh-pp-timerow {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(57px * var(--scale));
+  top: calc(58px * var(--scale));
   white-space: nowrap;
 }
 
