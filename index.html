@@ -416,6 +416,29 @@
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
+    // Manual scrolling for a long plant name in the details
+    // popup: drag the name sideways, or use the wheel over it.
+    // (It used to scroll itself back and forth on its own.)
+    if (pdTitle) {
+      let titleDrag = null;
+      pdTitle.addEventListener('pointerdown', (e) => {
+        titleDrag = { x: e.clientX, scroll: pdTitle.scrollLeft };
+        pdTitle.classList.add('is-dragging');
+      });
+      pdTitle.addEventListener('pointermove', (e) => {
+        if (!titleDrag) return;
+        pdTitle.scrollLeft = titleDrag.scroll - (e.clientX - titleDrag.x);
+      });
+      const endTitleDrag = () => { titleDrag = null; pdTitle.classList.remove('is-dragging'); };
+      pdTitle.addEventListener('pointerup', endTitleDrag);
+      pdTitle.addEventListener('pointercancel', endTitleDrag);
+      pdTitle.addEventListener('wheel', (e) => {
+        if (pdTitle.scrollWidth <= pdTitle.clientWidth) return;
+        e.preventDefault();
+        pdTitle.scrollLeft += (e.deltaY || 0) + (e.deltaX || 0);
+      }, { passive: false });
+    }
+
     const potOptions = [
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
       { id: 'orange', name: 'Orange pot', src: 'assets/pot-orange.png', isWhite: false, isShort: true },
@@ -3494,14 +3517,10 @@
       }
       pdTitle.appendChild(titleLine);
 
-      // If the name is too long to fit in the popup, scroll the
-      // title line back and forth so the whole name can be read
-      // (the .pd-title box clips it — see styles.css).
-      const titleOverflow = (titleLine.scrollWidth || 0) - (pdTitle.clientWidth || 0);
-      if (titleOverflow > 1) {
-        titleLine.style.setProperty('--pd-scroll-dist', `${-titleOverflow}px`);
-        titleLine.classList.add('is-scrolling');
-      }
+      // A name too long for the popup is scrolled by hand
+      // (drag it, or wheel over it — wired up with the popup's
+      // elements below); each plant's name starts at its start.
+      pdTitle.scrollLeft = 0;
 
       pdStreak.innerHTML = '';
       for (let i = 0; i < 8; i++) {
