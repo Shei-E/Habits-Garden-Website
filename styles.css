@@ -2309,16 +2309,16 @@ body {
 
 .bh-modal .bh-name-left {
   display: inline-block;
-  max-width: calc(78px * var(--scale));
+  max-width: calc(83px * var(--scale));
   overflow: hidden;
   vertical-align: bottom;
 }
 
 .bh-modal .bh-name-right {
   position: absolute;
-  left: calc(116px * var(--scale));
+  left: calc(121px * var(--scale));
   top: 0;
-  width: calc(76px * var(--scale));
+  width: calc(71px * var(--scale));
   overflow: hidden;
   white-space: nowrap;
 }

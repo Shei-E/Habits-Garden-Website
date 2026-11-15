@@ -2958,10 +2958,11 @@
     // space before the drawing and the rest continues on the
     // other side of it, on the same line. (Panel units: the
     // title starts at x 21 and the drawing's ink spans about
-    // x 101–135, so the left part gets 78 units, the name
-    // resumes at 137, and the continuation has 76 units before
-    // the panel's right edge.)
-    const BH_NAME_LEFT_W = 78;
+    // x 101–135; tuned by eye, the left part gets 83 units —
+    // one more character than the ink box alone suggests —
+    // the name resumes at 142, and the continuation has 71
+    // units before the panel's right edge.)
+    const BH_NAME_LEFT_W = 83;
     let bhNameMeasurer = null;
     function measureBinNameWidth(text) {
       if (!bhNameMeasurer) {
