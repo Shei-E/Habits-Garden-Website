@@ -2174,7 +2174,7 @@ body {
 }
 
 .bin.has-flower {
-  background-image: url("assets/placeholder1.png");
+  background-image: url("assets/bin-yellow-flower.png");
 }
 
 .bin:focus-visible {
