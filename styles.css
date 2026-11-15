@@ -2450,7 +2450,7 @@ body {
 .bh-pp-notesrow {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(58px * var(--scale));
+  top: calc(56px * var(--scale));
   white-space: nowrap;
 }
 
