@@ -2216,6 +2216,17 @@
     // coming" (the cloud hook below does it when Firebase
     // reports in).
     const CLOUD_EMAIL_KEY = 'hg.cloudEmail.v1';
+    // The last garden that was on this shelf, kept in the
+    // browser (with the email of the account it belongs to,
+    // or null for a signed-out garden) so a new visit opens
+    // with it — see the restore near the end of the page.
+    const LAST_GARDEN_KEY = 'hg.lastGarden.v1';
+    // Whose garden is on the shelf right now, as far as this
+    // page knows: an account email, or null for a garden that
+    // grew here signed out. The sign-in hook reads it to keep
+    // one account's garden from ever being adopted into
+    // another account.
+    let shelfGardenOwner = null;
     let signedInEmail = null;
     let restoringGarden = false;
 
@@ -2303,8 +2314,13 @@
     let lastSavedBundleJson = '';
 
     function saveGarden() {
-      if (!signedInEmail || restoringGarden) return;
+      if (restoringGarden) return;
       const bundle = serializeGarden();
+      // The last garden on this shelf is kept in the browser
+      // whoever it belongs to (even a signed-out one), so the
+      // next visit opens with it.
+      lsSet(LAST_GARDEN_KEY, { email: signedInEmail || null, bundle });
+      if (!signedInEmail) return;
       lastSavedBundleJson = bundleJson(bundle);
       lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
       // The same bundle goes to the account's cloud row, so the
@@ -3400,6 +3416,11 @@
       // previous account's garden, so it must never be adopted
       // into the new account below.
       const switchedAccount = !!cloudUid;
+      // The shelf may be showing the LAST garden visited in
+      // this browser, which can belong to a different account:
+      // that garden is foreign here and, like a switched
+      // account's, is never adopted into this one.
+      const shelfIsForeign = typeof shelfGardenOwner === 'string' && shelfGardenOwner !== user.email;
       const myUid = user.uid;
       cloudUid = user.uid;
       signedInEmail = user.email;
@@ -3423,7 +3444,7 @@
           // whatever is on the shelf right now.
           restoreGarden(cloudGarden);
           lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
-        } else if (switchedAccount) {
+        } else if (switchedAccount || shelfIsForeign) {
           // ACCOUNT SWITCH: the account has no cloud garden,
           // and the shelf may be the PREVIOUS account's garden —
           // it is never adopted. The new account starts from
@@ -3460,6 +3481,10 @@
           lastSavedBundleJson = bundleJson(bundle);
           if (bridge && bridge.save) { try { bridge.save(bundle); } catch (e) { } }
         }
+        // The shelf now holds this account's garden: it is
+        // also the last garden this browser has visited.
+        shelfGardenOwner = signedInEmail;
+        lsSet(LAST_GARDEN_KEY, { email: signedInEmail, bundle: serializeGarden() });
         // Today's drops are now decided from this account's
         // garden as it was saved before — not the guest shelf's.
         resetDewGrant();
@@ -3473,6 +3498,17 @@
         // browser has one — never another account's.
         const local = lsGet(GARDEN_KEY_PREFIX + signedInEmail);
         if (local) restoreGarden(local);
+        else if (shelfIsForeign) {
+          // No mirror of this account's here and the shelf is
+          // another account's garden: start this account from
+          // a fresh shelf rather than show (and later save)
+          // a garden that is not its own.
+          restoreGarden([{ left: SLOT_COL_LEFT[0], row: 'top', homeLeft: String(SLOT_COL_LEFT[0]), homeRow: 'top', potType: null, plant: null }]);
+        }
+        if (local || shelfIsForeign) {
+          shelfGardenOwner = signedInEmail;
+          lsSet(LAST_GARDEN_KEY, { email: signedInEmail, bundle: serializeGarden() });
+        }
         refreshSignInUI();
         showSignInText();
       });
@@ -3505,6 +3541,8 @@
       lastSavedBundleJson = bundleJson(bundle);
       restoreGarden(bundle);
       lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+      shelfGardenOwner = signedInEmail;
+      lsSet(LAST_GARDEN_KEY, { email: signedInEmail, bundle: serializeGarden() });
       resetDewGrant();
       updateDewDrops();
     }
@@ -3541,10 +3579,29 @@
     document.getElementById('si-google')?.addEventListener('click', handleGoogleSignIn);
     document.getElementById('si-signout')?.addEventListener('click', handleSignOut);
 
-    // A returning visit: Firebase restores the session by itself
-    // and reports in through the cloud hook, which puts the
-    // account's garden back (its plants keep the dew assignment
-    // they were saved with). Until then the shelf starts fresh.
+    // A returning visit opens with the LAST garden that was
+    // on this shelf — signed in or out, it is kept in the
+    // browser, with the email of the account it belongs to
+    // (null for a signed-out garden). Firebase then restores
+    // the session by itself and reports in through the cloud
+    // hook, which puts the signed-in account's own garden
+    // back over it; the remembered owner keeps that hook from
+    // ever adopting a different account's garden into the
+    // one signing in.
+    const lastGarden = lsGet(LAST_GARDEN_KEY);
+    if (lastGarden && Array.isArray(lastGarden.bundle) && lastGarden.bundle.length) {
+      shelfGardenOwner = lastGarden.email || null;
+      restoreGarden(lastGarden.bundle);
+      if (lastGarden.bundle.some(e => e && e.plant)) {
+        // A garden with plants is not a new garden: the intro
+        // is skipped for this visit and the corner buttons
+        // show, as if it had just been played here.
+        hasPlantedFirstPlant = true;
+        hasWateredFirstPlant = true;
+        hasMovedFirstPot = true;
+        updateHint();
+      }
+    }
     refreshSignInUI();
 
     updateDewDrops();
