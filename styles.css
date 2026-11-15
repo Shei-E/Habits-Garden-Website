@@ -382,7 +382,7 @@ body {
 /* While a dead plant's −2 is part of today's total, the count
    wears the penalty colour. */
 .ui-currency-count.is-penalty {
-  color: #465456;
+  color: #4a5f62;
 }
 
 /* Add-a-pot button: below the currency display, the two sprites'
