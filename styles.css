@@ -2278,9 +2278,18 @@ body {
 /* The drawing was shortened by 7 units (its upper artwork
    moved down 7, the jar's base unmoved), so the petal
    overlays — still drawn for the taller flower — sit 7
-   units lower too, keeping them on the flower's head. */
+   units lower too, keeping them on the flower's head.
+   The shortened flower as a whole also sits 2 units lower
+   (see the #bh-drawing rule below), so the petals get
+   those 2 as well: 10 + 7 + 2 = 19. */
 .bh-layer.bh-petal-layer {
-  top: calc(17px * var(--scale));
+  top: calc(19px * var(--scale));
+}
+
+/* The shortened drawing sits 2 units lower than the tall
+   one (the tall drawing uses the layers' own top, 10). */
+.bh-modal:not(.bh-long-drawing) #bh-drawing {
+  top: calc(12px * var(--scale));
 }
 
 /* Hidden span for measuring a flower name's true width
