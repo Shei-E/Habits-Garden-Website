@@ -3267,7 +3267,7 @@
           const petalY = (pr.top - cr.top) / scale;
           // The card ink sits at (98.49..165.49, 41..85) of
           // the container when the group is unshifted.
-          let dx = (petalX + 8) - 132;
+          let dx = (petalX + 8) - 132 + 2; // centred on the petal, then 2 further right
           let dy = (petalY + 18) - 41; // card top 2 under the petal
           if (85 + dy > 124) dy = (petalY - 2) - 85; // no room below: above
           dx = Math.max(-96, Math.min(68, dx));
