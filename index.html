@@ -3044,6 +3044,24 @@
       } catch (e) { return Promise.resolve(); }
     }
 
+    // A quick squish on the flower and jar when the jar is
+    // clicked, so the press feels physical: the whole drawing
+    // dips from its base and springs back. Fired before the
+    // petal-removal animation, which replaces the transform on
+    // the one petal layer that is leaving.
+    function squishBinFlower() {
+      binPage.querySelectorAll('.bh-layer').forEach((el) => {
+        if (!el || typeof el.animate !== 'function') return;
+        try {
+          el.animate([
+            { transform: 'scale(1, 1)' },
+            { transform: 'scale(0.94, 0.88)', offset: 0.35 },
+            { transform: 'scale(1, 1)' },
+          ], { duration: 260, easing: 'ease-out' });
+        } catch (e) { /* the squish is decoration only */ }
+      });
+    }
+
     // Clicking the flower: one petal lifts off the flower and
     // fades away, then a petal falls in next to today's date.
     // Once all six petals are gone, the petal that falls in is
@@ -3061,19 +3079,19 @@
       setBinFlower(pageBin, f);
       saveGarden();
       binAnimating = true;
+      squishBinFlower();
       const scale = (stageEl.getBoundingClientRect().width || 256) / 256;
       (async () => {
         if (overlay) {
           // The petal rises off the flower, speeding up as it
           // goes (ease-in), reaching the top at 464ms (the old
           // 650ms rise at 1.4x speed). The fade starts at once
-          // — 0.4s sooner than the old start is as early as it
-          // can be — and runs the full 500ms of the animation.
+          // and is complete by 300ms (offset 0.647 of 464).
           await animateOnce(overlay, [
             { transform: 'translateY(0px)', opacity: 1, offset: 0 },
-            { transform: `translateY(${-18 * scale}px)`, offset: 0.928 },
+            { opacity: 0, offset: 0.647 },
             { transform: `translateY(${-18 * scale}px)`, opacity: 0, offset: 1 },
-          ], { duration: 500, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
+          ], { duration: 464, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
         }
         binPageIndex = 999; // the petal lands on today's page
         renderBinPage();
