@@ -2901,14 +2901,14 @@
       // the month changes.
       const columns = [];
       let col = null;
-      let cursorY = 40.17;
+      let cursorY = 43.17;
       for (const d of days) {
         const h = 10.6 + 8.4 * (d.lines - 1);
         if (!col || col.month !== d.month) {
           if (col) col.bottom = cursorY + 2;
           col = { month: d.month, days: [] };
           columns.push(col);
-          cursorY = 40.17;
+          cursorY = 43.17;
         }
         col.days.push({ ...d, y: cursorY });
         cursorY += h;
@@ -2947,13 +2947,13 @@
       // Each month's days live in their own scroll viewport
       // under the month label: the whole month is one column,
       // and it scrolls to reach the month's end. The top of
-      // the scroll matches the top of the first date (40.17):
+      // the scroll matches the top of the first date (43.17):
       // the viewport starts there, and the content is measured
       // from there, so a column scrolled to its top shows its
       // first date flush with the top, just under the month
       // name.
-      const COL_TOP = 40.17;
-      const VIEW_TOP = 40.17;
+      const COL_TOP = 43.17;
+      const VIEW_TOP = 43.17;
       const todayStr = getLocalDateStr(getGameDate());
       let todayLastPetal = null;
       cols.forEach((col, ci) => {
@@ -2962,7 +2962,7 @@
         m.className = 'bh-t';
         m.textContent = BH_MONTHS[col.month];
         m.style.left = `calc(${C.monthX}px * var(--scale))`;
-        m.style.top = 'calc(31.77px * var(--scale))';
+        m.style.top = 'calc(34.77px * var(--scale))';
         bhDays.appendChild(m);
         bhDayNodes.push(m);
         const view = document.createElement('div');
