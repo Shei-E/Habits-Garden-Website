@@ -313,6 +313,16 @@
         <button class="bh-arrow bh-arrow--prev" id="bh-page-prev" type="button"
           aria-label="Previous page"></button>
         <button class="bh-arrow bh-arrow--next" id="bh-page-next" type="button" aria-label="Next page"></button>
+        <!-- Clicking a fallen petal opens this card: when the
+             petal was picked, a notes box, and an undo button. -->
+        <div class="bh-petal-popup" id="bh-petal-popup" hidden>
+          <img class="bh-popup-card" src="assets/ui-badhabit-popup.png" alt="">
+          <p class="bh-pp-time" id="bh-pp-time"></p>
+          <label class="bh-pp-label" for="bh-pp-notes">notes:</label>
+          <input class="bh-pp-notes" id="bh-pp-notes" type="text">
+          <button class="bh-pp-undo" id="bh-pp-undo" type="button">undo</button>
+          <button class="bh-pp-close" id="bh-pp-close" type="button" aria-label="Close"></button>
+        </div>
       </div>
     </div>
   </main>
@@ -2764,14 +2774,37 @@
       bin.remove();
     }
 
+    // One day's drops, kept as a list of records — one per
+    // fallen petal: { t, b, note }, when the petal was picked
+    // (an ISO time, or null for drops recorded before times
+    // were kept), whether it was a blank drop (the flower was
+    // already bare), and the note written for it in the petal
+    // popup. Older saves stored per-day counts ({ n, b }); they
+    // become records with no time.
+    function normalizeBinDrops(drops) {
+      const out = {};
+      if (!drops || typeof drops !== 'object') return out;
+      for (const [ds, v] of Object.entries(drops)) {
+        if (Array.isArray(v)) {
+          out[ds] = v.map(r => ({ t: (r && r.t) || null, b: !!(r && r.b), note: (r && r.note) || '' }));
+        } else if (v && typeof v === 'object') {
+          const list = [];
+          for (let i = 0; i < (v.n || 0); i++) list.push({ t: null, b: false, note: '' });
+          for (let i = 0; i < (v.b || 0); i++) list.push({ t: null, b: true, note: '' });
+          out[ds] = list;
+        }
+      }
+      return out;
+    }
+
     // The flower living in a bin, read from / written to the
     // bin's dataset (and so into the garden bundle). drops maps
-    // a date string to { n, b }: how many normal petals and how
-    // many blank petals fell that day.
+    // a date string to that day's list of drop records.
     function getBinFlower(bin) {
       if (!bin || !bin.classList.contains('has-flower')) return null;
       let drops = {};
       try { drops = JSON.parse(bin.dataset.drops || '{}'); } catch (e) { drops = {}; }
+      drops = normalizeBinDrops(drops);
       return {
         name: bin.dataset.flowerName || '',
         type: bin.dataset.flowerType || 'placeholder',
@@ -3004,11 +3037,11 @@
       const end = new Date(todayStr + 'T12:00:00');
       while (cur <= end) {
         const ds = getLocalDateStr(cur);
-        const drop = (f.drops && f.drops[ds]) || {};
-        const n = drop.n || 0;
-        const b = drop.b || 0;
+        const list = (f.drops && f.drops[ds]) || [];
+        const n = list.filter(r => !r.b).length;
+        const b = list.length - n;
         days.push({
-          str: ds, month: cur.getMonth(), day: cur.getDate(), n, b,
+          str: ds, month: cur.getMonth(), day: cur.getDate(), n, b, list,
           lines: Math.max(1, Math.ceil((n + b) / 7)),
         });
         cur.setDate(cur.getDate() + 1);
@@ -3124,14 +3157,16 @@
           label.style.left = `calc(${C.dayX - C.viewLeft}px * var(--scale))`;
           label.style.top = `calc(${d.y - COL_TOP}px * var(--scale))`;
           inner.appendChild(label);
-          const kinds = [...Array(d.n).fill('n'), ...Array(d.b).fill('b')];
-          kinds.forEach((kind, j) => {
+          (d.list || []).forEach((rec, j) => {
             const img = document.createElement('img');
             img.className = 'bh-petal';
-            img.src = kind === 'n' ? 'assets/petal-icon1.png' : 'assets/petal-icon2.png';
+            img.src = rec.b ? 'assets/petal-icon2.png' : 'assets/petal-icon1.png';
             img.alt = '';
             img.style.left = `calc(${C.petalX + (j % 7) * 8 - C.viewLeft}px * var(--scale))`;
             img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4 - COL_TOP}px * var(--scale))`;
+            // Clicking a fallen petal opens its card (when it
+            // was picked, its note, an undo button).
+            img.addEventListener('click', () => openPetalPopup(d.str, j));
             inner.appendChild(img);
             if (d.str === todayStr) todayLastPetal = img;
           });
@@ -3159,6 +3194,7 @@
 
     function closeBinPage() {
       if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
+      closePetalPopup();
       binPage.classList.remove('is-open');
       binPage.classList.add('is-closing');
       binPage.setAttribute('aria-hidden', 'true');
@@ -3201,6 +3237,84 @@
     });
     document.getElementById('bh-centre')?.addEventListener('click', dropPetal);
 
+    // ---- Petal popup ----
+    // Clicking a fallen petal in a day column opens a small
+    // card over the bin page (ui-badhabit-popup.png): when the
+    // petal was picked, a notes box that saves as you type,
+    // and an undo button that un-picks the petal.
+    let petalPopup = null; // { date, index } into pageBin's drops
+
+    function openPetalPopup(dateStr, index) {
+      if (!pageBin) return;
+      const f = getBinFlower(pageBin);
+      const rec = f && f.drops[dateStr] ? f.drops[dateStr][index] : null;
+      if (!rec) return;
+      petalPopup = { date: dateStr, index };
+      const timeEl = document.getElementById('bh-pp-time');
+      if (timeEl) {
+        const parts = dateStr.split('-').map(Number);
+        const when = `${BH_MONTHS[parts[1] - 1]} ${parts[2]}`;
+        if (rec.t) {
+          const t = new Date(rec.t);
+          const hh = String(t.getHours()).padStart(2, '0');
+          const mi = String(t.getMinutes()).padStart(2, '0');
+          timeEl.textContent = dateStr === getLocalDateStr(getGameDate())
+            ? `picked at ${hh}:${mi}`
+            : `picked at ${hh}:${mi} on ${when}`;
+        } else {
+          // Drops recorded before times were kept.
+          timeEl.textContent = `picked on ${when}`;
+        }
+      }
+      const notesEl = document.getElementById('bh-pp-notes');
+      if (notesEl) notesEl.value = rec.note || '';
+      const pop = document.getElementById('bh-petal-popup');
+      if (pop) pop.hidden = false;
+    }
+
+    function closePetalPopup() {
+      petalPopup = null;
+      const pop = document.getElementById('bh-petal-popup');
+      if (pop) pop.hidden = true;
+    }
+
+    function undoPetalPick() {
+      if (!pageBin || !petalPopup) return;
+      const f = getBinFlower(pageBin);
+      if (!f) return;
+      const list = f.drops[petalPopup.date];
+      const rec = list ? list[petalPopup.index] : null;
+      if (!rec) { closePetalPopup(); return; }
+      list.splice(petalPopup.index, 1);
+      if (!list.length) delete f.drops[petalPopup.date];
+      // Un-picking one of today's petals puts it back on the
+      // flower; an older day's petals already grew back at
+      // that day's end, so only the record goes there.
+      if (!rec.b && petalPopup.date === getLocalDateStr(getGameDate()) && f.petalsLeft < BIN_PETALS) {
+        f.petalsLeft += 1;
+      }
+      setBinFlower(pageBin, f);
+      saveGarden();
+      closePetalPopup();
+      renderBinPage();
+    }
+
+    document.getElementById('bh-pp-close')?.addEventListener('click', closePetalPopup);
+    document.getElementById('bh-pp-undo')?.addEventListener('click', undoPetalPick);
+    document.getElementById('bh-pp-notes')?.addEventListener('input', () => {
+      if (!pageBin || !petalPopup) return;
+      const f = getBinFlower(pageBin);
+      const rec = f && f.drops[petalPopup.date] ? f.drops[petalPopup.date][petalPopup.index] : null;
+      if (!rec) return;
+      const notesEl = document.getElementById('bh-pp-notes');
+      rec.note = notesEl ? notesEl.value : '';
+      setBinFlower(pageBin, f);
+      saveGarden();
+    });
+    document.getElementById('bh-petal-popup')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget || (e.target && e.target.classList && e.target.classList.contains('bh-popup-card'))) closePetalPopup();
+    });
+
     // Run one WAAPI animation and wait for it; without WAAPI
     // (or if it fails) the end state simply applies at once.
     function animateOnce(el, keyframes, options) {
@@ -3241,8 +3355,8 @@
       const isNormal = f.petalsLeft > 0;
       const overlay = isNormal ? document.getElementById('bh-petal-' + f.petalsLeft) : null;
       if (isNormal) f.petalsLeft -= 1;
-      const drop = f.drops[todayStr] || (f.drops[todayStr] = { n: 0, b: 0 });
-      if (isNormal) drop.n += 1; else drop.b += 1;
+      const dropList = f.drops[todayStr] || (f.drops[todayStr] = []);
+      dropList.push({ t: new Date().toISOString(), b: !isNormal, note: '' });
       setBinFlower(pageBin, f);
       saveGarden();
       binAnimating = true;

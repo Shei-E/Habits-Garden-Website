@@ -2388,7 +2388,106 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* The petal popup: a small card (ui-badhabit-popup.png, a
+   full-panel canvas whose card ink sits at canvas x 88..155,
+   y 31..75) over the bin page, opened by clicking a fallen
+   petal. The content sits inside the card: the pick time,
+   the notes box, the undo button, a tiny close X. */
+.bh-petal-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+}
+
+.bh-petal-popup[hidden] {
+  display: none;
+}
+
+.bh-popup-card {
+  position: absolute;
+  left: calc(10.49px * var(--scale));
+  top: calc(10px * var(--scale));
+  width: calc(236px * var(--scale));
+  height: calc(124px * var(--scale));
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   pointer-events: none;
+}
+
+.bh-pp-time {
+  position: absolute;
+  left: calc(98.5px * var(--scale));
+  top: calc(46px * var(--scale));
+  width: calc(67px * var(--scale));
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bh-pp-label {
+  position: absolute;
+  left: calc(104.5px * var(--scale));
+  top: calc(56.5px * var(--scale));
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: normal;
+  color: #000;
+  white-space: nowrap;
+}
+
+.bh-pp-notes {
+  position: absolute;
+  left: calc(104.5px * var(--scale));
+  top: calc(63.5px * var(--scale));
+  width: calc(58px * var(--scale));
+  height: calc(9.5px * var(--scale));
+  box-sizing: border-box;
+  padding: 0 calc(2px * var(--scale));
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  color: #000;
+  background: rgba(255, 255, 255, 0.6);
+  border: 0;
+  border-radius: calc(2px * var(--scale));
+  outline: none;
+}
+
+.bh-pp-undo {
+  position: absolute;
+  left: calc(104.5px * var(--scale));
+  top: calc(76px * var(--scale));
+  padding: 0;
+  font-family: "Tiny5", monospace;
+  font-size: calc(7px * var(--scale));
+  color: #000;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bh-modal .bh-pp-close {
+  position: absolute;
+  left: calc(157px * var(--scale));
+  top: calc(42.5px * var(--scale));
+  width: calc(8px * var(--scale));
+  height: calc(8px * var(--scale));
+  padding: 0;
+  background: url("assets/ui-tiny-x.png") center / contain no-repeat;
+  border: 0;
+  cursor: pointer;
 }
 
 .bh-centre {
