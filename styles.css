@@ -2267,9 +2267,12 @@ body {
   top: calc(10px * var(--scale));
   width: calc(236px * var(--scale));
   height: calc(124px * var(--scale));
-  /* The press bounce pivots on the jar's base (ink centre
-     x 118 of 236, base y 116 of 124). */
-  transform-origin: 50% 93.5%;
+  object-fit: cover;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
 }
 
 /* On the bad-habits page the flower drawing paints ABOVE the
@@ -2277,13 +2280,6 @@ body {
    clicks pass through, so the header's buttons still work. */
 .bh-modal .bh-layer {
   z-index: 3;
-}
-  object-fit: cover;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  pointer-events: none;
 }
 
 .bh-days {
