@@ -2610,7 +2610,7 @@
         bin.classList.add('is-dragging');
         bin.style.zIndex = 50;
         if (deleteXEl) {
-          const box = deleteXBox(orig, 5); // bins: the X floats 5 units higher than for pots
+          const box = deleteXBox(orig, 1); // bins: the X floats 1 unit higher than for pots
           deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
           deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
           deleteXEl.classList.add('is-visible');
