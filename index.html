@@ -3319,17 +3319,21 @@
     }
 
     // The notes field wraps onto new lines instead of
-    // scrolling sideways: it grows taller as the note wraps
-    // (up to the room left inside the card, then it scrolls).
+    // scrolling sideways, growing taller as the note wraps —
+    // but only within the room inside the card (26 units
+    // below the notes line): a note that would outgrow the
+    // card is refused at the keyboard (see the input
+    // listener), so the field never needs to scroll.
+    function notesMaxHeight() {
+      const scale = stageEl ? (stageEl.getBoundingClientRect().width || 256) / 256 : 1;
+      return 26 * scale;
+    }
+
     function fitNotesHeight() {
       const notesEl = document.getElementById('bh-pp-notes');
       if (!notesEl || !notesEl.scrollHeight) return;
-      const scale = stageEl ? (stageEl.getBoundingClientRect().width || 256) / 256 : 1;
-      const maxH = 26 * scale; // the card's room below the notes line
       notesEl.style.height = 'auto';
-      const sh = notesEl.scrollHeight;
-      notesEl.style.height = Math.min(sh, maxH) + 'px';
-      notesEl.style.overflowY = sh > maxH ? 'auto' : 'hidden';
+      notesEl.style.height = Math.min(notesEl.scrollHeight, notesMaxHeight()) + 'px';
     }
 
     function closePetalPopup() {
@@ -3367,7 +3371,17 @@
       const rec = f && f.drops[petalPopup.date] ? f.drops[petalPopup.date][petalPopup.index] : null;
       if (!rec) return;
       const notesEl = document.getElementById('bh-pp-notes');
-      rec.note = notesEl ? notesEl.value : '';
+      if (!notesEl) return;
+      // Too long for the card? The input is refused — the
+      // field keeps the last note that fit, so typing simply
+      // stops having an effect at the limit.
+      notesEl.style.height = 'auto';
+      if (notesEl.scrollHeight && notesEl.scrollHeight > notesMaxHeight()) {
+        notesEl.value = rec.note || '';
+        fitNotesHeight();
+        return;
+      }
+      rec.note = notesEl.value;
       setBinFlower(pageBin, f);
       saveGarden();
       fitNotesHeight();
