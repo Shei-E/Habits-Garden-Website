@@ -128,6 +128,7 @@
         <div class="ap-header">
           <h2 class="ap-title" id="ap-title">Grow your good habits</h2>
           <button class="ap-remove" id="ap-remove" type="button" hidden>remove</button>
+          <button class="ap-remove" id="ap-unwater" type="button" hidden>unwater</button>
         </div>
         <button class="ap-close" id="ap-close" type="button" aria-label="Close"></button>
 
@@ -379,6 +380,7 @@
     const closeBtn = document.getElementById('ap-close');
     const apTitle = document.getElementById('ap-title');
     const apRemove = document.getElementById('ap-remove');
+    const apUnwater = document.getElementById('ap-unwater');
     const plantInput = document.getElementById('plant-name');
     const commitBtn = document.getElementById('ap-commit');
     // A plain array (not the live NodeList) so the add-a-pot button
@@ -1268,6 +1270,7 @@
       if (isEdit && activePot) {
         if (apTitle) apTitle.textContent = 'Edit Plant';
         if (apRemove) apRemove.hidden = false;
+        if (apUnwater) apUnwater.hidden = false;
 
         if (plantInput) plantInput.value = activePot.dataset.plantName || '';
 
@@ -1373,6 +1376,7 @@
       } else {
         if (apTitle) apTitle.textContent = 'Grow your good habits';
         if (apRemove) apRemove.hidden = true;
+        if (apUnwater) apUnwater.hidden = true;
         resetModal();
       }
 
@@ -3745,6 +3749,27 @@
       }
       removePlant(activePot);
       closeModal();
+    });
+
+    // Unwater: step the growth counter back by one watering,
+    // to where it stood before the plant was last watered. A
+    // flower whose counter falls back below its grow threshold
+    // becomes a bud again. The watering itself stays in the
+    // history (streaks and dew are untouched) — only the
+    // growth it bought is taken back. Repeat clicks step back
+    // further; the page stays open.
+    apUnwater?.addEventListener('click', () => {
+      if (!activePot || !activePot.classList.contains('has-plant')) return;
+      const count = parseInt(activePot.dataset.waterCount || '0', 10) || 0;
+      if (count <= 0) return;
+      const next = count - 1;
+      activePot.dataset.waterCount = String(next);
+      const threshold = parseInt(activePot.dataset.growThreshold || '5', 10) || 5;
+      if (activePot.dataset.stage === 'grown' && next < threshold) {
+        activePot.dataset.stage = 'bud';
+      }
+      updatePotVisuals(activePot);
+      saveGarden();
     });
 
     commitBtn?.addEventListener('click', () => {
