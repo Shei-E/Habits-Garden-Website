@@ -2944,10 +2944,20 @@
       playWateringAnimation(pot);
 
       if (isDead) {
-        // The plant revives 0.4s after the water starts
+        // The plant revives 0.7s after the water starts
         // falling, so it looks like the water hitting the
-        // plant is what brings it back.
-        setTimeout(() => updatePotVisuals(pot), 400);
+        // plant is what brings it back — and it comes back
+        // with the growing animation.
+        setTimeout(() => {
+          updatePotVisuals(pot);
+          const potPlant = pot.querySelector('.pot-plant');
+          if (potPlant) {
+            potPlant.classList.remove('plant-growing');
+            void potPlant.offsetWidth;
+            potPlant.classList.add('plant-growing');
+          }
+          playSparkleAnimation(pot);
+        }, 700);
       }
 
       if (shouldGrow) {
