@@ -2252,16 +2252,21 @@
     let signInHideTimer = null;
     function scheduleSignInTextHide() {
       if (signInHideTimer) { clearTimeout(signInHideTimer); signInHideTimer = null; }
-      if (!signedInEmail) return;
+      // The signed-in note stays out for 3s; the signed-out
+      // "already have a garden?" question stays out for 4s.
+      // Then either one scrolls back into the pill.
+      const delay = signedInEmail ? 3000 : 4000;
+      const email = signedInEmail;
       signInHideTimer = setTimeout(() => {
-        if (signInText && signedInEmail) signInText.classList.add('is-out');
-      }, 3000);
+        if (signInText && signedInEmail === email) signInText.classList.add('is-out');
+      }, delay);
     }
 
-    // Bring the corner text out of the pill and (when signed in)
-    // start its 3-second scroll back in. Only called when the
-    // sign-in state itself changes — signing in, creating an
-    // account, signing out, or a visit that restores the session.
+    // Bring the corner text out of the pill and start its
+    // scroll back in (3s later when signed in, 4s when signed
+    // out). Only called when the sign-in state itself changes
+    // — signing in, creating an account, signing out, a visit
+    // that restores the session, or a page opened signed out.
     // Just opening the panel (the pill press) must NOT bring the
     // text out, so openSignInModal does not call this.
     function showSignInText() {
@@ -2326,7 +2331,7 @@
         }
         // A signed-out visitor gets the "already have a
         // garden?" text sliding out of the account pill as
-        // the page opens, and it stays out.
+        // the page opens; it scrolls back in after 4s.
         if (signInText) signInText.classList.add('is-visible');
         showSignInText();
         return;
