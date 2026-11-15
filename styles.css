@@ -2466,7 +2466,7 @@ body {
    right after the colon. */
 .bh-pp-notes {
   position: relative;
-  top: calc(-0.8px * var(--scale));
+  top: calc(0.2px * var(--scale));
   margin-left: calc(2px * var(--scale));
   width: calc(35px * var(--scale));
   height: calc(9px * var(--scale));
