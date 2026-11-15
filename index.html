@@ -4190,6 +4190,7 @@
     // Secret dev commands listener:
     // - type 'devdate' to toggle dev date popup
     // - type 'devgrw' to instantly grow all plants
+    // - type 'devwrg' to turn all plants back to buds (water counter reset)
     // - type 'devdew' to give every plant its dew drops
     // - type 'devreset' to reset the garden to the start of today
     let secretBuffer = '';
@@ -4216,6 +4217,22 @@
         playSparkleAnimation(pot);
       });
       updateDewDrops();
+      if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
+        openPlantDetailsModal(currentDetailsPot);
+      }
+    }
+
+    // The reverse of devgrw: every plant goes back to a bud
+    // and its growth counter resets to 0. The visuals are
+    // recomputed, so a dead flower becomes a dead bud and a
+    // healthy flower a healthy bud; watering history is kept.
+    function devBudAllPlants() {
+      document.querySelectorAll('.pot.has-plant').forEach(pot => {
+        pot.dataset.stage = 'bud';
+        pot.dataset.waterCount = '0';
+        updatePotVisuals(pot);
+      });
+      saveGarden();
       if (currentDetailsPot && pdModal?.classList.contains('is-open')) {
         openPlantDetailsModal(currentDetailsPot);
       }
@@ -4332,6 +4349,9 @@
         } else if (secretBuffer.endsWith('devgrw')) {
           secretBuffer = '';
           devGrowAllPlants();
+        } else if (secretBuffer.endsWith('devwrg')) {
+          secretBuffer = '';
+          devBudAllPlants();
         } else if (secretBuffer.endsWith('devdew')) {
           secretBuffer = '';
           devGiveAllDew();
