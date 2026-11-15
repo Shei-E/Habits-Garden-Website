@@ -2267,7 +2267,7 @@ body {
   top: calc(10px * var(--scale));
   width: calc(236px * var(--scale));
   height: calc(124px * var(--scale));
-  /* The press squish pivots on the jar's base (ink centre
+  /* The press bounce pivots on the jar's base (ink centre
      x 118 of 236, base y 116 of 124). */
   transform-origin: 50% 93.5%;
   object-fit: cover;
