@@ -2488,7 +2488,7 @@ body {
    right after the colon. */
 .bh-pp-notes {
   position: relative;
-  top: calc(1.2px * var(--scale));
+  top: calc(0.7px * var(--scale));
   vertical-align: top;
   margin-left: calc(2px * var(--scale));
   width: calc(40px * var(--scale));
