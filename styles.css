@@ -2433,6 +2433,16 @@ body {
   pointer-events: none;
 }
 
+/* Above the petal (the flipped case) the card sprite turns
+   180 degrees so its arrow nub points down at the petal.
+   The turn is around the ink's own centre (canvas 121.5,53
+   of 236x124), so the card stays in its box and the text on
+   top of it is untouched. */
+.bh-petal-popup.is-flipped .bh-popup-card {
+  transform: rotate(180deg);
+  transform-origin: 51.48% 42.74%;
+}
+
 /* The pick time with the undo button right after it, on
    one line. */
 .bh-pp-timerow {
@@ -2475,7 +2485,7 @@ body {
    right after the colon. */
 .bh-pp-notes {
   position: relative;
-  top: calc(0.2px * var(--scale));
+  top: calc(1.2px * var(--scale));
   vertical-align: top;
   margin-left: calc(2px * var(--scale));
   width: calc(40px * var(--scale));
