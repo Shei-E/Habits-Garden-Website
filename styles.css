@@ -2309,9 +2309,13 @@ body {
 
 .bh-modal .bh-name-left {
   display: inline-block;
-  max-width: calc(83px * var(--scale));
+  width: calc(83px * var(--scale));
   overflow: hidden;
+  white-space: nowrap;
   vertical-align: bottom;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .bh-modal .bh-name-right {
@@ -2319,17 +2323,19 @@ body {
   left: calc(121px * var(--scale));
   top: 0;
   width: calc(71px * var(--scale));
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  overflow: hidden;
+  white-space: nowrap;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bh-name-line {
+  display: inline-block;
   white-space: nowrap;
 }
 
-.bh-modal .bh-name-right::-webkit-scrollbar {
-  display: none;
-}
-
+.bh-modal .bh-name-left.is-dragging,
 .bh-modal .bh-name-right.is-dragging {
   cursor: grabbing;
 }

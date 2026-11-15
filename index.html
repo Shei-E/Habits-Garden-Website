@@ -2158,6 +2158,7 @@
       if (dewRewardDayStr === getLocalDateStr(getGameDate())) return;
       updateAllPotVisuals();
       updateDewDrops();
+      resetBinPetalsForNewDay();
     }
 
     // Watch for the 4am rollover while the page sits open.
@@ -2259,7 +2260,7 @@
           bin: true,
           left: Number(bin.dataset.binLeft),
           row: bin.dataset.binRow,
-          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, drops: f.drops } : null,
+          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, petalsDay: f.petalsDay || '', drops: f.drops } : null,
         });
       }
       return entries;
@@ -2375,6 +2376,7 @@
             type: be.flower.type || 'placeholder',
             created: be.flower.created || '',
             petalsLeft: be.flower.petalsLeft !== undefined ? be.flower.petalsLeft : BIN_PETALS,
+            petalsDay: be.flower.petalsDay || '',
             drops: be.flower.drops || {},
           });
         }
@@ -2388,6 +2390,9 @@
         hasMovedFirstPot = true;
         updateHint();
       }
+      // A garden restored on a new day: its bin flowers have
+      // grown their petals back overnight.
+      resetBinPetalsForNewDay();
     }
 
     // ---------- Bins: bad-habit flowers ----------
@@ -2729,6 +2734,7 @@
         type: bin.dataset.flowerType || 'placeholder',
         created: bin.dataset.flowerCreated || '',
         petalsLeft: parseInt(bin.dataset.petalsLeft, 10) || 0,
+        petalsDay: bin.dataset.petalsDay || '',
         drops,
       };
     }
@@ -2740,6 +2746,7 @@
         delete bin.dataset.flowerType;
         delete bin.dataset.flowerCreated;
         delete bin.dataset.petalsLeft;
+        delete bin.dataset.petalsDay;
         delete bin.dataset.drops;
         bin.setAttribute('aria-label', 'Add a flower');
         return;
@@ -2749,8 +2756,33 @@
       bin.dataset.flowerType = f.type;
       bin.dataset.flowerCreated = f.created;
       bin.dataset.petalsLeft = String(f.petalsLeft);
+      if (f.petalsDay) bin.dataset.petalsDay = f.petalsDay;
+      else delete bin.dataset.petalsDay;
       bin.dataset.drops = JSON.stringify(f.drops || {});
       bin.setAttribute('aria-label', `${f.name || 'Flower'} flower`);
+    }
+
+    // A new game day: every bin flower grows its petals back.
+    // Each flower carries the day its petal count belongs to
+    // (petalsDay — the same idea as the plants' dewDay stamp):
+    // a flower stamped with an older day becomes whole again
+    // and the stamp moves to today, so it happens once a day.
+    // The dropped-petal history is kept.
+    function resetBinPetalsForNewDay() {
+      const todayStr = getLocalDateStr(getGameDate());
+      let changed = false;
+      bins.forEach(bin => {
+        const f = getBinFlower(bin);
+        if (!f || f.petalsDay === todayStr) return;
+        f.petalsLeft = BIN_PETALS;
+        f.petalsDay = todayStr;
+        setBinFlower(bin, f);
+        changed = true;
+      });
+      if (changed) {
+        if (pageBin) renderBinPage();
+        saveGarden();
+      }
     }
 
     // ---- Add Flower menu ----
@@ -2882,6 +2914,7 @@
           type: selectedFlower,
           created: getLocalDateStr(getGameDate()),
           petalsLeft: BIN_PETALS,
+          petalsDay: getLocalDateStr(getGameDate()),
           drops: {},
         });
       }
@@ -2966,6 +2999,7 @@
     // the name resumes at 142, and the continuation has 71
     // units before the panel's right edge.)
     const BH_NAME_LEFT_W = 83;
+    const BH_NAME_RIGHT_W = 71;
     let bhNameMeasurer = null;
     function measureBinNameWidth(text) {
       if (!bhNameMeasurer) {
@@ -2988,17 +3022,64 @@
       }
       let k = 0;
       while (k < name.length && measureBinNameWidth(name.slice(0, k + 1)) <= leftMaxPx) k++;
-      const leftSpan = document.createElement('span');
-      leftSpan.className = 'bh-name-left';
-      leftSpan.textContent = name.slice(0, k);
-      const rightSpan = document.createElement('span');
-      rightSpan.className = 'bh-name-right';
-      rightSpan.textContent = name.slice(k);
-      // If the continuation is itself too long for its side,
-      // it scrolls by hand, like the plant popup's name.
-      wireManualScroll(rightSpan);
-      bhName.appendChild(leftSpan);
-      bhName.appendChild(rightSpan);
+      // Both parts are windows onto the SAME full name: the
+      // left window shows it from the start, the right window
+      // shows it from where the left part filled up (its line
+      // is shifted by the first part's width), so the name
+      // reads as one line that jumps the flower. Scrolling
+      // slides both windows together — drag or wheel over
+      // either part and the whole name moves as one, passing
+      // behind the flower.
+      const prefixPx = measureBinNameWidth(name.slice(0, k));
+      const totalPx = measureBinNameWidth(name);
+      const maxScroll = Math.max(0, totalPx - prefixPx - BH_NAME_RIGHT_W * scale);
+      let scroll = 0;
+      const leftWin = document.createElement('span');
+      leftWin.className = 'bh-name-left';
+      const leftLine = document.createElement('span');
+      leftLine.className = 'bh-name-line';
+      leftLine.textContent = name;
+      leftWin.appendChild(leftLine);
+      const rightWin = document.createElement('span');
+      rightWin.className = 'bh-name-right';
+      const rightLine = document.createElement('span');
+      rightLine.className = 'bh-name-line';
+      rightLine.textContent = name;
+      rightWin.appendChild(rightLine);
+      const applyScroll = () => {
+        leftLine.style.transform = `translateX(${-scroll}px)`;
+        rightLine.style.transform = `translateX(${-(prefixPx + scroll)}px)`;
+      };
+      const setScroll = (v) => {
+        scroll = Math.min(maxScroll, Math.max(0, v));
+        applyScroll();
+      };
+      applyScroll();
+      [leftWin, rightWin].forEach(win => {
+        let drag = null;
+        win.addEventListener('pointerdown', (e) => {
+          drag = { x: e.clientX, scroll };
+          leftWin.classList.add('is-dragging');
+          rightWin.classList.add('is-dragging');
+        });
+        win.addEventListener('pointermove', (e) => {
+          if (drag) setScroll(drag.scroll - (e.clientX - drag.x));
+        });
+        const endDrag = () => {
+          drag = null;
+          leftWin.classList.remove('is-dragging');
+          rightWin.classList.remove('is-dragging');
+        };
+        win.addEventListener('pointerup', endDrag);
+        win.addEventListener('pointercancel', endDrag);
+        win.addEventListener('wheel', (e) => {
+          if (maxScroll <= 0) return;
+          e.preventDefault();
+          setScroll(scroll + (e.deltaY || 0) + (e.deltaX || 0));
+        }, { passive: false });
+      });
+      bhName.appendChild(leftWin);
+      bhName.appendChild(rightWin);
     }
 
     function renderBinPage() {
