@@ -2106,16 +2106,16 @@ body {
 
 /* Add-a-bin button: below the add-a-pot button in the corner
    stack. Same 28x32 canvas shown at x0.75 (21x24); its ink is
-   19x15 with 7 units of clear canvas on the right (= 5.25 at
-   this scale), so the right offset is -0.25 to keep the ink's
-   right edge the same 5 units in from the screen's right edge,
-   and the top leaves the same 2-unit visible gap below the
+   18x15 with 8 units of clear canvas on the right (= 6 at this
+   scale), so the right offset is -1 to keep the ink's right
+   edge the same 5 units in from the screen's right edge, and
+   the top leaves the same 2-unit visible gap below the
    add-a-pot button's ink. Hidden until the intro hint flow
    finishes, like the rest of the corner stack. */
 .ui-addbin {
   position: fixed;
   top: calc(26.25px * var(--scale));
-  right: calc(-0.25px * var(--scale));
+  right: calc(-1px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
