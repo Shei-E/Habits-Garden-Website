@@ -2108,15 +2108,16 @@ body {
    row (top 13, so the two buttons' inks line up — both sprites
    start their ink 7 down the canvas). Same 28x32 canvas shown
    at x0.75 (21x24); its ink is 18x15 with 8 units of clear
-   canvas on the right (= 6 at this scale). The add-a-pot ink's
-   left edge sits 22.25 units in from the screen's right edge,
-   so a right offset of 16.25 puts this ink's right edge right
-   against it. Hidden until the intro hint flow finishes, like
-   the rest of the corner stack. */
+   canvas on the right (= 6 at this scale). A right offset of
+   18.5 aligns this button's left edge with the currency
+   pill's left edge (the pill spans 3.5 to 39.5 units in from
+   the right; both sprites' ink starts 2 into the canvas, so
+   the ink left edges line up too). Hidden until the intro
+   hint flow finishes, like the rest of the corner stack. */
 .ui-addbin {
   position: fixed;
   top: calc(13px * var(--scale));
-  right: calc(16.25px * var(--scale));
+  right: calc(18.5px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;

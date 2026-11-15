@@ -3065,13 +3065,15 @@
       (async () => {
         if (overlay) {
           // The petal rises off the flower, speeding up as it
-          // goes (ease-in), and it finishes fading exactly as
-          // it reaches its fastest — the end of an ease-in.
+          // goes (ease-in). The rise runs 464ms (the old 650ms
+          // at 1.4x speed); the fade is done by 250ms, 0.4s
+          // sooner than the old animation's end.
           await animateOnce(overlay, [
             { transform: 'translateY(0px)', opacity: 1, offset: 0 },
-            { opacity: 1, offset: 0.45 },
+            { opacity: 1, offset: 0.25 },
+            { opacity: 0, offset: 0.54 },
             { transform: `translateY(${-18 * scale}px)`, opacity: 0, offset: 1 },
-          ], { duration: 650, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
+          ], { duration: 464, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
         }
         binPageIndex = 999; // the petal lands on today's page
         renderBinPage();
@@ -3080,7 +3082,7 @@
           // The petal falls in next to today's date: fastest
           // at the start, slowing down until it rests.
           await animateOnce(target, [
-            { transform: `translateY(${-16 * scale}px)`, opacity: 0 },
+            { transform: `translateY(${-12 * scale}px)`, opacity: 0 },
             { transform: 'translateY(0px)', opacity: 1 },
           ], { duration: 550, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
         }
