@@ -2428,7 +2428,7 @@ body {
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(7px * var(--scale));
+  font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
   text-align: center;
@@ -2441,7 +2441,7 @@ body {
   top: calc(56.5px * var(--scale));
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(7px * var(--scale));
+  font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
   white-space: nowrap;
@@ -2456,11 +2456,10 @@ body {
   box-sizing: border-box;
   padding: 0 calc(2px * var(--scale));
   font-family: "Tiny5", monospace;
-  font-size: calc(7px * var(--scale));
+  font-size: calc(6px * var(--scale));
   color: #000;
   background: rgba(255, 255, 255, 0.6);
   border: 0;
-  border-radius: calc(2px * var(--scale));
   outline: none;
 }
 
@@ -2470,12 +2469,11 @@ body {
   top: calc(76px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
-  font-size: calc(7px * var(--scale));
-  color: #000;
+  font-size: calc(6px * var(--scale));
+  color: #bda499;
   background: none;
   border: 0;
   cursor: pointer;
-  text-decoration: underline;
 }
 
 .bh-modal .bh-pp-close {
