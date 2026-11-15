@@ -3020,19 +3020,21 @@
         bhName.textContent = name || '';
         return;
       }
-      let k = 0;
-      while (k < name.length && measureBinNameWidth(name.slice(0, k + 1)) <= leftMaxPx) k++;
-      // Both parts are windows onto the SAME full name: the
-      // left window shows it from the start, the right window
-      // shows it from where the left part filled up (its line
-      // is shifted by the first part's width), so the name
-      // reads as one line that jumps the flower. Scrolling
-      // slides both windows together — drag or wheel over
-      // either part and the whole name moves as one, passing
-      // behind the flower.
-      const prefixPx = measureBinNameWidth(name.slice(0, k));
+      // Both parts are windows onto the SAME full name, and
+      // the right window's line is shifted by exactly the
+      // left window's WIDTH — not by a measured character
+      // count. So the text position at the left window's
+      // right edge is the very position the right window
+      // starts from: the name flows as one continuous line
+      // passing behind the flower, and no letter can appear
+      // in both windows (an earlier version shifted by the
+      // width of the characters that fit, and the overlap
+      // showed the boundary letters twice). Scrolling slides
+      // both windows together — drag or wheel over either
+      // part and the whole name moves as one.
+      const leftWinPx = BH_NAME_LEFT_W * scale;
       const totalPx = measureBinNameWidth(name);
-      const maxScroll = Math.max(0, totalPx - prefixPx - BH_NAME_RIGHT_W * scale);
+      const maxScroll = Math.max(0, totalPx - leftWinPx - BH_NAME_RIGHT_W * scale);
       let scroll = 0;
       const leftWin = document.createElement('span');
       leftWin.className = 'bh-name-left';
@@ -3048,7 +3050,7 @@
       rightWin.appendChild(rightLine);
       const applyScroll = () => {
         leftLine.style.transform = `translateX(${-scroll}px)`;
-        rightLine.style.transform = `translateX(${-(prefixPx + scroll)}px)`;
+        rightLine.style.transform = `translateX(${-(leftWinPx + scroll)}px)`;
       };
       const setScroll = (v) => {
         scroll = Math.min(maxScroll, Math.max(0, v));
