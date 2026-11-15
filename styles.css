@@ -2319,8 +2319,19 @@ body {
   left: calc(121px * var(--scale));
   top: 0;
   width: calc(71px * var(--scale));
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  cursor: grab;
   white-space: nowrap;
+}
+
+.bh-modal .bh-name-right::-webkit-scrollbar {
+  display: none;
+}
+
+.bh-modal .bh-name-right.is-dragging {
+  cursor: grabbing;
 }
 
 .bh-days {

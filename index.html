@@ -416,28 +416,31 @@
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
-    // Manual scrolling for a long plant name in the details
-    // popup: drag the name sideways, or use the wheel over it.
-    // (It used to scroll itself back and forth on its own.)
-    if (pdTitle) {
-      let titleDrag = null;
-      pdTitle.addEventListener('pointerdown', (e) => {
-        titleDrag = { x: e.clientX, scroll: pdTitle.scrollLeft };
-        pdTitle.classList.add('is-dragging');
+    // Manual scrolling for a too-long name: drag it sideways,
+    // or use the wheel over it. Used by the plant popup's name
+    // (which used to scroll itself back and forth on its own)
+    // and by the bin page's name continuation.
+    function wireManualScroll(el) {
+      if (!el) return;
+      let drag = null;
+      el.addEventListener('pointerdown', (e) => {
+        drag = { x: e.clientX, scroll: el.scrollLeft || 0 };
+        el.classList.add('is-dragging');
       });
-      pdTitle.addEventListener('pointermove', (e) => {
-        if (!titleDrag) return;
-        pdTitle.scrollLeft = titleDrag.scroll - (e.clientX - titleDrag.x);
+      el.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        el.scrollLeft = drag.scroll - (e.clientX - drag.x);
       });
-      const endTitleDrag = () => { titleDrag = null; pdTitle.classList.remove('is-dragging'); };
-      pdTitle.addEventListener('pointerup', endTitleDrag);
-      pdTitle.addEventListener('pointercancel', endTitleDrag);
-      pdTitle.addEventListener('wheel', (e) => {
-        if (pdTitle.scrollWidth <= pdTitle.clientWidth) return;
+      const endDrag = () => { drag = null; el.classList.remove('is-dragging'); };
+      el.addEventListener('pointerup', endDrag);
+      el.addEventListener('pointercancel', endDrag);
+      el.addEventListener('wheel', (e) => {
+        if (el.scrollWidth <= el.clientWidth) return;
         e.preventDefault();
-        pdTitle.scrollLeft += (e.deltaY || 0) + (e.deltaX || 0);
+        el.scrollLeft += (e.deltaY || 0) + (e.deltaX || 0);
       }, { passive: false });
     }
+    wireManualScroll(pdTitle);
 
     const potOptions = [
       { id: 'clay', name: 'Clay pot', src: 'assets/pot-template.png', isWhite: false, isShort: false },
@@ -2991,6 +2994,9 @@
       const rightSpan = document.createElement('span');
       rightSpan.className = 'bh-name-right';
       rightSpan.textContent = name.slice(k);
+      // If the continuation is itself too long for its side,
+      // it scrolls by hand, like the plant popup's name.
+      wireManualScroll(rightSpan);
       bhName.appendChild(leftSpan);
       bhName.appendChild(rightSpan);
     }
