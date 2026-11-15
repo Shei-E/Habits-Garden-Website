@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 
 <body>
@@ -3298,12 +3298,16 @@
           // stood at day start: it counts when the plant is
           // dead (a revive always counts) or due today.
           calculateStreak(pot);
-          const counted = getMissedOpportunitiesCount(pot) >= 1
+          const wasDeadAtStart = getMissedOpportunitiesCount(pot) >= 1;
+          const counted = wasDeadAtStart
             || pot.dataset.streakLastOppLabel === 'today';
           if (counted) {
             const wc = Math.max(0, (parseInt(pot.dataset.waterCount || '0', 10) || 0) - 1);
             pot.dataset.waterCount = String(wc);
-            if (pot.dataset.stage === 'grown'
+            // Only a live bud's growing watering is undone: a
+            // revived plant keeps its stage — a dead flower
+            // comes back as a dead flower, not a dead bud.
+            if (!wasDeadAtStart && pot.dataset.stage === 'grown'
               && wc < (parseInt(pot.dataset.growThreshold || '5', 10) || 5)) {
               pot.dataset.stage = 'bud';
             }
