@@ -2428,17 +2428,21 @@ body {
   pointer-events: none;
 }
 
-.bh-pp-time {
+/* The pick time with the undo button right after it, on
+   one line. */
+.bh-pp-timerow {
   position: absolute;
   left: calc(104.5px * var(--scale));
   top: calc(48px * var(--scale));
-  margin: 0;
+  white-space: nowrap;
+}
+
+.bh-pp-time {
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
-  white-space: nowrap;
 }
 
 .bh-pp-label {
@@ -2472,9 +2476,7 @@ body {
 }
 
 .bh-pp-undo {
-  position: absolute;
-  left: calc(104.5px * var(--scale));
-  top: calc(71px * var(--scale));
+  margin-left: calc(4px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(5px * var(--scale));
@@ -2482,6 +2484,7 @@ body {
   background: none;
   border: 0;
   cursor: pointer;
+  vertical-align: baseline;
 }
 
 .bh-modal .bh-pp-close {
