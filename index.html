@@ -254,7 +254,7 @@
         <img class="ap-panel" src="assets/ui-plant-1.png" alt="">
 
         <div class="ap-header">
-          <h2 class="ap-title" id="af-title">Remove your bad habits</h2>
+          <h2 class="ap-title" id="af-title">Fix bad habits</h2>
           <button class="ap-remove" id="af-remove" type="button" hidden>remove</button>
         </div>
         <button class="ap-close" id="af-close" type="button" aria-label="Close"></button>
@@ -2778,7 +2778,7 @@
     function openFlowerModal(bin) {
       activeBin = bin;
       const f = getBinFlower(bin);
-      if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Remove your bad habits';
+      if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Fix bad habits';
       if (afRemove) {
         afRemove.hidden = !f;
         afRemove.classList.remove('is-confirming');
@@ -3044,6 +3044,24 @@
       } catch (e) { return Promise.resolve(); }
     }
 
+    // Clicking the jar pops the flower drawing bigger, the
+    // same pop the currency pill does when a dew drop lands:
+    // scale to 1.22 at 40% of 350ms, back to rest by the end.
+    // Fired before the petal-removal animation, which replaces
+    // the transform on the one petal layer that is leaving.
+    function bounceBinFlower() {
+      binPage.querySelectorAll('.bh-layer').forEach((el) => {
+        if (!el || typeof el.animate !== 'function') return;
+        try {
+          el.animate([
+            { transform: 'scale(1)' },
+            { transform: 'scale(1.22)', offset: 0.4 },
+            { transform: 'scale(1)' },
+          ], { duration: 350, easing: 'ease' });
+        } catch (e) { /* the pop is decoration only */ }
+      });
+    }
+
     // Clicking the flower: one petal lifts off the flower and
     // fades away, then a petal falls in next to today's date.
     // Once all six petals are gone, the petal that falls in is
@@ -3061,6 +3079,7 @@
       setBinFlower(pageBin, f);
       saveGarden();
       binAnimating = true;
+      bounceBinFlower();
       const scale = (stageEl.getBoundingClientRect().width || 256) / 256;
       (async () => {
         if (overlay) {
