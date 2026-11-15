@@ -738,7 +738,7 @@
       }
       // Bins block pots too (a bin's detection width is 8).
       for (const b of bins) {
-        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < (w + 8) / 2) return false;
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < (w + 6) / 2) return false;
       }
       return true;
     }
@@ -2415,11 +2415,11 @@
     function binSpotFree(left, row, exceptBin) {
       for (const b of bins) {
         if (b === exceptBin) continue;
-        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 10) return false;
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 8) return false;
       }
       for (const p of pots) {
         const s = getPotPos(p);
-        if (s.row === row && Math.abs(s.left - left) < (8 + getPotDetectWidth(p)) / 2) return false;
+        if (s.row === row && Math.abs(s.left - left) < (6 + getPotDetectWidth(p)) / 2) return false;
       }
       return true;
     }
@@ -2440,14 +2440,14 @@
       return { left: Number(bin.dataset.binLeft) || 0, row: bin.dataset.binRow || 'top' };
     }
 
-    // The bin is 48 tall where a pot is 32; its jar ink ends 2
-    // units above the sprite's bottom edge, so the top sits 14
+    // The bin is 48 tall where a pot is 32; its jar ink ends
+    // flush with the sprite's bottom edge, so the top sits 16
     // above the row for the jar to land on the shelf line.
     function setBinPos(bin, left, row) {
       bin.dataset.binLeft = String(left);
       bin.dataset.binRow = row;
       bin.style.left = `calc(${left}px * var(--scale))`;
-      bin.style.top = `calc(${SLOT_ROW_TOP[row] - 14}px * var(--scale))`;
+      bin.style.top = `calc(${SLOT_ROW_TOP[row] - 16}px * var(--scale))`;
       bin.style.zIndex = row === 'top' ? '3' : '13';
     }
 
@@ -2479,14 +2479,14 @@
     function binInkBox(bin) {
       return bin.classList.contains('has-flower')
         ? { x: 11, y: 23, w: 10, h: 23 }
-        : { x: 11, y: 27, w: 10, h: 19 };
+        : { x: 12, y: 35, w: 8, h: 13 };
     }
 
     function pointInBinInk(bin, designX, designY) {
       const pos = getBinPos(bin);
       const ink = binInkBox(bin);
       const x = designX - pos.left;
-      const y = designY - (SLOT_ROW_TOP[pos.row] - 14);
+      const y = designY - (SLOT_ROW_TOP[pos.row] - 16);
       return x >= ink.x && x <= ink.x + ink.w && y >= ink.y && y <= ink.y + ink.h;
     }
 
@@ -2593,7 +2593,7 @@
       e.preventDefault();
       const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
       // Row from the bin centre's Y: above the midpoint is the top shelf.
-      const centreY = SLOT_ROW_TOP[orig.row] - 14 + 24 + dy;
+      const centreY = SLOT_ROW_TOP[orig.row] - 16 + 24 + dy;
       const row = centreY < ROW_MID_Y ? 'top' : 'bottom';
       setBinPos(bin, left, row);
       bin.style.zIndex = 50; // setBinPos restores the row z; keep the drag lift

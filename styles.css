@@ -2194,10 +2194,10 @@ body {
 .bin.is-dragging.is-blocked::after {
   content: "";
   position: absolute;
-  left: calc(11px * var(--scale));
-  bottom: calc(2px * var(--scale));
-  width: calc(10px * var(--scale));
-  height: calc(19px * var(--scale));
+  left: calc(12px * var(--scale));
+  bottom: calc(0px * var(--scale));
+  width: calc(8px * var(--scale));
+  height: calc(13px * var(--scale));
   outline: 2px dashed #e05656;
 }
 
