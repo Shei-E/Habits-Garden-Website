@@ -2306,48 +2306,6 @@ body {
   margin-top: calc(-3px * var(--scale));
 }
 
-/* A long flower name skips over the flower drawing: the first
-   part ends before it and the rest resumes on its other side
-   (positions measured in layoutBinName). */
-.bh-name-measure {
-  position: absolute;
-  visibility: hidden;
-  white-space: nowrap;
-}
-
-.bh-modal .bh-name-left {
-  display: inline-block;
-  width: calc(83px * var(--scale));
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: bottom;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.bh-modal .bh-name-right {
-  position: absolute;
-  left: calc(121px * var(--scale));
-  top: 0;
-  width: calc(71px * var(--scale));
-  overflow: hidden;
-  white-space: nowrap;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.bh-name-line {
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.bh-modal .bh-name-left.is-dragging,
-.bh-modal .bh-name-right.is-dragging {
-  cursor: grabbing;
-}
-
 .bh-days {
   position: absolute;
   inset: 0;

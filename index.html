@@ -2988,107 +2988,11 @@
       return pages.length ? pages : [[{ month: new Date(todayStr + 'T12:00:00').getMonth(), days: [] }]];
     }
 
-    // The flower name on the bin page: the flower drawing sits
-    // in the middle of the title row, so a name long enough to
-    // reach it skips over the flower — the first part fills the
-    // space before the drawing and the rest continues on the
-    // other side of it, on the same line. (Panel units: the
-    // title starts at x 21 and the drawing's ink spans about
-    // x 101–135; tuned by eye, the left part gets 83 units —
-    // one more character than the ink box alone suggests —
-    // the name resumes at 142, and the continuation has 71
-    // units before the panel's right edge.)
-    const BH_NAME_LEFT_W = 83;
-    const BH_NAME_RIGHT_W = 71;
-    let bhNameMeasurer = null;
-    function measureBinNameWidth(text) {
-      if (!bhNameMeasurer) {
-        bhNameMeasurer = document.createElement('span');
-        bhNameMeasurer.className = 'ap-title bh-name-measure';
-        document.body.appendChild(bhNameMeasurer);
-      }
-      bhNameMeasurer.textContent = text;
-      return bhNameMeasurer.offsetWidth || 0;
-    }
-    function layoutBinName(name) {
-      if (!bhName) return;
-      bhName.textContent = '';
-      const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
-      const scale = stageRect && stageRect.width ? stageRect.width / 256 : 1;
-      const leftMaxPx = BH_NAME_LEFT_W * scale;
-      if (!name || measureBinNameWidth(name) <= leftMaxPx) {
-        bhName.textContent = name || '';
-        return;
-      }
-      // Both parts are windows onto the SAME full name, and
-      // the right window's line is shifted by exactly the
-      // left window's WIDTH — not by a measured character
-      // count. So the text position at the left window's
-      // right edge is the very position the right window
-      // starts from: the name flows as one continuous line
-      // passing behind the flower, and no letter can appear
-      // in both windows (an earlier version shifted by the
-      // width of the characters that fit, and the overlap
-      // showed the boundary letters twice). Scrolling slides
-      // both windows together — drag or wheel over either
-      // part and the whole name moves as one.
-      const leftWinPx = BH_NAME_LEFT_W * scale;
-      const totalPx = measureBinNameWidth(name);
-      const maxScroll = Math.max(0, totalPx - leftWinPx - BH_NAME_RIGHT_W * scale);
-      let scroll = 0;
-      const leftWin = document.createElement('span');
-      leftWin.className = 'bh-name-left';
-      const leftLine = document.createElement('span');
-      leftLine.className = 'bh-name-line';
-      leftLine.textContent = name;
-      leftWin.appendChild(leftLine);
-      const rightWin = document.createElement('span');
-      rightWin.className = 'bh-name-right';
-      const rightLine = document.createElement('span');
-      rightLine.className = 'bh-name-line';
-      rightLine.textContent = name;
-      rightWin.appendChild(rightLine);
-      const applyScroll = () => {
-        leftLine.style.transform = `translateX(${-scroll}px)`;
-        rightLine.style.transform = `translateX(${-(leftWinPx + scroll)}px)`;
-      };
-      const setScroll = (v) => {
-        scroll = Math.min(maxScroll, Math.max(0, v));
-        applyScroll();
-      };
-      applyScroll();
-      [leftWin, rightWin].forEach(win => {
-        let drag = null;
-        win.addEventListener('pointerdown', (e) => {
-          drag = { x: e.clientX, scroll };
-          leftWin.classList.add('is-dragging');
-          rightWin.classList.add('is-dragging');
-        });
-        win.addEventListener('pointermove', (e) => {
-          if (drag) setScroll(drag.scroll - (e.clientX - drag.x));
-        });
-        const endDrag = () => {
-          drag = null;
-          leftWin.classList.remove('is-dragging');
-          rightWin.classList.remove('is-dragging');
-        };
-        win.addEventListener('pointerup', endDrag);
-        win.addEventListener('pointercancel', endDrag);
-        win.addEventListener('wheel', (e) => {
-          if (maxScroll <= 0) return;
-          e.preventDefault();
-          setScroll(scroll + (e.deltaY || 0) + (e.deltaX || 0));
-        }, { passive: false });
-      });
-      bhName.appendChild(leftWin);
-      bhName.appendChild(rightWin);
-    }
-
     function renderBinPage() {
       if (!pageBin) return;
       const f = getBinFlower(pageBin);
       if (!f) return;
-      layoutBinName(f.name);
+      if (bhName) bhName.textContent = f.name || '';
       // The flower keeps the petals it has not lost: petal i is
       // on the flower while i <= petalsLeft (petals fall from
       // petal6 down to petal1).
