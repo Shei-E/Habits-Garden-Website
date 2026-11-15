@@ -2433,14 +2433,14 @@ body {
 .bh-pp-timerow {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(58px * var(--scale));
+  top: calc(51px * var(--scale));
   white-space: nowrap;
 }
 
 .bh-pp-time {
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(6px * var(--scale));
+  font-size: calc(3px * var(--scale));
   line-height: normal;
   color: #000;
 }
@@ -2448,10 +2448,10 @@ body {
 .bh-pp-label {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(65px * var(--scale));
+  top: calc(58px * var(--scale));
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(6px * var(--scale));
+  font-size: calc(3px * var(--scale));
   line-height: normal;
   color: #000;
   white-space: nowrap;
@@ -2462,13 +2462,13 @@ body {
 .bh-pp-notes {
   position: absolute;
   left: calc(123px * var(--scale));
-  top: calc(64.2px * var(--scale));
+  top: calc(57.2px * var(--scale));
   width: calc(35px * var(--scale));
   height: calc(9px * var(--scale));
   box-sizing: border-box;
   padding: 0;
   font-family: "Tiny5", monospace;
-  font-size: calc(6px * var(--scale));
+  font-size: calc(3px * var(--scale));
   color: #bda499;
   background: transparent;
   border: 0;
@@ -2484,7 +2484,7 @@ body {
   margin-left: calc(3px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
-  font-size: calc(5px * var(--scale));
+  font-size: calc(2px * var(--scale));
   color: #bda499;
   background: none;
   border: 0;
