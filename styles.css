@@ -2371,7 +2371,7 @@ body {
   top: calc(117px * var(--scale));
   width: calc(11px * var(--scale));
   height: calc(11px * var(--scale));
-  background: url("assets/ui-tiny-arrow-1.png") center / contain no-repeat;
+  background: url("assets/ui-tiny-button.png") center / contain no-repeat;
   border: 0;
   padding: 0;
   cursor: pointer;
