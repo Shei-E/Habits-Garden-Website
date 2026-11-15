@@ -2896,12 +2896,16 @@
         });
         cur.setDate(cur.getDate() + 1);
       }
+      // One column per month, however long the month runs:
+      // the column scrolls, and a new column starts only when
+      // the month changes.
       const columns = [];
       let col = null;
       let cursorY = 40.17;
       for (const d of days) {
         const h = 10.6 + 8.4 * (d.lines - 1);
-        if (!col || col.month !== d.month || cursorY + (h - 10.6) > 120.5) {
+        if (!col || col.month !== d.month) {
+          if (col) col.bottom = cursorY + 2;
           col = { month: d.month, days: [] };
           columns.push(col);
           cursorY = 40.17;
@@ -2909,6 +2913,7 @@
         col.days.push({ ...d, y: cursorY });
         cursorY += h;
       }
+      if (col) col.bottom = cursorY + 2;
       const pages = [];
       for (let i = 0; i < columns.length; i += 2) pages.push(columns.slice(i, i + 2));
       return pages.length ? pages : [[{ month: new Date(todayStr + 'T12:00:00').getMonth(), days: [] }]];
@@ -2936,9 +2941,13 @@
       for (const node of bhDayNodes) node.remove();
       bhDayNodes = [];
       const COLS = [
-        { monthX: 25.55, dayX: 32.3, petalX: 42.3 },
-        { monthX: 162.24, dayX: 168.24, petalX: 178.3 },
+        { monthX: 25.55, dayX: 32.3, petalX: 42.3, viewLeft: 30.3 },
+        { monthX: 162.24, dayX: 168.24, petalX: 178.3, viewLeft: 166.24 },
       ];
+      // Each month's days live in their own scroll viewport
+      // under the month label: the whole month is one column,
+      // and it scrolls to reach the month's end.
+      const COL_TOP = 36;
       const todayStr = getLocalDateStr(getGameDate());
       let todayLastPetal = null;
       cols.forEach((col, ci) => {
@@ -2950,27 +2959,37 @@
         m.style.top = 'calc(31.77px * var(--scale))';
         bhDays.appendChild(m);
         bhDayNodes.push(m);
+        const view = document.createElement('div');
+        view.className = 'bh-col';
+        view.style.left = `calc(${C.viewLeft}px * var(--scale))`;
+        view.style.top = `calc(${COL_TOP}px * var(--scale))`;
+        const inner = document.createElement('div');
+        inner.className = 'bh-col-inner';
+        inner.style.height = `calc(${(col.bottom || 42) - COL_TOP}px * var(--scale))`;
+        view.appendChild(inner);
+        bhDays.appendChild(view);
+        bhDayNodes.push(view);
         for (const d of col.days) {
           const label = document.createElement('p');
           label.className = 'bh-t';
           label.textContent = bhOrdinal(d.day);
-          label.style.left = `calc(${C.dayX}px * var(--scale))`;
-          label.style.top = `calc(${d.y}px * var(--scale))`;
-          bhDays.appendChild(label);
-          bhDayNodes.push(label);
+          label.style.left = `calc(${C.dayX - C.viewLeft}px * var(--scale))`;
+          label.style.top = `calc(${d.y - COL_TOP}px * var(--scale))`;
+          inner.appendChild(label);
           const kinds = [...Array(d.n).fill('n'), ...Array(d.b).fill('b')];
           kinds.forEach((kind, j) => {
             const img = document.createElement('img');
             img.className = 'bh-petal';
             img.src = kind === 'n' ? 'assets/petal-icon1.png' : 'assets/petal-icon2.png';
             img.alt = '';
-            img.style.left = `calc(${C.petalX + (j % 7) * 8}px * var(--scale))`;
-            img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4}px * var(--scale))`;
-            bhDays.appendChild(img);
-            bhDayNodes.push(img);
+            img.style.left = `calc(${C.petalX + (j % 7) * 8 - C.viewLeft}px * var(--scale))`;
+            img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4 - COL_TOP}px * var(--scale))`;
+            inner.appendChild(img);
             if (d.str === todayStr) todayLastPetal = img;
           });
         }
+        // Start at the month's end: the newest days.
+        view.scrollTop = view.scrollHeight;
       });
       binPage._todayPetalEl = todayLastPetal;
       if (bhPrev) bhPrev.style.display = binPageIndex > 0 ? '' : 'none';
@@ -3045,8 +3064,9 @@
     }
 
     // Clicking the jar pops the flower drawing bigger, the
-    // same pop the currency pill does when a dew drop lands:
-    // scale to 1.22 at 40% of 350ms, back to rest by the end.
+    // same pop the currency pill does when a dew drop lands,
+    // at x0.7 of its size: scale to 1.154 at 40% of 350ms,
+    // back to rest by the end.
     // Fired before the petal-removal animation, which replaces
     // the transform on the one petal layer that is leaving.
     function bounceBinFlower() {
@@ -3055,7 +3075,7 @@
         try {
           el.animate([
             { transform: 'scale(1)' },
-            { transform: 'scale(1.22)', offset: 0.4 },
+            { transform: 'scale(1.154)', offset: 0.4 },
             { transform: 'scale(1)' },
           ], { duration: 350, easing: 'ease' });
         } catch (e) { /* the pop is decoration only */ }

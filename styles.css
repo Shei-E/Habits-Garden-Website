@@ -2291,6 +2291,28 @@ body {
   pointer-events: none;
 }
 
+/* One month's days in the bin page: a tall column inside a
+   short viewport, scrolled to reach the month's end. The
+   scrollbar stays invisible; the wheel and touch do the work. */
+.bh-col {
+  position: absolute;
+  width: calc(78px * var(--scale));
+  height: calc(92px * var(--scale));
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+
+.bh-col::-webkit-scrollbar {
+  display: none;
+}
+
+.bh-col-inner {
+  position: relative;
+  width: 100%;
+}
+
 .bh-t {
   position: absolute;
   margin: 0;
