@@ -319,7 +319,7 @@
           <div class="bh-pp-shift" id="bh-pp-shift">
             <img class="bh-popup-card" src="assets/ui-badhabit-popup.png" alt="">
             <div class="bh-pp-timerow"><span class="bh-pp-time" id="bh-pp-time"></span><button class="bh-pp-undo" id="bh-pp-undo" type="button">undo</button></div>
-            <div class="bh-pp-notesrow"><label class="bh-pp-label" for="bh-pp-notes">notes:</label><input class="bh-pp-notes" id="bh-pp-notes" type="text" placeholder="type here..."></div>
+            <div class="bh-pp-notesrow"><label class="bh-pp-label" for="bh-pp-notes">notes:</label><textarea class="bh-pp-notes" id="bh-pp-notes" placeholder="type here..." rows="1"></textarea></div>
             <button class="bh-pp-close" id="bh-pp-close" type="button" aria-label="Close"></button>
           </div>
         </div>
@@ -3299,9 +3299,23 @@
         }
       }
       const notesEl = document.getElementById('bh-pp-notes');
-      if (notesEl) notesEl.value = rec.note || '';
+      if (notesEl) { notesEl.value = rec.note || ''; fitNotesHeight(); }
       const pop = document.getElementById('bh-petal-popup');
       if (pop) pop.hidden = false;
+    }
+
+    // The notes field wraps onto new lines instead of
+    // scrolling sideways: it grows taller as the note wraps
+    // (up to the room left inside the card, then it scrolls).
+    function fitNotesHeight() {
+      const notesEl = document.getElementById('bh-pp-notes');
+      if (!notesEl || !notesEl.scrollHeight) return;
+      const scale = stageEl ? (stageEl.getBoundingClientRect().width || 256) / 256 : 1;
+      const maxH = 26 * scale; // the card's room below the notes line
+      notesEl.style.height = 'auto';
+      const sh = notesEl.scrollHeight;
+      notesEl.style.height = Math.min(sh, maxH) + 'px';
+      notesEl.style.overflowY = sh > maxH ? 'auto' : 'hidden';
     }
 
     function closePetalPopup() {
@@ -3342,6 +3356,7 @@
       rec.note = notesEl ? notesEl.value : '';
       setBinFlower(pageBin, f);
       saveGarden();
+      fitNotesHeight();
     });
     document.getElementById('bh-petal-popup')?.addEventListener('click', (e) => {
       if (e.target === e.currentTarget || (e.target && e.target.classList && e.target.classList.contains('bh-popup-card'))) closePetalPopup();

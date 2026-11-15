@@ -2473,16 +2473,20 @@ body {
   position: relative;
   top: calc(0.2px * var(--scale));
   margin-left: calc(2px * var(--scale));
-  width: calc(35px * var(--scale));
+  width: calc(40px * var(--scale));
   height: calc(9px * var(--scale));
   box-sizing: border-box;
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(4px * var(--scale));
+  line-height: normal;
   color: #bda499;
   background: transparent;
   border: 0;
   outline: none;
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: break-word;
 }
 
 .bh-pp-notes::placeholder {
