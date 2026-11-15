@@ -2327,6 +2327,12 @@
           pot.setAttribute('aria-label', `${entry.plant.plantName || 'Plant'} plant`);
           pot.dataset.streak = JSON.stringify(calculateStreak(pot));
           updatePotVisuals(pot);
+        } else if (pot.classList.contains('has-plant')) {
+          // The bundle says this pot is empty: clear any plant
+          // still on it here (a plant removed on another device
+          // is removed everywhere; an account switch's fresh
+          // shelf starts empty too).
+          removePlant(pot);
         }
       });
       // Bins are rebuilt from scratch to match the bundle.
@@ -3268,6 +3274,13 @@
         return;
       }
       if (cloudUid === user.uid) return; // already applied
+      // A DIFFERENT account than the one already applied in
+      // this page session (a switch — possible when another
+      // tab changes the sign-in): the shelf may still hold the
+      // previous account's garden, so it must never be adopted
+      // into the new account below.
+      const switchedAccount = !!cloudUid;
+      const myUid = user.uid;
       cloudUid = user.uid;
       signedInEmail = user.email;
       lsSet(CLOUD_EMAIL_KEY, user.email);
@@ -3282,22 +3295,44 @@
       }
       const bridge = window.hgCloud;
       Promise.resolve(bridge && bridge.load ? bridge.load() : null).then(cloudGarden => {
+        // A newer sign-in (or a sign-out) superseded this one
+        // while the garden was loading: do not apply it.
+        if (cloudUid !== myUid) return;
         if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length) {
           // The account's garden, from the cloud: it wins over
           // whatever is on the shelf right now.
           restoreGarden(cloudGarden);
           lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
+        } else if (switchedAccount) {
+          // ACCOUNT SWITCH: the account has no cloud garden,
+          // and the shelf may be the PREVIOUS account's garden —
+          // it is never adopted. The new account starts from
+          // its own mirrored garden if this browser has one,
+          // and from a fresh shelf otherwise.
+          const own = lsGet(GARDEN_KEY_PREFIX + signedInEmail);
+          if (Array.isArray(own) && own.some(e => e && e.plant)) {
+            restoreGarden(own);
+            const bundle = serializeGarden();
+            lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
+            lastSavedBundleJson = bundleJson(bundle);
+            if (bridge && bridge.save) { try { bridge.save(bundle); } catch (e) { } }
+          } else {
+            restoreGarden([{ left: SLOT_COL_LEFT[0], row: 'top', homeLeft: String(SLOT_COL_LEFT[0]), homeRow: 'top', potType: null, plant: null }]);
+            lastSavedBundleJson = bundleJson(serializeGarden());
+          }
         } else {
           // ADOPTION: the account has no garden in the cloud yet,
           // so the garden already here becomes its first one —
-          // the shelf as it stands, or (if the shelf is empty) a
-          // garden this browser saved earlier under the old
-          // browser-only accounts. Nothing is lost by signing in.
+          // the shelf as it stands, or (if the shelf is empty)
+          // this account's OWN garden mirrored in this browser
+          // (saved under the old browser-only accounts with the
+          // same email). Another account's garden is never
+          // adopted. Nothing is lost by signing in.
           let bundle = serializeGarden();
           if (!bundle.some(e => e && e.plant)) {
-            const local = findLocalGarden();
-            if (local) {
-              restoreGarden(local);
+            const own = lsGet(GARDEN_KEY_PREFIX + signedInEmail);
+            if (Array.isArray(own) && own.some(e => e && e.plant)) {
+              restoreGarden(own);
               bundle = serializeGarden();
             }
           }
@@ -3312,9 +3347,11 @@
         refreshSignInUI();
         showSignInText();
       }).catch(() => {
+        if (cloudUid !== myUid) return;
         // The cloud could not be reached: stay signed in locally
-        // with the mirrored garden, if this browser has one.
-        const local = lsGet(GARDEN_KEY_PREFIX + signedInEmail) || findLocalGarden();
+        // with this account's OWN mirrored garden, if this
+        // browser has one — never another account's.
+        const local = lsGet(GARDEN_KEY_PREFIX + signedInEmail);
         if (local) restoreGarden(local);
         refreshSignInUI();
         showSignInText();
@@ -3330,7 +3367,11 @@
     // one we sent) and ignored. If a pot is mid-drag when a
     // change arrives, it waits until the drag ends.
     let pendingRemoteGarden = null;
-    window.hgRemoteGarden = function (bundle) {
+    window.hgRemoteGarden = function (bundle, uid) {
+      // A bundle tagged with a different account than the one
+      // applied here is not ours to show (an account switch in
+      // another tab can race the watch over).
+      if (uid && cloudUid && uid !== cloudUid) return;
       if (!signedInEmail || !Array.isArray(bundle) || !bundle.length) return;
       if (bundleJson(bundle) === lastSavedBundleJson) return; // our own echo
       pendingRemoteGarden = bundle;
@@ -3346,21 +3387,6 @@
       lsSet(GARDEN_KEY_PREFIX + signedInEmail, serializeGarden());
       resetDewGrant();
       updateDewDrops();
-    }
-
-    // A garden this browser saved under the old browser-only
-    // accounts (any hg.garden.v1.* entry that has a plant).
-    function findLocalGarden() {
-      try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const k = window.localStorage.key(i);
-          if (k && k.indexOf(GARDEN_KEY_PREFIX) === 0) {
-            const g = lsGet(k);
-            if (Array.isArray(g) && g.some(e => e && e.plant)) return g;
-          }
-        }
-      } catch (e) { }
-      return null;
     }
 
     function handleGoogleSignIn() {
@@ -4378,9 +4404,15 @@
         },
         save(bundle) {
           if (!user) return;
+          // The row is bound NOW, to the account that made this
+          // garden: if the sign-in changes before the write
+          // lands, the write is dropped rather than delivered
+          // to the new account's row.
+          const uid = user.uid;
           if (saveTimer) clearTimeout(saveTimer);
           saveTimer = setTimeout(() => {
-            setDoc(doc(db, 'gardens', user.uid), { garden: bundle, updatedAt: serverTimestamp() })
+            if (!user || user.uid !== uid) return;
+            setDoc(doc(db, 'gardens', uid), { garden: bundle, updatedAt: serverTimestamp() })
               .catch(() => { });
           }, 1200);
         },
@@ -4401,7 +4433,7 @@
             if (!snap.exists()) return;
             const data = snap.data();
             if (data && Array.isArray(data.garden) && window.hgRemoteGarden) {
-              window.hgRemoteGarden(data.garden);
+              window.hgRemoteGarden(data.garden, u.uid);
             }
           }, () => { });
         }
