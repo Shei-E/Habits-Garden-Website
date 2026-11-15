@@ -316,12 +316,14 @@
         <!-- Clicking a fallen petal opens this card: when the
              petal was picked, a notes box, and an undo button. -->
         <div class="bh-petal-popup" id="bh-petal-popup" hidden>
-          <img class="bh-popup-card" src="assets/ui-badhabit-popup.png" alt="">
-          <p class="bh-pp-time" id="bh-pp-time"></p>
-          <label class="bh-pp-label" for="bh-pp-notes">notes:</label>
-          <input class="bh-pp-notes" id="bh-pp-notes" type="text">
-          <button class="bh-pp-undo" id="bh-pp-undo" type="button">undo</button>
-          <button class="bh-pp-close" id="bh-pp-close" type="button" aria-label="Close"></button>
+          <div class="bh-pp-shift" id="bh-pp-shift">
+            <img class="bh-popup-card" src="assets/ui-badhabit-popup.png" alt="">
+            <p class="bh-pp-time" id="bh-pp-time"></p>
+            <label class="bh-pp-label" for="bh-pp-notes">notes:</label>
+            <input class="bh-pp-notes" id="bh-pp-notes" type="text" placeholder="type here...">
+            <button class="bh-pp-undo" id="bh-pp-undo" type="button">undo</button>
+            <button class="bh-pp-close" id="bh-pp-close" type="button" aria-label="Close"></button>
+          </div>
         </div>
       </div>
     </div>
@@ -3164,9 +3166,10 @@
             img.alt = '';
             img.style.left = `calc(${C.petalX + (j % 7) * 8 - C.viewLeft}px * var(--scale))`;
             img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4 - COL_TOP}px * var(--scale))`;
-            // Clicking a fallen petal opens its card (when it
-            // was picked, its note, an undo button).
-            img.addEventListener('click', () => openPetalPopup(d.str, j));
+            // Clicking a fallen petal opens its card below
+            // the petal (when it was picked, its note, an
+            // undo button).
+            img.addEventListener('click', () => openPetalPopup(d.str, j, img));
             inner.appendChild(img);
             if (d.str === todayStr) todayLastPetal = img;
           });
@@ -3244,12 +3247,36 @@
     // and an undo button that un-picks the petal.
     let petalPopup = null; // { date, index } into pageBin's drops
 
-    function openPetalPopup(dateStr, index) {
+    function openPetalPopup(dateStr, index, petalEl) {
       if (!pageBin) return;
       const f = getBinFlower(pageBin);
       const rec = f && f.drops[dateStr] ? f.drops[dateStr][index] : null;
       if (!rec) return;
       petalPopup = { date: dateStr, index };
+      // The card appears below the clicked petal (above it
+      // when there is no room below), centred on it: the
+      // whole card group shifts by the difference between
+      // the petal's spot and the card's home spot.
+      const shift = document.getElementById('bh-pp-shift');
+      if (shift && petalEl && petalEl.getBoundingClientRect) {
+        const container = binPage ? binPage.querySelector('.ap-container') : null;
+        const cr = container ? container.getBoundingClientRect() : null;
+        const pr = petalEl.getBoundingClientRect();
+        if (cr && cr.width && pr.width) {
+          const scale = cr.width / 236;
+          const petalX = (pr.left - cr.left) / scale;
+          const petalY = (pr.top - cr.top) / scale;
+          // The card ink sits at (98.49..165.49, 41..85) of
+          // the container when the group is unshifted.
+          let dx = (petalX + 8) - 132;
+          let dy = (petalY + 18) - 41; // card top 2 under the petal
+          if (85 + dy > 124) dy = (petalY - 2) - 85; // no room below: above
+          dx = Math.max(-96, Math.min(68, dx));
+          dy = Math.max(-39, Math.min(39, dy));
+          shift.style.left = `calc(${dx}px * var(--scale))`;
+          shift.style.top = `calc(${dy}px * var(--scale))`;
+        }
+      }
       const timeEl = document.getElementById('bh-pp-time');
       if (timeEl) {
         const parts = dateStr.split('-').map(Number);

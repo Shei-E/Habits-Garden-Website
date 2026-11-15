@@ -2407,6 +2407,14 @@ body {
   display: none;
 }
 
+/* The card and its content, shifted as one group so the
+   card lands below the clicked petal. */
+.bh-pp-shift {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
 .bh-popup-card {
   position: absolute;
   left: calc(10.49px * var(--scale));
@@ -2422,23 +2430,21 @@ body {
 
 .bh-pp-time {
   position: absolute;
-  left: calc(98.5px * var(--scale));
-  top: calc(46px * var(--scale));
-  width: calc(67px * var(--scale));
+  left: calc(104.5px * var(--scale));
+  top: calc(48px * var(--scale));
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
-  text-align: center;
   white-space: nowrap;
 }
 
 .bh-pp-label {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(56.5px * var(--scale));
+  top: calc(58px * var(--scale));
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(6px * var(--scale));
@@ -2447,18 +2453,20 @@ body {
   white-space: nowrap;
 }
 
+/* No box: the note is typed on the same line as "notes:",
+   right after the colon. */
 .bh-pp-notes {
   position: absolute;
-  left: calc(104.5px * var(--scale));
-  top: calc(63.5px * var(--scale));
-  width: calc(58px * var(--scale));
-  height: calc(9.5px * var(--scale));
+  left: calc(127px * var(--scale));
+  top: calc(57.2px * var(--scale));
+  width: calc(35px * var(--scale));
+  height: calc(9px * var(--scale));
   box-sizing: border-box;
-  padding: 0 calc(2px * var(--scale));
+  padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(6px * var(--scale));
   color: #000;
-  background: rgba(255, 255, 255, 0.6);
+  background: transparent;
   border: 0;
   outline: none;
 }
@@ -2466,10 +2474,10 @@ body {
 .bh-pp-undo {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(76px * var(--scale));
+  top: calc(71px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
-  font-size: calc(6px * var(--scale));
+  font-size: calc(5px * var(--scale));
   color: #bda499;
   background: none;
   border: 0;
@@ -2478,8 +2486,8 @@ body {
 
 .bh-modal .bh-pp-close {
   position: absolute;
-  left: calc(157px * var(--scale));
-  top: calc(42.5px * var(--scale));
+  left: calc(155px * var(--scale));
+  top: calc(48.5px * var(--scale));
   width: calc(8px * var(--scale));
   height: calc(8px * var(--scale));
   padding: 0;
