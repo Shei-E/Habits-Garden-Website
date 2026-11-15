@@ -2285,6 +2285,18 @@ body {
   z-index: 3;
 }
 
+/* Bin page header: the flower name takes its own row, with
+   the edit and remove buttons left-aligned just below it
+   (the plant page keeps them beside the name). */
+.bh-modal .ap-header {
+  flex-wrap: wrap;
+  row-gap: calc(2px * var(--scale));
+}
+
+.bh-modal .ap-title {
+  flex: 0 0 100%;
+}
+
 .bh-days {
   position: absolute;
   inset: 0;
