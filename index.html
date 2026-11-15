@@ -900,10 +900,10 @@
     // top edge, so the visible X floats about 9 units above the
     // pot's sprite — half the distance it had when the box top sat
     // 10 units above the row.
-    function deleteXBox(pos) {
+    function deleteXBox(pos, lift = 0) {
       return {
         left: pos.left + POT_SIZE / 2 - DELETE_X_SIZE / 2,
-        top: SLOT_ROW_TOP[pos.row],
+        top: SLOT_ROW_TOP[pos.row] - lift,
       };
     }
 
@@ -1053,6 +1053,13 @@
           return;
         }
         dewSwallowPot = null; // a fresh press supersedes a pending swallow
+        // A press on this pot's clear canvas that lands on a
+        // bin's jar belongs to the bin — the jar stays grabbable
+        // even where a pot's box overlaps it.
+        if (!isInDragZone(pot, e.clientX, e.clientY)) {
+          const binTarget = binAtPoint(e.clientX, e.clientY);
+          if (binTarget) { beginBinDrag(binTarget, e); return; }
+        }
         beginPotDrag(pot, e);
       });
       pot.addEventListener('pointermove', (e) => {
@@ -2422,16 +2429,62 @@
       return null; // both shelves are full
     }
 
+    // The bin's visible artwork inside its 32x48 box: the jar
+    // (10x19 at (11,27)); a flower's stem rises above the jar,
+    // stretching the ink up to y 23. Presses and clicks count
+    // only on the artwork, like the pots' zones — the rest of
+    // the box is clear canvas and lets whatever is beneath it
+    // (another bin's jar, a pot) take the press instead.
+    function binInkBox(bin) {
+      return bin.classList.contains('has-flower')
+        ? { x: 11, y: 23, w: 10, h: 23 }
+        : { x: 11, y: 27, w: 10, h: 19 };
+    }
+
+    function pointInBinInk(bin, designX, designY) {
+      const pos = getBinPos(bin);
+      const ink = binInkBox(bin);
+      const x = designX - pos.left;
+      const y = designY - (SLOT_ROW_TOP[pos.row] - 14);
+      return x >= ink.x && x <= ink.x + ink.w && y >= ink.y && y <= ink.y + ink.h;
+    }
+
+    // The topmost bin whose artwork contains the client point,
+    // or null. Later bins paint above earlier ones in a row.
+    function binAtPoint(clientX, clientY) {
+      const stageRect = stageEl.getBoundingClientRect();
+      const designX = (clientX - stageRect.left) * (256 / (stageRect.width || 1));
+      const designY = (clientY - stageRect.top) * (144 / (stageRect.height || 1));
+      for (let i = bins.length - 1; i >= 0; i--) {
+        if (pointInBinInk(bins[i], designX, designY)) return bins[i];
+      }
+      return null;
+    }
+
+    // What a click on a bin does: a filled bin opens its page,
+    // an empty one opens the Add Flower menu.
+    function openBin(bin) {
+      if (bin.classList.contains('has-flower')) openBinPage(bin);
+      else openFlowerModal(bin);
+    }
+
     function createBin(left, row) {
       const bin = document.createElement('button');
       bin.classList.add('bin');
       bin.setAttribute('type', 'button');
       setBinPos(bin, left, row);
       bin.setAttribute('aria-label', 'Add a flower');
-      bin.addEventListener('click', () => {
+      bin.addEventListener('click', (e) => {
         if (suppressBinClick) return; // the tail of a drag, not a click
-        if (bin.classList.contains('has-flower')) openBinPage(bin);
-        else openFlowerModal(bin);
+        const isKeyboard = (!e.clientX && !e.clientY); // keyboard clicks carry no point
+        if (isKeyboard) { openBin(bin); return; }
+        // Route the click to the bin whose artwork was actually
+        // clicked, not the bin whose clear box sits on top.
+        const target = binAtPoint(e.clientX, e.clientY);
+        if (target) { openBin(target); return; }
+        // Clear canvas over a pot: the click is the pot's.
+        const pot = potAtPoint(e.clientX, e.clientY, isInPlantZone);
+        if (pot) handlePotClick(pot, e);
       });
       stageEl.appendChild(bin);
       bins.push(bin);
@@ -2489,7 +2542,7 @@
         bin.classList.add('is-dragging');
         bin.style.zIndex = 50;
         if (deleteXEl) {
-          const box = deleteXBox(orig);
+          const box = deleteXBox(orig, 5); // bins: the X floats 5 units higher than for pots
           deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
           deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
           deleteXEl.classList.add('is-visible');
@@ -2507,7 +2560,7 @@
       // Delete arming, same as the pots: the pointer inside the
       // marker's visible X (grown by 4 units) arms the delete.
       if (binDragState.deleteShown) {
-        const box = deleteXBox(orig);
+        const box = deleteXBox(orig, 5);
         const ink = (DELETE_X_SIZE - DELETE_X_INK) / 2;
         const px = binDragState.startDesignX + dx;
         const py = binDragState.startDesignY + dy;
@@ -2559,7 +2612,24 @@
     }
 
     function wireBinDrag(bin) {
-      bin.addEventListener('pointerdown', (e) => beginBinDrag(bin, e));
+      bin.addEventListener('pointerdown', (e) => {
+        // Only a press on a bin's artwork starts a bin drag —
+        // routed to the bin whose jar is actually under the
+        // pointer, which may be a different bin than the one
+        // whose clear box received the press.
+        const target = binAtPoint(e.clientX, e.clientY);
+        if (target) { beginBinDrag(target, e); return; }
+        // Clear canvas over a pot: the press is the pot's (dew
+        // collection first, exactly like pressing the pot).
+        const dewTarget = dewPotAtPoint(e.clientX, e.clientY);
+        if (dewTarget) {
+          dewSwallowPot = dewTarget;
+          collectDew(dewTarget);
+          return;
+        }
+        const pot = potAtPoint(e.clientX, e.clientY, isInDragZone);
+        if (pot) beginPotDrag(pot, e);
+      });
       bin.addEventListener('pointermove', (e) => {
         if (binDragState && binDragState.bin === bin) moveBinDrag(e);
       });
@@ -3506,8 +3576,7 @@
     // Wires one pot's click handler (open Add Plant, or the plant
     // details when planted). Called for the starting pot at load and
     // for each pot the button adds.
-    function wirePotClick(pot) {
-      pot.addEventListener('click', (e) => {
+    function handlePotClick(pot, e) {
         if (suppressNextPotClick) {
           suppressNextPotClick = false;
           return; // was a drag, not a click
@@ -3537,13 +3606,25 @@
         // button box was on top. Keyboard clicks use the focused
         // pot. A click in no pot's zone is ignored.
         const target = isKeyboard ? pot : potAtPoint(e.clientX, e.clientY, isInPlantZone);
-        if (!target) return;
+        if (!target) {
+          // No pot's zone holds the point — but a bin's jar may
+          // sit under this pot's clear canvas; the click is the
+          // bin's, then.
+          if (!isKeyboard) {
+            const binTarget = binAtPoint(e.clientX, e.clientY);
+            if (binTarget) openBin(binTarget);
+          }
+          return;
+        }
         if (target.classList.contains('has-plant')) {
           openPlantDetailsModal(target);
         } else {
           openModal(target);
         }
-      });
+    }
+
+    function wirePotClick(pot) {
+      pot.addEventListener('click', (e) => handlePotClick(pot, e));
     }
 
     pots.forEach(wirePotClick);
