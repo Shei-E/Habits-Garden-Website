@@ -2297,6 +2297,10 @@ body {
   flex: 0 0 100%;
 }
 
+.bh-modal .ap-remove {
+  margin-top: calc(-3px * var(--scale));
+}
+
 .bh-days {
   position: absolute;
   inset: 0;
