@@ -2164,6 +2164,14 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   cursor: pointer;
+  /* Left/top animate to the resolved spot on drop, like the
+     pots; disabled while dragging. Pointer Events drive the
+     drag, so touch must not scroll and text must not select. */
+  transition: left 0.18s ease, top 0.18s ease;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .bin.has-flower {
@@ -2173,6 +2181,25 @@ body {
 .bin:focus-visible {
   outline: 2px dashed #000;
   outline-offset: 2px;
+}
+
+.bin.is-dragging {
+  z-index: 50;
+  cursor: grabbing;
+  transition: none;
+  transform: translateY(calc(-2px * var(--scale)));
+}
+
+/* The blocked-drop outline hugs the visible jar: ink 10x19 at
+   the bottom centre of the 32x48 sprite (left 11, bottom 2). */
+.bin.is-dragging.is-blocked::after {
+  content: "";
+  position: absolute;
+  left: calc(11px * var(--scale));
+  bottom: calc(2px * var(--scale));
+  width: calc(10px * var(--scale));
+  height: calc(19px * var(--scale));
+  outline: 2px dashed #e05656;
 }
 
 /* Add Flower menu: the Add Plant modal's frame with its own

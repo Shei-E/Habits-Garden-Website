@@ -708,6 +708,10 @@
         const s = getPotPos(p);
         if (s.row === row && Math.abs(s.left - left) < (w + getPotDetectWidth(p)) / 2) return false;
       }
+      // Bins block pots too (a bin's detection width is 8).
+      for (const b of bins) {
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < (w + 8) / 2) return false;
+      }
       return true;
     }
 
@@ -2360,8 +2364,9 @@
     // A spot is free for a bin when no bin is near it and no pot
     // blocks it (the bin's visible jar is 10 units wide, so its
     // detection width is 8, like the pots' shrunk sprites).
-    function binSpotFree(left, row) {
+    function binSpotFree(left, row, exceptBin) {
       for (const b of bins) {
+        if (b === exceptBin) continue;
         if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 10) return false;
       }
       for (const p of pots) {
@@ -2369,6 +2374,33 @@
         if (s.row === row && Math.abs(s.left - left) < (8 + getPotDetectWidth(p)) / 2) return false;
       }
       return true;
+    }
+
+    // Resolve a bin drop like a pot drop: the point itself if
+    // free, else the nearest free spot on the row, else null.
+    function resolveBinDrop(left, row, bin) {
+      const lo = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(left)));
+      if (binSpotFree(lo, row, bin)) return { left: lo, row };
+      for (let d = 1; d <= POT_MAX_LEFT - POT_MIN_LEFT; d++) {
+        if (lo - d >= POT_MIN_LEFT && binSpotFree(lo - d, row, bin)) return { left: lo - d, row };
+        if (lo + d <= POT_MAX_LEFT && binSpotFree(lo + d, row, bin)) return { left: lo + d, row };
+      }
+      return null;
+    }
+
+    function getBinPos(bin) {
+      return { left: Number(bin.dataset.binLeft) || 0, row: bin.dataset.binRow || 'top' };
+    }
+
+    // The bin is 48 tall where a pot is 32; its jar ink ends 2
+    // units above the sprite's bottom edge, so the top sits 14
+    // above the row for the jar to land on the shelf line.
+    function setBinPos(bin, left, row) {
+      bin.dataset.binLeft = String(left);
+      bin.dataset.binRow = row;
+      bin.style.left = `calc(${left}px * var(--scale))`;
+      bin.style.top = `calc(${SLOT_ROW_TOP[row] - 14}px * var(--scale))`;
+      bin.style.zIndex = row === 'top' ? '3' : '13';
     }
 
     // The first free designed slot (top row left to right, then
@@ -2394,22 +2426,173 @@
       const bin = document.createElement('button');
       bin.classList.add('bin');
       bin.setAttribute('type', 'button');
-      bin.dataset.binLeft = String(left);
-      bin.dataset.binRow = row;
-      // The bin is 48 tall where a pot is 32; its jar ink ends 2
-      // units above the sprite's bottom edge, so the top sits 14
-      // above the row for the jar to land on the shelf line.
-      bin.style.left = `calc(${left}px * var(--scale))`;
-      bin.style.top = `calc(${SLOT_ROW_TOP[row] - 14}px * var(--scale))`;
-      bin.style.zIndex = row === 'top' ? '3' : '13';
+      setBinPos(bin, left, row);
       bin.setAttribute('aria-label', 'Add a flower');
       bin.addEventListener('click', () => {
+        if (suppressBinClick) return; // the tail of a drag, not a click
         if (bin.classList.contains('has-flower')) openBinPage(bin);
         else openFlowerModal(bin);
       });
       stageEl.appendChild(bin);
       bins.push(bin);
+      wireBinDrag(bin);
       return bin;
+    }
+
+    // ---------- Drag-and-drop bins (like the pots) ----------
+    // Free-form drag on the shelf rows with the same rules as
+    // pots: continuous horizontal position, the row snaps by
+    // the bin's centre, drops resolve to the nearest free spot,
+    // and the drag-to-delete X floats above the drag's starting
+    // spot — dropping the bin on it deletes the bin, flower and
+    // all. A bin can always be deleted (the button adds more),
+    // so the marker shows for every bin drag.
+    let binDragState = null;
+    let suppressBinClick = false;
+
+    function binDesignDelta(e) {
+      const w = binDragState.stageRect.width || 1;
+      const h = binDragState.stageRect.height || 1;
+      return {
+        dx: (e.clientX - binDragState.startClientX) * (256 / w),
+        dy: (e.clientY - binDragState.startClientY) * (144 / h),
+      };
+    }
+
+    function beginBinDrag(bin, e) {
+      if (dragState || binDragState) return;
+      if (e.button !== undefined && e.button !== 0) return; // primary pointer only
+      const stageRect = stageEl.getBoundingClientRect();
+      binDragState = {
+        bin,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startDesignX: (e.clientX - stageRect.left) * (256 / (stageRect.width || 1)),
+        startDesignY: (e.clientY - stageRect.top) * (144 / (stageRect.height || 1)),
+        moved: false,
+        deleteShown: false,
+        deleteArmed: false,
+        origPos: getBinPos(bin),
+        stageRect,
+      };
+      try { bin.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+    }
+
+    function moveBinDrag(e) {
+      if (!binDragState) return;
+      const { dx, dy } = binDesignDelta(e);
+      if (!binDragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      const bin = binDragState.bin;
+      const orig = binDragState.origPos;
+      if (!binDragState.moved) {
+        binDragState.moved = true;
+        bin.classList.add('is-dragging');
+        bin.style.zIndex = 50;
+        if (deleteXEl) {
+          const box = deleteXBox(orig);
+          deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
+          deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
+          deleteXEl.classList.add('is-visible');
+          binDragState.deleteShown = true;
+        }
+      }
+      e.preventDefault();
+      const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
+      // Row from the bin centre's Y: above the midpoint is the top shelf.
+      const centreY = SLOT_ROW_TOP[orig.row] - 14 + 24 + dy;
+      const row = centreY < ROW_MID_Y ? 'top' : 'bottom';
+      setBinPos(bin, left, row);
+      bin.style.zIndex = 50; // setBinPos restores the row z; keep the drag lift
+      bin.classList.toggle('is-blocked', !binSpotFree(left, row, bin));
+      // Delete arming, same as the pots: the pointer inside the
+      // marker's visible X (grown by 4 units) arms the delete.
+      if (binDragState.deleteShown) {
+        const box = deleteXBox(orig);
+        const ink = (DELETE_X_SIZE - DELETE_X_INK) / 2;
+        const px = binDragState.startDesignX + dx;
+        const py = binDragState.startDesignY + dy;
+        const armed =
+          px >= box.left + ink - 4 && px <= box.left + DELETE_X_SIZE - ink + 4 &&
+          py >= box.top + ink - 4 && py <= box.top + DELETE_X_SIZE - ink + 4;
+        binDragState.deleteArmed = armed;
+        deleteXEl.classList.toggle('is-armed', armed);
+      }
+    }
+
+    function endBinDrag(cancelled) {
+      if (!binDragState) return;
+      const state = binDragState;
+      binDragState = null;
+      const bin = state.bin;
+      bin.classList.remove('is-dragging', 'is-blocked');
+      if (deleteXEl) deleteXEl.classList.remove('is-visible', 'is-armed');
+      if (cancelled || !state.moved) {
+        // Plain click, or a cancelled drag: back to the origin
+        // (setBinPos also restores the row z-index).
+        if (state.moved) setBinPos(bin, state.origPos.left, state.origPos.row);
+        return; // plain click — the click handler opens the menu/page
+      }
+      suppressBinClick = true;
+      // The click that follows a real drag must not open anything.
+      setTimeout(() => { suppressBinClick = false; }, 300);
+      if (state.deleteArmed) {
+        deleteBin(bin);
+        return;
+      }
+      const pos = getBinPos(bin);
+      const target = resolveBinDrop(pos.left, pos.row, bin);
+      if (!target) {
+        setBinPos(bin, state.origPos.left, state.origPos.row); // row full — snap back
+        return;
+      }
+      setBinPos(bin, target.left, target.row);
+      saveGarden();
+    }
+
+    // Removes a bin from the shelf for good, flower and all.
+    // Only called from a drop on the delete marker.
+    function deleteBin(bin) {
+      if (pageBin === bin) pageBin = null;
+      if (activeBin === bin) activeBin = null;
+      removeBin(bin);
+      saveGarden();
+    }
+
+    function wireBinDrag(bin) {
+      bin.addEventListener('pointerdown', (e) => beginBinDrag(bin, e));
+      bin.addEventListener('pointermove', (e) => {
+        if (binDragState && binDragState.bin === bin) moveBinDrag(e);
+      });
+      bin.addEventListener('pointerup', () => {
+        if (binDragState && binDragState.bin === bin) endBinDrag(false);
+      });
+      bin.addEventListener('pointercancel', () => {
+        if (binDragState && binDragState.bin === bin) endBinDrag(true);
+      });
+      bin.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        // Don't hijack arrows while a modal is open.
+        if (modal.classList.contains('is-open') || pdModal.classList.contains('is-open') || flowerModal.classList.contains('is-open') || binPage.classList.contains('is-open')) return;
+        e.preventDefault();
+        const pos = getBinPos(bin);
+        const step = e.shiftKey ? 10 : 2;
+        let left = pos.left;
+        let row = pos.row;
+        if (e.key === 'ArrowLeft') left = Math.max(POT_MIN_LEFT, pos.left - step);
+        if (e.key === 'ArrowRight') left = Math.min(POT_MAX_LEFT, pos.left + step);
+        if (e.key === 'ArrowUp') row = 'top';
+        if (e.key === 'ArrowDown') row = 'bottom';
+        if (left === pos.left && row === pos.row) return;
+        if (row !== pos.row) {
+          const target = resolveBinDrop(left, row, bin);
+          if (!target) return;
+          setBinPos(bin, target.left, target.row);
+        } else {
+          if (!binSpotFree(left, row, bin)) return;
+          setBinPos(bin, left, row);
+        }
+        saveGarden();
+      });
     }
 
     function addBin() {
