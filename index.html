@@ -770,13 +770,14 @@
     // flag is kept in the browser, but the flag only counts for
     // a signed-in account — signed-out visits always get the
     // tutorial. So the three flags below start finished only
-    // when the flag is set AND this browser has an account on
-    // record (the hg.cloudEmail.v1 key; its const lives with
-    // the sign-in code below), and the sign-in hook applies
-    // the flag for real once a sign-in is confirmed.
-    // (lsGet/lsSet are defined with the accounts code; they
+    // when the flag is set AND this TAB has an account on
+    // record (the hg.cloudEmail.v1 key, kept per tab; its
+    // const lives with the sign-in code below), and the
+    // sign-in hook applies the flag for real once a sign-in
+    // is confirmed.
+    // (lsGet/ssGet are defined with the accounts code; they
     // are hoisted and safe to call here.)
-    const tutorialFinished = !!lsGet('hg.tutorialDone.v1') && !!lsGet('hg.cloudEmail.v1');
+    const tutorialFinished = !!lsGet('hg.tutorialDone.v1') && !!ssGet('hg.cloudEmail.v1');
     let hasPlantedFirstPlant = tutorialFinished;
     let hasWateredFirstPlant = tutorialFinished;
     let hasMovedFirstPot = tutorialFinished;
@@ -2206,10 +2207,14 @@
     // plant kinds, schedules and watering history, which is
     // everything the game itself runs on.
     const GARDEN_KEY_PREFIX = 'hg.garden.v1.';
-    // The email of the last Google account signed in on this
-    // browser. Firebase keeps the real session itself; this flag
-    // only tells a fresh page load "a garden restore is coming"
-    // (the cloud hook below does it when Firebase reports in).
+    // The email of the Google account signed in in THIS tab,
+    // kept in the tab's session storage (the ss* helpers below)
+    // so several tabs can be signed in as different accounts
+    // at once. Firebase keeps the real session itself (also
+    // per tab — see the bridge at the end of the page); this
+    // flag only tells a fresh page load "a garden restore is
+    // coming" (the cloud hook below does it when Firebase
+    // reports in).
     const CLOUD_EMAIL_KEY = 'hg.cloudEmail.v1';
     let signedInEmail = null;
     let restoringGarden = false;
@@ -2225,6 +2230,20 @@
     }
     function lsRemove(key) {
       try { window.localStorage.removeItem(key); } catch (e) { }
+    }
+    // The same three helpers over the tab's session storage —
+    // per tab, gone when the tab closes.
+    function ssGet(key) {
+      try {
+        const v = window.sessionStorage.getItem(key);
+        return v === null ? null : JSON.parse(v);
+      } catch (e) { return null; }
+    }
+    function ssSet(key, value) {
+      try { window.sessionStorage.setItem(key, JSON.stringify(value)); } catch (e) { }
+    }
+    function ssRemove(key) {
+      try { window.sessionStorage.removeItem(key); } catch (e) { }
     }
 
     // Accounts live with Firebase now (Google sign-in + a cloud
@@ -3364,7 +3383,7 @@
           // (it expired or was revoked): forget the account on
           // record, so the next visit counts as signed out and
           // gets the tutorial.
-          lsRemove(CLOUD_EMAIL_KEY);
+          ssRemove(CLOUD_EMAIL_KEY);
           refreshSignInUI();
         }
         // A signed-out visitor gets the "already have a
@@ -3384,7 +3403,7 @@
       const myUid = user.uid;
       cloudUid = user.uid;
       signedInEmail = user.email;
-      lsSet(CLOUD_EMAIL_KEY, user.email);
+      ssSet(CLOUD_EMAIL_KEY, user.email);
       // The tutorial flag counts now that sign-in is confirmed:
       // a user who finished the tutorial on this browser before
       // never sees it again.
@@ -3505,7 +3524,7 @@
       }
       cloudUid = null;
       signedInEmail = null;
-      lsRemove(CLOUD_EMAIL_KEY);
+      ssRemove(CLOUD_EMAIL_KEY);
       // Signing out resets the page: the reload brings back the
       // fresh signed-out state (one empty pot, the intro hint, the
       // corner pills hidden again). The account's saved garden is
@@ -4500,7 +4519,7 @@
        security rules (each account can only touch its own row). -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -4515,6 +4534,14 @@
     try {
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
+      // Per-tab sign-in: the session lives in this tab's
+      // session storage, not the browser-wide local storage,
+      // so several tabs can be open on DIFFERENT accounts at
+      // once. (The default persistence shares one sign-in
+      // across every tab — signing in anywhere used to switch
+      // all the other tabs to that account.) A tab keeps its
+      // account across reloads; closing the tab ends it.
+      setPersistence(auth, browserSessionPersistence).catch(() => { });
       const db = getFirestore(app);
       let user = null;
       let saveTimer = null;
