@@ -687,6 +687,10 @@
         if (currencyBtn) currencyBtn.classList.add('is-visible');
         const signInText = document.getElementById('ui-signin');
         if (signInText) signInText.classList.add('is-visible');
+        // The accounts section has a second signed-out
+        // message for this moment ("sign in to save your
+        // plants"); it decides whether it applies.
+        if (window.hgOnTutorialDone) window.hgOnTutorialDone();
         return;
       }
       if (hasWateredFirstPlant && hint) {
@@ -2250,15 +2254,23 @@
     // the way back into the account panel. The signed-out invite
     // never scrolls away — it is the way in.
     let signInHideTimer = null;
-    function scheduleSignInTextHide() {
+    function scheduleSignInTextHide(delayMs) {
       if (signInHideTimer) { clearTimeout(signInHideTimer); signInHideTimer = null; }
       // The signed-in note stays out for 3s; the signed-out
       // "already have a garden?" question stays out for 4s.
       // Then either one scrolls back into the pill.
-      const delay = signedInEmail ? 3000 : 4000;
+      const delay = delayMs !== undefined ? delayMs : (signedInEmail ? 3000 : 4000);
       const email = signedInEmail;
       signInHideTimer = setTimeout(() => {
-        if (signInText && signedInEmail === email) signInText.classList.add('is-out');
+        if (!signInText || signedInEmail !== email) return;
+        const wasQuestion = signInText.textContent === 'already have a garden?';
+        signInText.classList.add('is-out');
+        // A signed-out visitor who finished the tutorial on
+        // an earlier visit gets the second message right
+        // after the question: "sign in to save your plants".
+        if (wasQuestion && !email) {
+          setTimeout(() => maybeShowSaveNote(), 850);
+        }
       }, delay);
     }
 
@@ -2269,10 +2281,29 @@
     // that restores the session, or a page opened signed out.
     // Just opening the panel (the pill press) must NOT bring the
     // text out, so openSignInModal does not call this.
-    function showSignInText() {
+    function showSignInText(delayMs) {
       if (signInText) signInText.classList.remove('is-out');
-      scheduleSignInTextHide();
+      scheduleSignInTextHide(delayMs);
     }
+
+    // The second signed-out message: after the tutorial is
+    // finished, "sign in to save your plants" slides out of
+    // the pill and scrolls back in after 3s. It shows once
+    // per page load — when the tutorial is finished during
+    // the visit (updateHint calls window.hgOnTutorialDone),
+    // or, for a visitor who finished it on an earlier visit,
+    // right after the opening question (the chain in
+    // scheduleSignInTextHide above).
+    let saveNoteShown = false;
+    function maybeShowSaveNote() {
+      if (saveNoteShown || signedInEmail || !signInText) return;
+      if (!hasMovedFirstPot) return; // the tutorial is not finished yet
+      saveNoteShown = true;
+      signInText.textContent = 'sign in to save your plants';
+      signInText.classList.add('is-visible');
+      showSignInText(3000);
+    }
+    window.hgOnTutorialDone = maybeShowSaveNote;
 
     function refreshSignInUI() {
       if (signInText) {
