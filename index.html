@@ -1518,7 +1518,7 @@
       return missed;
     }
 
-    function updatePotVisuals(pot) {
+    function updatePotVisuals(pot, holdRevive) {
       if (!pot || !pot.classList.contains('has-plant')) return;
       const potPlant = pot.querySelector('.pot-plant');
       if (!potPlant) return;
@@ -1557,6 +1557,10 @@
         potPlant.alt = `${pot.dataset.plantName || 'Plant'} (dead)`;
         potPlant.classList.add('is-dead');
         pot.dataset.plantState = 'dead';
+      } else if (holdRevive && pot.dataset.plantState === 'dead') {
+        // Revived by this watering, but the reveal is held:
+        // the plant keeps its dead look until the caller runs
+        // this again a moment later (once the water has hit).
       } else {
         // Healthy, missed once, or revived
         delete pot.dataset.deadPlantImg;
@@ -2902,7 +2906,7 @@
 
       const streakData = calculateStreak(pot);
       pot.dataset.streak = JSON.stringify(streakData);
-      updatePotVisuals(pot);
+      updatePotVisuals(pot, isDead);
 
       // Only a counting watering (first water of the day, on a due
       // day or into a dead plant) grows the plant
@@ -2919,6 +2923,13 @@
 
       closePlantDetailsModal();
       playWateringAnimation(pot);
+
+      if (isDead) {
+        // The plant revives 0.4s after the water starts
+        // falling, so it looks like the water hitting the
+        // plant is what brings it back.
+        setTimeout(() => updatePotVisuals(pot), 400);
+      }
 
       if (shouldGrow) {
         pot.dataset.stage = 'grown';
