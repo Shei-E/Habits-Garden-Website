@@ -2494,8 +2494,8 @@ body {
 
 .bh-modal .bh-pp-close {
   position: absolute;
-  left: calc(155px * var(--scale));
-  top: calc(48.5px * var(--scale));
+  left: calc(154px * var(--scale));
+  top: calc(49.5px * var(--scale));
   width: calc(8px * var(--scale));
   height: calc(8px * var(--scale));
   padding: 0;
