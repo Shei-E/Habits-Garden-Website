@@ -65,7 +65,7 @@
          back into it once signed in. Clicking it opens the
          sign-in page; while signed in it shows the account. -->
     <div class="ui-signin-slot">
-      <button class="ui-signin" id="ui-signin" type="button">sign in to save your plants</button>
+      <button class="ui-signin" id="ui-signin" type="button">already have a garden?</button>
     </div>
 
     <!-- Drag-to-delete marker: while a pot is dragged, this X floats
@@ -103,7 +103,6 @@
         <h2 class="si-title" id="si-title">Sign In</h2>
         <button class="si-close" id="si-close" type="button" aria-label="Close"></button>
         <div class="si-form" id="si-form">
-          <p class="si-line">Already have a garden?</p>
           <button class="si-btn" id="si-google" type="button">sign in with Google</button>
           <p class="si-status" id="si-status"></p>
         </div>
@@ -2272,7 +2271,7 @@
 
     function refreshSignInUI() {
       if (signInText) {
-        signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'sign in to save your plants';
+        signInText.textContent = signedInEmail ? `signed in as ${signedInEmail}` : 'already have a garden?';
       }
       if (siForm) siForm.hidden = !!signedInEmail;
       if (siAccount) siAccount.hidden = !signedInEmail;
@@ -2323,7 +2322,13 @@
           // record, so the next visit counts as signed out and
           // gets the tutorial.
           lsRemove(CLOUD_EMAIL_KEY);
+          refreshSignInUI();
         }
+        // A signed-out visitor gets the "already have a
+        // garden?" text sliding out of the account pill as
+        // the page opens, and it stays out.
+        if (signInText) signInText.classList.add('is-visible');
+        showSignInText();
         return;
       }
       if (cloudUid === user.uid) return; // already applied
