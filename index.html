@@ -2946,8 +2946,12 @@
       ];
       // Each month's days live in their own scroll viewport
       // under the month label: the whole month is one column,
-      // and it scrolls to reach the month's end.
+      // and it scrolls to reach the month's end. The viewport
+      // starts lower (44) than the content's own top (36), so
+      // a column scrolled to its top still keeps its first
+      // days clear of the month name above.
       const COL_TOP = 36;
+      const VIEW_TOP = 44;
       const todayStr = getLocalDateStr(getGameDate());
       let todayLastPetal = null;
       cols.forEach((col, ci) => {
@@ -2962,7 +2966,7 @@
         const view = document.createElement('div');
         view.className = 'bh-col';
         view.style.left = `calc(${C.viewLeft}px * var(--scale))`;
-        view.style.top = `calc(${COL_TOP}px * var(--scale))`;
+        view.style.top = `calc(${VIEW_TOP}px * var(--scale))`;
         const inner = document.createElement('div');
         inner.className = 'bh-col-inner';
         inner.style.height = `calc(${(col.bottom || 42) - COL_TOP}px * var(--scale))`;
