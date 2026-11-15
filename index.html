@@ -3261,12 +3261,19 @@
         const cr = container ? container.getBoundingClientRect() : null;
         const pr = petalEl.getBoundingClientRect();
         if (cr && cr.width && pr.width) {
-          const scale = cr.width / 236;
+          // The container spans the whole stage (256 units),
+          // not the 236-wide panel inside it — dividing by
+          // 236 here was what pulled the card left, worse the
+          // further right the petal sat.
+          const scale = cr.width / 256;
           const petalX = (pr.left - cr.left) / scale;
           const petalY = (pr.top - cr.top) / scale;
           // The card ink sits at (98.49..165.49, 41..85) of
-          // the container when the group is unshifted.
-          let dx = (petalX + 8) - 132 + 2; // centred on the petal, then 2 further right
+          // the container when the group is unshifted, and
+          // its little arrow nub is centred at x 133.5. The
+          // petal's visible centre is 8.5 into its 16-wide
+          // box (the 7x7 ink at 5,4). Line the two up.
+          let dx = (petalX + 8.5) - 133.5 + 2; // arrow on the petal, then 2 further right
           let dy = (petalY + 18) - 41; // card top 2 under the petal
           if (85 + dy > 124) dy = (petalY - 2) - 85; // no room below: above
           dx = Math.max(-96, Math.min(68, dx));
