@@ -2270,6 +2270,14 @@ body {
   /* The press bounce pivots on the jar's base (ink centre
      x 118 of 236, base y 116 of 124). */
   transform-origin: 50% 93.5%;
+}
+
+/* On the bad-habits page the flower drawing paints ABOVE the
+   habit name (the header sits at z-index 2). The layers let
+   clicks pass through, so the header's buttons still work. */
+.bh-modal .bh-layer {
+  z-index: 3;
+}
   object-fit: cover;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
