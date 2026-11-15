@@ -2445,24 +2445,29 @@ body {
   color: #000;
 }
 
-.bh-pp-label {
+/* The notes line: the label, then the field 2 units after
+   the colon. */
+.bh-pp-notesrow {
   position: absolute;
   left: calc(104.5px * var(--scale));
   top: calc(58px * var(--scale));
+  white-space: nowrap;
+}
+
+.bh-pp-label {
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(5px * var(--scale));
   line-height: normal;
   color: #000;
-  white-space: nowrap;
 }
 
 /* No box: the note is typed on the same line as "notes:",
    right after the colon. */
 .bh-pp-notes {
-  position: absolute;
-  left: calc(123px * var(--scale));
-  top: calc(57.2px * var(--scale));
+  position: relative;
+  top: calc(-0.8px * var(--scale));
+  margin-left: calc(2px * var(--scale));
   width: calc(35px * var(--scale));
   height: calc(9px * var(--scale));
   box-sizing: border-box;
