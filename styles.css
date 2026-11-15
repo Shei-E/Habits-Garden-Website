@@ -2104,18 +2104,20 @@ body {
 /* No fixed responsive scale steps: fitStage() in index.html sets
    --scale from the real window size, so every window size fits. */
 
-/* Add-a-bin button: below the add-a-pot button in the corner
-   stack. Same 28x32 canvas shown at x0.75 (21x24); its ink is
-   18x15 with 8 units of clear canvas on the right (= 6 at this
-   scale), so the right offset is -1 to keep the ink's right
-   edge the same 5 units in from the screen's right edge, and
-   the top leaves the same 2-unit visible gap below the
-   add-a-pot button's ink. Hidden until the intro hint flow
-   finishes, like the rest of the corner stack. */
+/* Add-a-bin button: LEFT of the add-a-pot button, on the same
+   row (top 13, so the two buttons' inks line up — both sprites
+   start their ink 7 down the canvas). Same 28x32 canvas shown
+   at x0.75 (21x24); its ink is 18x15 with 8 units of clear
+   canvas on the right (= 6 at this scale). The add-a-pot ink's
+   left edge sits 25.25 units in from the screen's right edge,
+   so a right offset of 21.25 puts this ink's right edge at
+   27.25 — the same 2-unit visible gap the corner stack uses
+   everywhere. Hidden until the intro hint flow finishes, like
+   the rest of the corner stack. */
 .ui-addbin {
   position: fixed;
-  top: calc(26.25px * var(--scale));
-  right: calc(-1px * var(--scale));
+  top: calc(13px * var(--scale));
+  right: calc(21.25px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
