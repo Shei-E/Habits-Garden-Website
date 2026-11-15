@@ -3213,6 +3213,7 @@
     // - type 'devdate' to toggle dev date popup
     // - type 'devgrw' to instantly grow all plants
     // - type 'devdew' to give every plant its dew drops
+    // - type 'devreset' to reset the garden to the start of today
     let secretBuffer = '';
     const MAX_BUFFER_LEN = 10;
 
@@ -3266,6 +3267,61 @@
       saveGarden();
     }
 
+    // Reset the garden to how it stood at the start of today.
+    // Today's watering is taken back: a plant it revived is
+    // dead again, a bud it grew is a bud again, and the growth
+    // counter steps back by the one watering. Today's dew is
+    // then decided again from scratch — drops wait to be
+    // collected once more, and a dead plant's −2 lands again.
+    // Plants planted today stay planted: at day start they
+    // were simply not here, and their dew stamp already says
+    // so, so theirs is left alone.
+    function devResetDay() {
+      const todayIso = getLocalDateStr(getGameDate());
+      document.querySelectorAll('.pot.has-plant').forEach(pot => {
+        let history = [];
+        try {
+          if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
+        } catch (e) { }
+        if (history.includes(todayIso)) {
+          history = history.filter(d => d !== todayIso);
+          pot.dataset.waterHistory = JSON.stringify(history);
+          pot.dataset.wateredToday = 'false';
+          if (history.length) {
+            const [y, m, d] = history[history.length - 1].split('-').map(Number);
+            pot.dataset.lastWateredDate = new Date(y, m - 1, d).toDateString();
+          } else {
+            delete pot.dataset.lastWateredDate;
+          }
+          // Did today's watering count towards growth? Judged
+          // on the plant as it stands now — which is how it
+          // stood at day start: it counts when the plant is
+          // dead (a revive always counts) or due today.
+          calculateStreak(pot);
+          const counted = getMissedOpportunitiesCount(pot) >= 1
+            || pot.dataset.streakLastOppLabel === 'today';
+          if (counted) {
+            const wc = Math.max(0, (parseInt(pot.dataset.waterCount || '0', 10) || 0) - 1);
+            pot.dataset.waterCount = String(wc);
+            if (pot.dataset.stage === 'grown'
+              && wc < (parseInt(pot.dataset.growThreshold || '5', 10) || 5)) {
+              pot.dataset.stage = 'bud';
+            }
+          }
+          pot.dataset.streak = JSON.stringify(calculateStreak(pot));
+        }
+        if (pot.dataset.createdDate !== todayIso) {
+          delete pot.dataset.dewToday;
+          delete pot.dataset.dewCollected;
+          delete pot.dataset.dewDay;
+        }
+        updatePotVisuals(pot);
+      });
+      resetDewGrant();
+      updateDewDrops();
+      saveGarden();
+    }
+
     document.addEventListener('keydown', (e) => {
       const tag = e.target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) {
@@ -3297,6 +3353,9 @@
         } else if (secretBuffer.endsWith('devdew')) {
           secretBuffer = '';
           devGiveAllDew();
+        } else if (secretBuffer.endsWith('devreset')) {
+          secretBuffer = '';
+          devResetDay();
         }
       }
     });
