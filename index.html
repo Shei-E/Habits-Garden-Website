@@ -3274,8 +3274,8 @@
           // petal's visible centre is 8.5 into its 16-wide
           // box (the 7x7 ink at 5,4). Line the two up.
           let dx = (petalX + 8.5) - 133.5; // the arrow lands on the petal
-          let dy = (petalY + 18) - 41; // card top 2 under the petal
-          if (85 + dy > 124) dy = (petalY - 2) - 85; // no room below: above
+          let dy = (petalY + 13) - 41; // card top 2 under the petal, the whole card 5 higher
+          if (85 + dy > 124) dy = (petalY - 7) - 85; // no room below: above, also 5 higher
           dx = Math.max(-96, Math.min(68, dx));
           dy = Math.max(-39, Math.min(39, dy));
           shift.style.left = `calc(${dx}px * var(--scale))`;
