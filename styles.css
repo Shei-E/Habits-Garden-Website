@@ -2265,14 +2265,22 @@ body {
   width: calc(236px * var(--scale));
   height: calc(124px * var(--scale));
   /* The click pop grows the drawing from the jar's centre
-     (ink centre (118, 67) of the 236x124 layer). */
-  transform-origin: 50% 54%;
+     (ink centre (118, 70) of the 236x124 layer). */
+  transform-origin: 50% 56.5%;
   object-fit: cover;
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   pointer-events: none;
+}
+
+/* The drawing was shortened by 7 units (its upper artwork
+   moved down 7, the jar's base unmoved), so the petal
+   overlays — still drawn for the taller flower — sit 7
+   units lower too, keeping them on the flower's head. */
+.bh-layer.bh-petal-layer {
+  top: calc(17px * var(--scale));
 }
 
 /* On the bad-habits page the flower drawing paints ABOVE the
