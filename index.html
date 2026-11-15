@@ -3065,15 +3065,15 @@
       (async () => {
         if (overlay) {
           // The petal rises off the flower, speeding up as it
-          // goes (ease-in). The rise runs 464ms (the old 650ms
-          // at 1.4x speed); the fade is done by 250ms, 0.4s
-          // sooner than the old animation's end.
+          // goes (ease-in), reaching the top at 464ms (the old
+          // 650ms rise at 1.4x speed). The fade starts at once
+          // — 0.4s sooner than the old start is as early as it
+          // can be — and runs the full 500ms of the animation.
           await animateOnce(overlay, [
             { transform: 'translateY(0px)', opacity: 1, offset: 0 },
-            { opacity: 1, offset: 0.25 },
-            { opacity: 0, offset: 0.54 },
+            { transform: `translateY(${-18 * scale}px)`, offset: 0.928 },
             { transform: `translateY(${-18 * scale}px)`, opacity: 0, offset: 1 },
-          ], { duration: 464, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
+          ], { duration: 500, easing: 'cubic-bezier(0.42, 0, 1, 1)', fill: 'forwards' });
         }
         binPageIndex = 999; // the petal lands on today's page
         renderBinPage();
