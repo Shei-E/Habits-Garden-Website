@@ -3863,25 +3863,68 @@
       closeModal();
     });
 
-    // Unwater: step the growth counter back by one watering,
-    // to where it stood before the plant was last watered. A
-    // flower whose counter falls back below its grow threshold
-    // becomes a bud again. The watering itself stays in the
-    // history (streaks and dew are untouched) — only the
-    // growth it bought is taken back. Repeat clicks step back
-    // further; the page stays open.
+    // Unwater: run back everything the last watering did.
+    // When the plant was watered today, today's watering is
+    // undone completely — it leaves the history (so streaks
+    // follow), wateredToday clears (the popup's water button
+    // un-greys, and the next watering is the day's first
+    // again, sparkles included), a growth it bought is
+    // stepped back, and a plant it revived is dead again —
+    // the same undo devreset performs, for this one plant.
+    // When it was not watered today, unwater just steps the
+    // growth counter back one, as it always has. Either way
+    // the page closes behind the click.
     apUnwater?.addEventListener('click', () => {
       if (!activePot || !activePot.classList.contains('has-plant')) return;
-      const count = parseInt(activePot.dataset.waterCount || '0', 10) || 0;
-      if (count <= 0) return;
-      const next = count - 1;
-      activePot.dataset.waterCount = String(next);
-      const threshold = parseInt(activePot.dataset.growThreshold || '5', 10) || 5;
-      if (activePot.dataset.stage === 'grown' && next < threshold) {
-        activePot.dataset.stage = 'bud';
+      const pot = activePot;
+      const todayIso = getLocalDateStr(getGameDate());
+      let history = [];
+      try {
+        if (pot.dataset.waterHistory) history = JSON.parse(pot.dataset.waterHistory);
+      } catch (e) { }
+      if (history.includes(todayIso)) {
+        history = history.filter(d => d !== todayIso);
+        pot.dataset.waterHistory = JSON.stringify(history);
+        pot.dataset.wateredToday = 'false';
+        if (history.length) {
+          const [y, m, d] = history[history.length - 1].split('-').map(Number);
+          pot.dataset.lastWateredDate = new Date(y, m - 1, d).toDateString();
+        } else {
+          delete pot.dataset.lastWateredDate;
+        }
+        // Did today's watering count towards growth? Judged
+        // on the plant as it stands without it: it counted
+        // when the plant was dead (a revive always counts)
+        // or due today.
+        calculateStreak(pot);
+        const wasDeadAtStart = getMissedOpportunitiesCount(pot) >= 1;
+        const counted = wasDeadAtStart
+          || pot.dataset.streakLastOppLabel === 'today';
+        if (counted) {
+          const wc = Math.max(0, (parseInt(pot.dataset.waterCount || '0', 10) || 0) - 1);
+          pot.dataset.waterCount = String(wc);
+          // A revived plant keeps its stage (a dead flower
+          // comes back as a dead flower, not a dead bud).
+          if (!wasDeadAtStart && pot.dataset.stage === 'grown'
+            && wc < (parseInt(pot.dataset.growThreshold || '5', 10) || 5)) {
+            pot.dataset.stage = 'bud';
+          }
+        }
+        pot.dataset.streak = JSON.stringify(calculateStreak(pot));
+      } else {
+        const count = parseInt(pot.dataset.waterCount || '0', 10) || 0;
+        if (count > 0) {
+          const next = count - 1;
+          pot.dataset.waterCount = String(next);
+          const threshold = parseInt(pot.dataset.growThreshold || '5', 10) || 5;
+          if (pot.dataset.stage === 'grown' && next < threshold) {
+            pot.dataset.stage = 'bud';
+          }
+        }
       }
-      updatePotVisuals(activePot);
+      updatePotVisuals(pot);
       saveGarden();
+      closeModal();
     });
 
     commitBtn?.addEventListener('click', () => {
