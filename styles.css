@@ -2177,6 +2177,11 @@ body {
   background-image: url("assets/bin-yellow-flower.png");
 }
 
+/* Every petal picked: only the stem is left in the jar. */
+.bin.has-flower.is-stem {
+  background-image: url("assets/bin-stem.png");
+}
+
 .bin:focus-visible {
   outline: 2px dashed #000;
   outline-offset: 2px;

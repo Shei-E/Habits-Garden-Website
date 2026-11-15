@@ -2476,15 +2476,18 @@
     }
 
     // The bin's visible artwork inside its 32x48 box: the jar
-    // (10x19 at (11,27)); a flower's stem rises above the jar,
-    // stretching the ink up to y 23. Presses and clicks count
-    // only on the artwork, like the pots' zones — the rest of
-    // the box is clear canvas and lets whatever is beneath it
-    // (another bin's jar, a pot) take the press instead.
+    // alone is 8x13 at (12,35); a flower's stem and head rise
+    // above it (9x19 at (11,29)), and once every petal has
+    // been picked only the stem is left (8x16 at (12,32)).
+    // Presses and clicks count only on the artwork, like the
+    // pots' zones — the rest of the box is clear canvas and
+    // lets whatever is beneath it (another bin's jar, a pot)
+    // take the press instead.
     function binInkBox(bin) {
-      return bin.classList.contains('has-flower')
-        ? { x: 11, y: 29, w: 9, h: 19 }
-        : { x: 12, y: 35, w: 8, h: 13 };
+      if (!bin.classList.contains('has-flower')) return { x: 12, y: 35, w: 8, h: 13 };
+      return bin.classList.contains('is-stem')
+        ? { x: 12, y: 32, w: 8, h: 16 }
+        : { x: 11, y: 29, w: 9, h: 19 };
     }
 
     function pointInBinInk(bin, designX, designY) {
@@ -2747,6 +2750,7 @@
     function setBinFlower(bin, f) {
       if (!f) {
         bin.classList.remove('has-flower');
+        bin.classList.remove('is-stem');
         delete bin.dataset.flowerName;
         delete bin.dataset.flowerType;
         delete bin.dataset.flowerCreated;
@@ -2757,6 +2761,10 @@
         return;
       }
       bin.classList.add('has-flower');
+      // With every petal picked, the shelf shows just the
+      // stem in the jar (bin-stem.png) until the petals grow
+      // back at the next day start.
+      bin.classList.toggle('is-stem', (parseInt(f.petalsLeft, 10) || 0) <= 0);
       bin.dataset.flowerName = f.name;
       bin.dataset.flowerType = f.type;
       bin.dataset.flowerCreated = f.created;
