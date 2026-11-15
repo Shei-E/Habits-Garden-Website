@@ -2433,7 +2433,7 @@ body {
 .bh-pp-timerow {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(50px * var(--scale));
+  top: calc(57px * var(--scale));
   white-space: nowrap;
 }
 
@@ -2448,7 +2448,7 @@ body {
 .bh-pp-label {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(58px * var(--scale));
+  top: calc(65px * var(--scale));
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(6px * var(--scale));
@@ -2462,7 +2462,7 @@ body {
 .bh-pp-notes {
   position: absolute;
   left: calc(125px * var(--scale));
-  top: calc(57.2px * var(--scale));
+  top: calc(64.2px * var(--scale));
   width: calc(35px * var(--scale));
   height: calc(9px * var(--scale));
   box-sizing: border-box;
