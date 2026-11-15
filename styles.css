@@ -2109,15 +2109,14 @@ body {
    start their ink 7 down the canvas). Same 28x32 canvas shown
    at x0.75 (21x24); its ink is 18x15 with 8 units of clear
    canvas on the right (= 6 at this scale). The add-a-pot ink's
-   left edge sits 25.25 units in from the screen's right edge,
-   so a right offset of 21.25 puts this ink's right edge at
-   27.25 — the same 2-unit visible gap the corner stack uses
-   everywhere. Hidden until the intro hint flow finishes, like
+   left edge sits 22.25 units in from the screen's right edge,
+   so a right offset of 16.25 puts this ink's right edge right
+   against it. Hidden until the intro hint flow finishes, like
    the rest of the corner stack. */
 .ui-addbin {
   position: fixed;
   top: calc(13px * var(--scale));
-  right: calc(21.25px * var(--scale));
+  right: calc(16.25px * var(--scale));
   width: calc(21px * var(--scale));
   height: calc(24px * var(--scale));
   padding: 0;
