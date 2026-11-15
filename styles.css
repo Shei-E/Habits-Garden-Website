@@ -2433,7 +2433,7 @@ body {
 .bh-pp-timerow {
   position: absolute;
   left: calc(104.5px * var(--scale));
-  top: calc(48px * var(--scale));
+  top: calc(50px * var(--scale));
   white-space: nowrap;
 }
 
@@ -2461,7 +2461,7 @@ body {
    right after the colon. */
 .bh-pp-notes {
   position: absolute;
-  left: calc(127px * var(--scale));
+  left: calc(125px * var(--scale));
   top: calc(57.2px * var(--scale));
   width: calc(35px * var(--scale));
   height: calc(9px * var(--scale));
@@ -2469,10 +2469,15 @@ body {
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(6px * var(--scale));
-  color: #000;
+  color: #bda499;
   background: transparent;
   border: 0;
   outline: none;
+}
+
+.bh-pp-notes::placeholder {
+  color: #bda499;
+  opacity: 1;
 }
 
 .bh-pp-undo {
