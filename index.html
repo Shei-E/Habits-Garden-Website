@@ -86,7 +86,7 @@
           <p class="dd-line"><img class="dd-bullet" src="assets/drop1-2.png" alt="">Buds reward 1 drop per day</p>
           <p class="dd-line"><img class="dd-bullet" src="assets/drop1-2.png" alt="">Flowers reward 2 drops per day and a bonus on the day after watering your flower.</p>
           <p class="dd-line"><img class="dd-bullet" src="assets/drop1-2.png" alt="">Dead plants subtract 2 from your dew drops.</p>
-          <p class="dd-line"><img class="dd-bullet" src="assets/drop1-2.png" alt="">Dew drops are reset every day, and can never go below 0.</p>
+          <p class="dd-line"><img class="dd-bullet" src="assets/drop1-2.png" alt="">Dew drops are reset every day, and can go below 0.</p>
         </div>
       </div>
     </div>
@@ -1588,8 +1588,9 @@
     // plants on the shelf as they stand, and it then stays fixed
     // for the whole day — planting, watering, reviving or removing
     // a plant during the day changes nothing until the next 4am,
-    // when the next day's reward is granted. The total never goes
-    // below 0:
+    // when the next day's reward is granted. Dead plants are the
+    // one exception to hand collection: their −2 is taken
+    // automatically at day start, and the total can go below 0:
     //   bud ....... 1 drop a day
     //   dead ...... -2 drops a day
     //   flower .... 5 (daily/weekly), 10 (monthly) or 20 (yearly)
@@ -1619,10 +1620,12 @@
     }
 
     // ---- Dew collection ----
-    // Drops are not handed out automatically any more: at the
-    // start of a game day each plant is assigned the drops it can
-    // pay that day (dewDropRate, from the plant as it stands
-    // then). The assignment is kept on the plant itself and saved
+    // Drops are not handed out automatically any more — except a
+    // dead plant's −2, which is taken automatically at the start
+    // of a game day (see updateDewDrops): at the start of a game
+    // day each plant is assigned the drops it can pay that day
+    // (dewDropRate, from the plant as it stands then). The
+    // assignment is kept on the plant itself and saved
     // with the garden: dataset.dewToday is the amount waiting,
     // dataset.dewCollected marks it taken, and dataset.dewDay is
     // the game day the assignment was decided for. A plant whose
@@ -1638,6 +1641,9 @@
     // amount — see the commit handler).
 
     function collectedDewTotal() {
+      // The total can go below 0: a dead plant's −2 is collected
+      // automatically (see updateDewDrops), so it counts here
+      // alongside the drops collected by hand.
       let total = 0;
       pots.forEach(pot => {
         if (pot.dataset.dewCollected === 'true') {
@@ -1658,16 +1664,20 @@
         // day, a freshly restored garden from an earlier day, or
         // a plant that was not there at day start (those are
         // stamped too, with nothing to collect, so they cannot
-        // be assigned again until tomorrow). Only plants that
-        // pay something get an amount — dead plants pay nothing
-        // and wear no icon.
+        // be assigned again until tomorrow). Plants that pay get
+        // an amount to collect; a dead plant's −2 is taken at
+        // once instead — no icon, no click — and wears no icon.
         const rate = dewDropRate(pot);
         if (rate > 0) {
           pot.dataset.dewToday = String(rate);
+          delete pot.dataset.dewCollected;
+        } else if (rate < 0) {
+          pot.dataset.dewToday = String(rate);
+          pot.dataset.dewCollected = 'true';
         } else {
           delete pot.dataset.dewToday;
+          delete pot.dataset.dewCollected;
         }
-        delete pot.dataset.dewCollected;
         pot.dataset.dewDay = todayStr;
         assigned = true;
       });
@@ -3214,9 +3224,10 @@
     }
 
     // Give every plant its dew drops right now, at the usual
-    // rates (dead plants still get none), clearing any
-    // collected state — so collection can be tested on demand
-    // instead of waiting for the next day start.
+    // rates (a dead plant's −2 is taken at once, as at day
+    // start), clearing any collected state — so collection can
+    // be tested on demand instead of waiting for the next day
+    // start.
     function devGiveAllDew() {
       const todayStr = getLocalDateStr(getGameDate());
       document.querySelectorAll('.pot.has-plant').forEach(pot => {
@@ -3224,6 +3235,10 @@
         if (rate > 0) {
           pot.dataset.dewToday = String(rate);
           delete pot.dataset.dewCollected;
+          pot.dataset.dewDay = todayStr;
+        } else if (rate < 0) {
+          pot.dataset.dewToday = String(rate);
+          pot.dataset.dewCollected = 'true';
           pot.dataset.dewDay = todayStr;
         }
         renderDew(pot);
