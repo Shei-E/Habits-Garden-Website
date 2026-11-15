@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 
 <body>
@@ -1683,7 +1683,16 @@
       });
       if (assigned) saveGarden();
       const el = document.getElementById('ui-currency-count');
-      if (el) el.textContent = String(collectedDewTotal());
+      if (el) {
+        el.textContent = String(collectedDewTotal());
+        // While a dead plant's −2 is part of today's total, the
+        // count wears the penalty colour.
+        if (pots.some(pot => (parseInt(pot.dataset.dewToday || '0', 10) || 0) < 0)) {
+          el.classList.add('is-penalty');
+        } else {
+          el.classList.remove('is-penalty');
+        }
+      }
       pots.forEach(pot => renderDew(pot));
     }
 
