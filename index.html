@@ -2461,6 +2461,21 @@
       return null;
     }
 
+    // Clicking a bin on the shelf bounces it bigger: a quick
+    // pop from the jar's base that settles back, played as the
+    // bin's menu or page opens.
+    function bounceBinEl(bin) {
+      if (!bin || typeof bin.animate !== 'function') return;
+      try {
+        bin.animate([
+          { transform: 'scale(1, 1)' },
+          { transform: 'scale(1.12, 1.12)', offset: 0.35 },
+          { transform: 'scale(1.03, 1.03)', offset: 0.65 },
+          { transform: 'scale(1, 1)' },
+        ], { duration: 420, easing: 'ease-out' });
+      } catch (e) { /* the bounce is decoration only */ }
+    }
+
     // What a click on a bin does: a filled bin opens its page,
     // an empty one opens the Add Flower menu.
     function openBin(bin) {
@@ -2477,11 +2492,11 @@
       bin.addEventListener('click', (e) => {
         if (suppressBinClick) return; // the tail of a drag, not a click
         const isKeyboard = (!e.clientX && !e.clientY); // keyboard clicks carry no point
-        if (isKeyboard) { openBin(bin); return; }
+        if (isKeyboard) { bounceBinEl(bin); openBin(bin); return; }
         // Route the click to the bin whose artwork was actually
         // clicked, not the bin whose clear box sits on top.
         const target = binAtPoint(e.clientX, e.clientY);
-        if (target) { openBin(target); return; }
+        if (target) { bounceBinEl(target); openBin(target); return; }
         // Clear canvas over a pot: the click is the pot's.
         const pot = potAtPoint(e.clientX, e.clientY, isInPlantZone);
         if (pot) handlePotClick(pot, e);

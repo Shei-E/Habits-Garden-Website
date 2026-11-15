@@ -2157,6 +2157,9 @@ body {
   padding: 0;
   border: 0;
   background-color: transparent;
+  /* The click bounce grows the bin from the jar's base
+     (ink centre x 16 of 32, base y 46 of 48). */
+  transform-origin: 50% 95.8%;
   background-image: url("assets/bin1.png");
   background-position: bottom center;
   background-size: contain;
