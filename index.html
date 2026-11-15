@@ -915,6 +915,16 @@
     const DRAG_THRESHOLD = 3; // design units of pointer travel to start a drag
     let dragState = null; // { pot, startClientX, startClientY, moved, origPos, stageRect }
     let suppressNextPotClick = false;
+    let suppressPotClickTimer = 0;
+    // Arms the post-drag click suppression (it clears itself
+    // after 300 ms). Called the moment a drag starts moving —
+    // not only when the drag ends — so the click the release
+    // produces is swallowed whenever it arrives.
+    function armPotClickSuppression() {
+      suppressNextPotClick = true;
+      clearTimeout(suppressPotClickTimer);
+      suppressPotClickTimer = setTimeout(() => { suppressNextPotClick = false; }, 300);
+    }
 
     // Pointer travel since dragstart, converted to design units.
     function designDelta(e) {
@@ -980,6 +990,7 @@
       if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
       if (!dragState.moved) {
         dragState.moved = true;
+        armPotClickSuppression();
         dragState.pot.classList.add('is-dragging');
         // A drag counts even if the pot ends up back where it started:
         // this pot is now the front of its size tier (the previous
@@ -1031,6 +1042,14 @@
       const state = dragState;
       dragState = null;
       const pot = state.pot;
+      // A fast flick can deliver no pointermove events at
+      // all, so the drag never "started" — but if the release
+      // lands far from the press, it was a drag, not a click.
+      if (!state.moved && !cancelled && e && typeof e.clientX === 'number' && state.stageRect) {
+        const dx = (e.clientX - state.startClientX) * (256 / (state.stageRect.width || 1));
+        const dy = (e.clientY - state.startClientY) * (144 / (state.stageRect.height || 1));
+        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) state.moved = true;
+      }
       pot.classList.remove('is-dragging', 'is-blocked');
       // The delete marker only lives for the length of a drag.
       if (deleteXEl) deleteXEl.classList.remove('is-visible', 'is-armed');
@@ -1041,10 +1060,9 @@
         if (state.moved) setPotPos(pot, state.origPos.left, state.origPos.row);
         return; // plain click — let the click handler open the modal
       }
-      suppressNextPotClick = true;
+      armPotClickSuppression();
       // A click is suppressed for 300 ms after a real drag so dragging
       // does not also open a popup.
-      setTimeout(() => { suppressNextPotClick = false; }, 300);
       if (state.deleteArmed) {
         // Dropped on the delete marker: the pot (and any plant in
         // it) is removed instead of landing anywhere.
@@ -2596,6 +2614,13 @@
     // so the marker shows for every bin drag.
     let binDragState = null;
     let suppressBinClick = false;
+    let suppressBinClickTimer = 0;
+    // The bins' twin of armPotClickSuppression.
+    function armBinClickSuppression() {
+      suppressBinClick = true;
+      clearTimeout(suppressBinClickTimer);
+      suppressBinClickTimer = setTimeout(() => { suppressBinClick = false; }, 300);
+    }
 
     function binDesignDelta(e) {
       const w = binDragState.stageRect.width || 1;
@@ -2633,6 +2658,7 @@
       const orig = binDragState.origPos;
       if (!binDragState.moved) {
         binDragState.moved = true;
+        armBinClickSuppression();
         bin.classList.add('is-dragging');
         bin.style.zIndex = 50;
         if (deleteXEl) {
@@ -2666,11 +2692,18 @@
       }
     }
 
-    function endBinDrag(cancelled) {
+    function endBinDrag(cancelled, e) {
       if (!binDragState) return;
       const state = binDragState;
       binDragState = null;
       const bin = state.bin;
+      // Same fast-flick case as the pots: no pointermove
+      // events, but the release landed far from the press.
+      if (!state.moved && !cancelled && e && typeof e.clientX === 'number' && state.stageRect) {
+        const dx = (e.clientX - state.startClientX) * (256 / (state.stageRect.width || 1));
+        const dy = (e.clientY - state.startClientY) * (144 / (state.stageRect.height || 1));
+        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) state.moved = true;
+      }
       bin.classList.remove('is-dragging', 'is-blocked');
       if (deleteXEl) deleteXEl.classList.remove('is-visible', 'is-armed');
       if (cancelled || !state.moved) {
@@ -2679,9 +2712,8 @@
         if (state.moved) setBinPos(bin, state.origPos.left, state.origPos.row);
         return; // plain click — the click handler opens the menu/page
       }
-      suppressBinClick = true;
+      armBinClickSuppression();
       // The click that follows a real drag must not open anything.
-      setTimeout(() => { suppressBinClick = false; }, 300);
       if (state.deleteArmed) {
         deleteBin(bin);
         return;
@@ -2727,8 +2759,8 @@
       bin.addEventListener('pointermove', (e) => {
         if (binDragState && binDragState.bin === bin) moveBinDrag(e);
       });
-      bin.addEventListener('pointerup', () => {
-        if (binDragState && binDragState.bin === bin) endBinDrag(false);
+      bin.addEventListener('pointerup', (e) => {
+        if (binDragState && binDragState.bin === bin) endBinDrag(false, e);
       });
       bin.addEventListener('pointercancel', () => {
         if (binDragState && binDragState.bin === bin) endBinDrag(true);
