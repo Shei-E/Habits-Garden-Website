@@ -2390,6 +2390,11 @@ body {
   image-rendering: crisp-edges;
   pointer-events: auto;
   cursor: pointer;
+  /* The icons' visible petal is only the middle 7x7 of the
+     16x16 canvas (ink at 5,4): clip the element to the ink
+     so clicks land on the petal itself, not its transparent
+     padding — the picture is unchanged. */
+  clip-path: inset(25% 25% 31.25% 31.25%);
 }
 
 /* The petal popup: a small card (ui-badhabit-popup.png, a
