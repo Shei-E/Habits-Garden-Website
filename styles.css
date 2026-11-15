@@ -2283,6 +2283,27 @@ body {
   top: calc(17px * var(--scale));
 }
 
+/* Hidden span for measuring a flower name's true width
+   (renderBinPage decides which drawing fits). */
+.bh-name-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+/* When the name is short enough, the bin page shows the
+   TALL drawing instead: the petal overlays sit at the
+   layers' own top again and the click pop centres on the
+   taller flower (ink centre (118, 67) of the 236x124
+   layer). */
+.bh-modal.bh-long-drawing .bh-layer {
+  transform-origin: 50% 54%;
+}
+
+.bh-modal.bh-long-drawing .bh-layer.bh-petal-layer {
+  top: calc(10px * var(--scale));
+}
+
 /* On the bad-habits page the flower drawing paints ABOVE the
    habit name (the header sits at z-index 2). The layers let
    clicks pass through, so the header's buttons still work. */

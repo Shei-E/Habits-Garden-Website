@@ -295,7 +295,7 @@
       aria-labelledby="bh-name">
       <div class="ap-container">
         <img class="ap-panel" src="assets/ui-plant-1.png" alt="">
-        <img class="bh-layer" src="assets/bin-flower-drawing.png" alt="">
+        <img class="bh-layer" id="bh-drawing" src="assets/bin-flower-drawing.png" alt="">
         <img class="bh-layer bh-petal-layer" id="bh-petal-1" data-petal="1" src="assets/petal1.png" alt="">
         <img class="bh-layer bh-petal-layer" id="bh-petal-2" data-petal="2" src="assets/petal2.png" alt="">
         <img class="bh-layer bh-petal-layer" id="bh-petal-3" data-petal="3" src="assets/petal3.png" alt="">
@@ -2988,11 +2988,36 @@
       return pages.length ? pages : [[{ month: new Date(todayStr + 'T12:00:00').getMonth(), days: [] }]];
     }
 
+    let bhNameMeasurer = null;
+    function measureBinNameWidth(text) {
+      if (!bhNameMeasurer) {
+        bhNameMeasurer = document.createElement('span');
+        bhNameMeasurer.className = 'ap-title bh-name-measure';
+        document.body.appendChild(bhNameMeasurer);
+      }
+      bhNameMeasurer.textContent = text;
+      return bhNameMeasurer.offsetWidth || 0;
+    }
+
     function renderBinPage() {
       if (!pageBin) return;
       const f = getBinFlower(pageBin);
       if (!f) return;
       if (bhName) bhName.textContent = f.name || '';
+      // The tall drawing (bin-flower-drawing-long) is used
+      // whenever the name is short enough to end before the
+      // drawing starts — 83 units, the boundary the name's
+      // old split layout was tuned to. A longer name would
+      // run into the tall flower, so the page falls back to
+      // the shortened drawing, whose top sits below the
+      // name. The modal class moves the petal overlays and
+      // the click-pop centre to match the drawing shown.
+      const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
+      const nameScale = stageRect && stageRect.width ? stageRect.width / 256 : 1;
+      const useLongDrawing = measureBinNameWidth(f.name || '') <= 83 * nameScale;
+      const bhDrawing = document.getElementById('bh-drawing');
+      if (bhDrawing) bhDrawing.src = useLongDrawing ? 'assets/bin-flower-drawing-long.png' : 'assets/bin-flower-drawing.png';
+      if (binPage) binPage.classList.toggle('bh-long-drawing', useLongDrawing);
       // The flower keeps the petals it has not lost: petal i is
       // on the flower while i <= petalsLeft (petals fall from
       // petal6 down to petal1).
