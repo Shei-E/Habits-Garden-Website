@@ -1287,7 +1287,12 @@
       plantBtns.forEach(btn => btn.classList.remove('is-selected'));
       plantCarouselOffset = 0;
       updatePlantCarousel();
-      setSelectedPot(0); // Clay pot by default
+      // The clicked pot's own design starts picked in the
+      // picker, so planting into an existing empty pot keeps
+      // its design unless another is chosen. A pot with no
+      // recorded design (a brand new one) starts on clay.
+      const clickedPotIdx = activePot ? potOptions.findIndex(p => p.id === (activePot.dataset.potType || 'clay')) : -1;
+      setSelectedPot(clickedPotIdx !== -1 ? clickedPotIdx : 0);
       checkCommitReady();
     }
 
