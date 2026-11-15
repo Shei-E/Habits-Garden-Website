@@ -2210,6 +2210,13 @@ body {
   top: calc(44px * var(--scale));
 }
 
+/* The flower name field sits 1 unit up and 4 units right of
+   where the plant name field sits in Add Plant. */
+.af-modal .ap-input {
+  left: calc(var(--stage-w) * 0.2 + 14.8px * var(--scale));
+  top: calc(31px * var(--scale));
+}
+
 .af-modal .ap-arrow {
   top: calc(84px * var(--scale));
 }

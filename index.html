@@ -269,7 +269,7 @@
           aria-label="Previous flowers"></button>
         <div class="ap-carousel-viewport">
           <div class="ap-carousel-track" id="af-carousel-track">
-            <button class="af-flower is-selected" type="button" aria-label="Placeholder flower"
+            <button class="af-flower" type="button" aria-label="Placeholder flower"
               data-flower="placeholder">
               <img class="af-flower-sprite" src="assets/placeholder1.png" alt="">
             </button>
@@ -2655,11 +2655,14 @@
     const afCommit = document.getElementById('af-commit');
     const afTrack = document.getElementById('af-carousel-track');
     let activeBin = null;
-    let selectedFlower = 'placeholder';
+    let selectedFlower = null;
     let flowerCarouselOffset = 0;
 
+    // COMMIT stays greyed out until every option is chosen:
+    // a flower picked from the menu and a name typed in.
     function checkFlowerCommitReady() {
-      const ready = !!selectedFlower;
+      const hasName = flowerInput && flowerInput.value.trim().length > 0;
+      const ready = Boolean(hasName && selectedFlower);
       if (afCommit) {
         if (ready) {
           afCommit.classList.add('is-ready');
@@ -2714,7 +2717,9 @@
       if (flowerInput) flowerInput.value = f ? f.name : '';
       flowerCarouselOffset = 0;
       updateFlowerCarousel();
-      selectFlower(f ? f.type : 'placeholder');
+      // Editing starts with the current flower picked; adding
+      // starts with nothing picked, so COMMIT waits for a pick.
+      selectFlower(f ? f.type : null);
       flowerModal.classList.remove('is-closing');
       flowerModal.classList.add('is-open');
       flowerModal.setAttribute('aria-hidden', 'false');
@@ -2740,6 +2745,7 @@
     }
 
     document.getElementById('af-close')?.addEventListener('click', closeFlowerModal);
+    flowerInput?.addEventListener('input', checkFlowerCommitReady);
 
     afRemove?.addEventListener('click', () => {
       if (!activeBin) return;
