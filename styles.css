@@ -2298,6 +2298,31 @@ body {
   margin-top: calc(-3px * var(--scale));
 }
 
+/* A long flower name skips over the flower drawing: the first
+   part ends before it and the rest resumes on its other side
+   (positions measured in layoutBinName). */
+.bh-name-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.bh-modal .bh-name-left {
+  display: inline-block;
+  max-width: calc(78px * var(--scale));
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.bh-modal .bh-name-right {
+  position: absolute;
+  left: calc(116px * var(--scale));
+  top: 0;
+  width: calc(76px * var(--scale));
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .bh-days {
   position: absolute;
   inset: 0;

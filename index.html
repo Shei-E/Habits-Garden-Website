@@ -2952,11 +2952,53 @@
       return pages.length ? pages : [[{ month: new Date(todayStr + 'T12:00:00').getMonth(), days: [] }]];
     }
 
+    // The flower name on the bin page: the flower drawing sits
+    // in the middle of the title row, so a name long enough to
+    // reach it skips over the flower — the first part fills the
+    // space before the drawing and the rest continues on the
+    // other side of it, on the same line. (Panel units: the
+    // title starts at x 21 and the drawing's ink spans about
+    // x 101–135, so the left part gets 78 units, the name
+    // resumes at 137, and the continuation has 76 units before
+    // the panel's right edge.)
+    const BH_NAME_LEFT_W = 78;
+    let bhNameMeasurer = null;
+    function measureBinNameWidth(text) {
+      if (!bhNameMeasurer) {
+        bhNameMeasurer = document.createElement('span');
+        bhNameMeasurer.className = 'ap-title bh-name-measure';
+        document.body.appendChild(bhNameMeasurer);
+      }
+      bhNameMeasurer.textContent = text;
+      return bhNameMeasurer.offsetWidth || 0;
+    }
+    function layoutBinName(name) {
+      if (!bhName) return;
+      bhName.textContent = '';
+      const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
+      const scale = stageRect && stageRect.width ? stageRect.width / 256 : 1;
+      const leftMaxPx = BH_NAME_LEFT_W * scale;
+      if (!name || measureBinNameWidth(name) <= leftMaxPx) {
+        bhName.textContent = name || '';
+        return;
+      }
+      let k = 0;
+      while (k < name.length && measureBinNameWidth(name.slice(0, k + 1)) <= leftMaxPx) k++;
+      const leftSpan = document.createElement('span');
+      leftSpan.className = 'bh-name-left';
+      leftSpan.textContent = name.slice(0, k);
+      const rightSpan = document.createElement('span');
+      rightSpan.className = 'bh-name-right';
+      rightSpan.textContent = name.slice(k);
+      bhName.appendChild(leftSpan);
+      bhName.appendChild(rightSpan);
+    }
+
     function renderBinPage() {
       if (!pageBin) return;
       const f = getBinFlower(pageBin);
       if (!f) return;
-      if (bhName) bhName.textContent = f.name;
+      layoutBinName(f.name);
       // The flower keeps the petals it has not lost: petal i is
       // on the flower while i <= petalsLeft (petals fall from
       // petal6 down to petal1).
