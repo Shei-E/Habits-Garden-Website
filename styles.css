@@ -2440,7 +2440,7 @@ body {
 .bh-pp-time {
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(3px * var(--scale));
+  font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
 }
@@ -2451,7 +2451,7 @@ body {
   top: calc(58px * var(--scale));
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(3px * var(--scale));
+  font-size: calc(6px * var(--scale));
   line-height: normal;
   color: #000;
   white-space: nowrap;
@@ -2468,7 +2468,7 @@ body {
   box-sizing: border-box;
   padding: 0;
   font-family: "Tiny5", monospace;
-  font-size: calc(3px * var(--scale));
+  font-size: calc(6px * var(--scale));
   color: #bda499;
   background: transparent;
   border: 0;
