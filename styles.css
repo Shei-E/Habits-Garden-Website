@@ -2366,7 +2366,10 @@ body {
 /* Page arrows for the day columns: the carousel's tiny arrow,
    at the panel's bottom corners, shown only when there is a
    page in that direction (the code hides them otherwise). */
-.bh-arrow {
+/* Scoped under .bh-modal so this beats the generic
+   .ap-container button reset (background: none) — without
+   the extra weight the arrows render with no picture. */
+.bh-modal .bh-arrow {
   position: absolute;
   top: calc(117px * var(--scale));
   width: calc(11px * var(--scale));
