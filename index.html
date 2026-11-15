@@ -3069,11 +3069,9 @@
       } catch (e) { return Promise.resolve(); }
     }
 
-    // Clicking the jar pops the flower drawing bigger, the
-    // same pop the currency pill does when a dew drop lands,
-    // gentled and stretched: scale to 1.05, peaking 20% into
-    // the 420ms (the pill's 350ms x 1.2), back to rest by the
-    // end.
+    // Clicking the jar squeezes the flower drawing smaller:
+    // scale down to 0.95, dipping 20% into the 420ms, back
+    // to rest by the end.
     // Fired before the petal-removal animation, which replaces
     // the transform on the one petal layer that is leaving.
     function bounceBinFlower() {
@@ -3082,7 +3080,7 @@
         try {
           el.animate([
             { transform: 'scale(1)' },
-            { transform: 'scale(1.05)', offset: 0.2 },
+            { transform: 'scale(0.95)', offset: 0.2 },
             { transform: 'scale(1)' },
           ], { duration: 420, easing: 'ease' });
         } catch (e) { /* the pop is decoration only */ }
