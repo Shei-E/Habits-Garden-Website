@@ -6348,6 +6348,10 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function binTutorialDone() {
+      // A guest (signed out) always gets the tutorial: the
+      // seen flag only counts for an account — the same rule
+      // as the intro tutorial's flag.
+      if (!signedInEmail) return false;
       return !!lsGet(binTutorialKey());
     }
 
