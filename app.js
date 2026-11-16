@@ -6226,7 +6226,13 @@ document.body.innerHTML = HG_MARKUP;
       // takes the drop back, so it leaves no fake history.
       if (binTutorial && pageBin === binTutorial.bin) {
         binTutorial.drops.push({ date: todayStr, index: dropList.length - 1, blank: !isNormal });
-        if (binTutorial.step === 1 || binTutorial.step === 2) advanceBinTutorial();
+        if (binTutorial.step === 1 || binTutorial.step === 2) {
+          // The flower steps don't move on at the drop: the
+          // line gains a "(click to proceed)", and the next
+          // click — anywhere — goes to the next line.
+          binTutorial.awaitingProceed = true;
+          if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[binTutorial.step] + ' (click to proceed)';
+        }
       }
       binAnimating = true;
       bounceBinFlower();
@@ -6282,7 +6288,7 @@ document.body.innerHTML = HG_MARKUP;
       'This is called habit replacement.',
       'Let’s try to keep this up for a week!',
     ];
-    let binTutorial = null; // { bin, step, drops: [{date, index, blank}], savedPetals }
+    let binTutorial = null; // { bin, step, drops: [{date, index, blank}], savedPetals, awaitingProceed }
     let binTutorialArmed = false;
     const bhTut = document.getElementById('bh-tut');
     const bhHint = document.getElementById('bh-hint');
@@ -6322,7 +6328,7 @@ document.body.innerHTML = HG_MARKUP;
         saveGarden();
         if (pageBin === tutBin && binPage.classList.contains('is-open')) renderBinPage();
       }
-      binTutorial = { bin: tutBin, step: 0, drops: [], savedPetals: null };
+      binTutorial = { bin: tutBin, step: 0, drops: [], savedPetals: null, awaitingProceed: false };
       bhTut.hidden = false;
       showBinTutorialStep();
     }
@@ -6512,16 +6518,25 @@ document.body.innerHTML = HG_MARKUP;
     // While the tutorial runs, the page's clicks are the
     // lesson's "continue": they are held back from the page
     // and advance the step — except the flower click on its
-    // own steps (dropPetal advances those), the close button,
-    // and the create-plant text, which keep their own jobs.
+    // own steps (the drop is those steps' work, and the
+    // click after it moves on), the close button, and the
+    // create-plant text, which keep their own jobs.
     binPage.addEventListener('click', (e) => {
       if (!binTutorial) return;
       const t = e.target;
       if (t && t.closest && t.closest('#bh-tut-create, #bh-close')) return;
       if (binTutorial.step === 1 || binTutorial.step === 2) {
-        if (t && t.closest && t.closest('#bh-centre')) return;
+        // Before the drop, only the flower click gets
+        // through (dropPetal does the step's work). Once the
+        // drop has landed and "(click to proceed)" is up,
+        // any click moves on to the next line.
+        if (!binTutorial.awaitingProceed && t && t.closest && t.closest('#bh-centre')) return;
         e.preventDefault();
         e.stopPropagation();
+        if (binTutorial.awaitingProceed) {
+          binTutorial.awaitingProceed = false;
+          advanceBinTutorial();
+        }
         return;
       }
       e.preventDefault();
