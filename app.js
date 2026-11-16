@@ -2575,12 +2575,13 @@ body {
    page in the garden tutorial's own style — the same bobbing
    hint line and the same little arrow. The line sits mainly
    on the right side of the page, its arrow turned to point
-   left at the flower. */
+   left at the flower. The block starts at x 152: the flower
+   drawing's ink ends at x 146, so the text clears it. */
 .bh-tut {
   position: absolute;
   right: calc(14px * var(--scale));
   top: calc(26px * var(--scale));
-  width: calc(112px * var(--scale));
+  width: calc(90px * var(--scale));
   z-index: 21;
   display: flex;
   align-items: center;
@@ -2627,9 +2628,9 @@ body {
    script can also place it exactly under the card; this low
    spot is the fallback.) */
 .bh-tut.is-low {
-  left: calc(43px * var(--scale));
+  left: calc(13px * var(--scale));
   right: auto;
-  top: calc(87px * var(--scale));
+  top: calc(97px * var(--scale));
   width: calc(140px * var(--scale));
   flex-direction: column;
   gap: calc(2px * var(--scale));
@@ -6356,15 +6357,15 @@ document.body.innerHTML = HG_MARKUP;
     // positioned on a real petal, the line goes just under
     // the card's ink — the ink's bottom edge sits at 85 in
     // container units before the popup's own shift is added —
-    // then 15 units back up, matching the block's 15-unit
-    // shift to the left in the stylesheet.
+    // then nudged by eye, matching the block's leftward
+    // shift in the stylesheet.
     function placeBinTutorialHintBelowPopup() {
       if (!bhTut) return;
       const shift = document.getElementById('bh-pp-shift');
       const m = shift && shift.style && typeof shift.style.top === 'string'
         ? shift.style.top.match(/calc\((-?[\d.]+)px/) : null;
       if (!m) return; // the stylesheet's low spot is the fallback
-      const top = Math.min(85 + parseFloat(m[1]) - 13, 95);
+      const top = Math.min(85 + parseFloat(m[1]) - 3, 105);
       bhTut.style.top = `calc(${top}px * var(--scale))`;
     }
 
