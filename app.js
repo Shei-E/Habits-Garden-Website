@@ -2595,16 +2595,17 @@ body {
 .bh-tut-text {
   flex: 1;
   min-width: 0;
+  text-align: left;
 }
 
 .bh-hint {
+  display: inline-block;
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
   font-size: calc(6px * var(--scale));
   line-height: 1.45;
   color: #000;
-  text-align: left;
   animation: hint-bob 2s steps(1) infinite;
 }
 
@@ -2628,9 +2629,9 @@ body {
    script can also place it exactly under the card; this low
    spot is the fallback.) */
 .bh-tut.is-low {
-  left: calc(13px * var(--scale));
+  left: calc(-2px * var(--scale));
   right: auto;
-  top: calc(97px * var(--scale));
+  top: calc(102px * var(--scale));
   width: calc(140px * var(--scale));
   flex-direction: column;
   gap: calc(2px * var(--scale));
@@ -2640,20 +2641,15 @@ body {
   transform: rotate(180deg);
 }
 
-.bh-tut.is-low .bh-hint {
+.bh-tut.is-low .bh-tut-text {
   text-align: center;
 }
 
-.bh-tut.is-low .bh-tut-create {
-  margin-left: auto;
-  margin-right: auto;
-}
-
 /* The last step's way forward: a small, greyed "create
-   plant?" under the closing line. */
+   plant?" right after the end of the closing sentence. */
 .bh-tut-create {
-  display: block;
-  margin: calc(3px * var(--scale)) 0 0;
+  display: inline;
+  margin: 0 0 0 calc(4px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(5px * var(--scale));
@@ -6365,7 +6361,7 @@ document.body.innerHTML = HG_MARKUP;
       const m = shift && shift.style && typeof shift.style.top === 'string'
         ? shift.style.top.match(/calc\((-?[\d.]+)px/) : null;
       if (!m) return; // the stylesheet's low spot is the fallback
-      const top = Math.min(85 + parseFloat(m[1]) - 3, 105);
+      const top = Math.min(85 + parseFloat(m[1]) + 2, 110);
       bhTut.style.top = `calc(${top}px * var(--scale))`;
     }
 
