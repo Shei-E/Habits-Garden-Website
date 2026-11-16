@@ -2629,6 +2629,12 @@ body {
    centred, its arrow on top pointing up at the card. (The
    script can also place it exactly under the card; this low
    spot is the fallback.) */
+/* The flower step sits 5 units further left, so its arrow
+   nearly reaches the flower it points at. */
+.bh-tut.is-flower {
+  right: calc(24px * var(--scale));
+}
+
 .bh-tut.is-low {
   left: calc(-2px * var(--scale));
   right: auto;
@@ -2651,8 +2657,8 @@ body {
 /* The last step's way forward: a small, greyed "create
    plant?" right after the end of the closing sentence. */
 .bh-tut-create {
-  display: inline;
-  margin: 0 0 0 calc(4px * var(--scale));
+  display: inline-block;
+  margin: 0 0 0 calc(2px * var(--scale));
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(5px * var(--scale));
@@ -2661,6 +2667,7 @@ body {
   border: 0;
   cursor: pointer;
   transition: color 0.15s ease;
+  animation: hint-bob 2s steps(1) infinite;
 }
 
 .bh-tut-create:hover {
@@ -6296,6 +6303,7 @@ document.body.innerHTML = HG_MARKUP;
       // every other step keeps the right-side spot.
       if (bhTut) {
         bhTut.classList.toggle('is-low', step === 4);
+        bhTut.classList.toggle('is-flower', step === 1);
         if (step !== 4) bhTut.style.top = '';
       }
       if (step === last) {
@@ -6376,6 +6384,7 @@ document.body.innerHTML = HG_MARKUP;
       if (bhTut) {
         bhTut.hidden = true;
         bhTut.classList.remove('is-low');
+        bhTut.classList.remove('is-flower');
         bhTut.style.top = '';
       }
       closePetalPopup();
