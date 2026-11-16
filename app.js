@@ -2650,7 +2650,7 @@ body {
 
 .bh-tut.is-low .bh-hint-arrow {
   position: relative;
-  left: calc(-20px * var(--scale));
+  left: calc(-17px * var(--scale));
   transform: rotate(180deg);
 }
 
