@@ -2434,13 +2434,19 @@ body {
 
 /* The petal popup: a small card (ui-badhabit-popup.png, a
    full-panel canvas whose card ink sits at canvas x 88..155,
-   y 31..75) over the bin page, opened by clicking a fallen
-   petal. The content sits inside the card: the pick time,
-   the notes box, the undo button, a tiny close X. */
+   y 31..75) over the bin page, opened by hovering over a
+   fallen petal. The content sits inside the card: the pick
+   time, the notes box, the undo button, a tiny close X.
+   The overlay itself takes no pointer events, so the petals
+   underneath stay hoverable while the card is up (hovering
+   another petal switches the card to it); only the card
+   group (.bh-pp-shift) is solid, so the card can be hovered
+   and used. */
 .bh-petal-popup {
   position: absolute;
   inset: 0;
   z-index: 6;
+  pointer-events: none;
 }
 
 .bh-petal-popup[hidden] {
@@ -2448,11 +2454,17 @@ body {
 }
 
 /* The card and its content, shifted as one group so the
-   card lands below the clicked petal. */
+   card lands below the hovered petal. The group is given
+   the card canvas's own size and takes pointer events, so
+   hovering anywhere on the card counts as hovering the
+   card (which keeps it open — see the hover code below). */
 .bh-pp-shift {
   position: absolute;
   left: 0;
   top: 0;
+  width: calc(247px * var(--scale));
+  height: calc(134px * var(--scale));
+  pointer-events: auto;
 }
 
 .bh-popup-card {
@@ -3049,8 +3061,8 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
         <button class="bh-arrow bh-arrow--prev" id="bh-page-prev" type="button"
           aria-label="Previous page"></button>
         <button class="bh-arrow bh-arrow--next" id="bh-page-next" type="button" aria-label="Next page"></button>
-        <!-- Clicking a fallen petal opens this card: when the
-             petal was picked, a notes box, and an undo button. -->
+        <!-- Hovering over a fallen petal opens this card: when
+             the petal was picked, a notes box, and an undo button. -->
         <div class="bh-petal-popup" id="bh-petal-popup" hidden>
           <div class="bh-pp-shift" id="bh-pp-shift">
             <img class="bh-popup-card" src="assets/ui-badhabit-popup.png" alt="">
@@ -5984,10 +5996,17 @@ document.body.innerHTML = HG_MARKUP;
             img.alt = '';
             img.style.left = `calc(${C.petalX + (j % 7) * 8 - C.viewLeft}px * var(--scale))`;
             img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4 - COL_TOP}px * var(--scale))`;
-            // Clicking a fallen petal opens its card below
-            // the petal (when it was picked, its note, an
-            // undo button).
-            img.addEventListener('click', () => openPetalPopup(d.str, j, img));
+            // Hovering over a fallen petal opens its card
+            // below the petal (when it was picked, its note,
+            // an undo button); moving off the petal closes
+            // it again, unless the pointer moves onto the
+            // card itself (see the petal popup code below).
+            img.addEventListener('mouseenter', () => {
+              cancelPetalPopupHoverClose();
+              if (binTutorial) return; // the tutorial opens the card itself
+              openPetalPopup(d.str, j, img);
+            });
+            img.addEventListener('mouseleave', schedulePetalPopupHoverClose);
             inner.appendChild(img);
             if (d.str === todayStr) todayLastPetal = img;
           });
@@ -6067,19 +6086,52 @@ document.body.innerHTML = HG_MARKUP;
     document.getElementById('bh-centre')?.addEventListener('click', dropPetal);
 
     // ---- Petal popup ----
-    // Clicking a fallen petal in a day column opens a small
-    // card over the bin page (ui-badhabit-popup.png): when the
-    // petal was picked, a notes box that saves as you type,
-    // and an undo button that un-picks the petal.
+    // Hovering over a fallen petal in a day column opens a
+    // small card over the bin page (ui-badhabit-popup.png):
+    // when the petal was picked, a notes box that saves as
+    // you type, and an undo button that un-picks the petal.
     let petalPopup = null; // { date, index } into pageBin's drops
 
+    // Hovering is what opens the card, so hovering is what
+    // closes it: when the pointer leaves the petal, the card
+    // goes away after a short grace — unless the pointer has
+    // moved onto the card itself (to read it, write a note or
+    // use undo), the note is being typed in, or the bin
+    // tutorial is the one showing the card.
+    let petalPopupHoverTimer = null;
+    let petalPopupCardHovered = false;
+    function cancelPetalPopupHoverClose() {
+      if (petalPopupHoverTimer) { clearTimeout(petalPopupHoverTimer); petalPopupHoverTimer = null; }
+    }
+    function schedulePetalPopupHoverClose() {
+      cancelPetalPopupHoverClose();
+      petalPopupHoverTimer = setTimeout(() => {
+        petalPopupHoverTimer = null;
+        if (binTutorial) return;
+        if (petalPopupCardHovered) return;
+        const notesEl = document.getElementById('bh-pp-notes');
+        if (notesEl && document.activeElement === notesEl) return;
+        closePetalPopup();
+      }, 350);
+    }
+    const ppShiftEl = document.getElementById('bh-pp-shift');
+    ppShiftEl?.addEventListener('mouseenter', () => {
+      petalPopupCardHovered = true;
+      cancelPetalPopupHoverClose();
+    });
+    ppShiftEl?.addEventListener('mouseleave', () => {
+      petalPopupCardHovered = false;
+      schedulePetalPopupHoverClose();
+    });
+
     function openPetalPopup(dateStr, index, petalEl) {
+      cancelPetalPopupHoverClose();
       if (!pageBin) return;
       const f = getBinFlower(pageBin);
       const rec = f && f.drops[dateStr] ? f.drops[dateStr][index] : null;
       if (!rec) return;
       petalPopup = { date: dateStr, index };
-      // The card appears below the clicked petal (above it
+      // The card appears below the hovered petal (above it
       // when there is no room below), centred on it: the
       // whole card group shifts by the difference between
       // the petal's spot and the card's home spot.
@@ -6165,6 +6217,8 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function closePetalPopup() {
+      cancelPetalPopupHoverClose();
+      petalPopupCardHovered = false;
       petalPopup = null;
       const pop = document.getElementById('bh-petal-popup');
       if (pop) pop.hidden = true;
@@ -6214,9 +6268,9 @@ document.body.innerHTML = HG_MARKUP;
       saveGarden();
       fitNotesHeight();
     });
-    document.getElementById('bh-petal-popup')?.addEventListener('click', (e) => {
-      if (e.target === e.currentTarget || (e.target && e.target.classList && e.target.classList.contains('bh-popup-card'))) closePetalPopup();
-    });
+    // (No click-outside-to-close: the popup overlay takes no
+    // pointer events now — hovering opens and closes the card,
+    // and the X and undo buttons still close it directly.)
 
     // Run one WAAPI animation and wait for it; without WAAPI
     // (or if it fails) the end state simply applies at once.
