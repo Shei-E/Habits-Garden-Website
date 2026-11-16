@@ -5960,17 +5960,6 @@ document.body.innerHTML = HG_MARKUP;
 
     function openBinPage(bin) {
       pageBin = bin;
-      // The example flower (the one "How does this method
-      // work?" plants) is a demo: it always shows as a full
-      // flower, so opening its page tops its petals back up.
-      // Its dropped-petal history is kept.
-      const bf = getBinFlower(bin);
-      if (bf && bf.example && bf.petalsLeft < BIN_PETALS) {
-        bf.petalsLeft = BIN_PETALS;
-        bf.petalsDay = getLocalDateStr(getGameDate());
-        setBinFlower(bin, bf);
-        saveGarden();
-      }
       binPageIndex = 999; // opens on the last page: today's page
       if (bhRemove) {
         bhRemove.classList.remove('is-confirming');
@@ -6235,9 +6224,9 @@ document.body.innerHTML = HG_MARKUP;
       // real drop on its bin: the drop is the lesson's
       // demonstration and advances that step. endBinTutorial
       // takes the drop back, so it leaves no fake history.
-      if (binTutorial && pageBin === binTutorial.bin && !binTutorial.drop) {
-        binTutorial.drop = { date: todayStr, index: dropList.length - 1, blank: !isNormal };
-        if (binTutorial.step === 1) advanceBinTutorial();
+      if (binTutorial && pageBin === binTutorial.bin) {
+        binTutorial.drops.push({ date: todayStr, index: dropList.length - 1, blank: !isNormal });
+        if (binTutorial.step === 1 || binTutorial.step === 2) advanceBinTutorial();
       }
       binAnimating = true;
       bounceBinFlower();
@@ -6284,6 +6273,7 @@ document.body.innerHTML = HG_MARKUP;
     const BIN_TUTORIAL_STEPS = [
       'Here’s how this method works (click to continue)',
       'Whenever you act on a bad habit, come to your garden and click the flower.',
+      'Even if it’s empty',
       'You don’t have to stop yourself from doing your bad habit. You can do your bad habit however long and often as you please.',
       'Just come to your garden and report it. Raising awareness is the goal.',
       'The petals will keep track\nof your actions.',
@@ -6292,7 +6282,7 @@ document.body.innerHTML = HG_MARKUP;
       'This is called habit replacement.',
       'Let’s try to keep this up for a week!',
     ];
-    let binTutorial = null; // { bin, step, drop: {date, index, blank} | null }
+    let binTutorial = null; // { bin, step, drops: [{date, index, blank}], savedPetals }
     let binTutorialArmed = false;
     const bhTut = document.getElementById('bh-tut');
     const bhHint = document.getElementById('bh-hint');
@@ -6303,9 +6293,36 @@ document.body.innerHTML = HG_MARKUP;
       return !!lsGet(BIN_TUTORIAL_KEY);
     }
 
+    // A freshly planted example flower: full petals, no
+    // history, made today, named "example".
+    function freshExampleFlower() {
+      const today = getLocalDateStr(getGameDate());
+      return {
+        name: 'example',
+        type: 'placeholder',
+        created: today,
+        petalsLeft: BIN_PETALS,
+        petalsDay: today,
+        example: true,
+        drops: {},
+      };
+    }
+
     function startBinTutorial(bin) {
       if (!bhTut || binTutorial) return;
-      binTutorial = { bin: bin || pageBin, step: 0, drop: null };
+      const tutBin = bin || pageBin;
+      // The tutorial always teaches on a freshly planted
+      // example, so a bin holding the example (or nothing)
+      // gets a fresh one here: the page then shows only
+      // today, as if the flower were new. A flower of the
+      // user's own is taught on as it is.
+      const f = tutBin ? getBinFlower(tutBin) : null;
+      if (tutBin && (!f || f.example)) {
+        setBinFlower(tutBin, freshExampleFlower());
+        saveGarden();
+        if (pageBin === tutBin && binPage.classList.contains('is-open')) renderBinPage();
+      }
+      binTutorial = { bin: tutBin, step: 0, drops: [], savedPetals: null };
       bhTut.hidden = false;
       showBinTutorialStep();
     }
@@ -6316,30 +6333,58 @@ document.body.innerHTML = HG_MARKUP;
       const last = BIN_TUTORIAL_STEPS.length - 1;
       if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[step];
       if (bhTutCreate) bhTutCreate.hidden = step !== last;
-      // The arrow only appears on the two steps that point
-      // at something: the flower (step 2) and the petal
-      // popup (step 5).
-      if (bhHintArrow) bhHintArrow.hidden = !(step === 1 || step === 4);
+      // The arrow only appears on the steps that point at
+      // something: the flower (steps 2 and 3) and the petal
+      // popup (step 6).
+      if (bhHintArrow) bhHintArrow.hidden = !(step === 1 || step === 2 || step === 5);
       // The petal step's line moves low, below the popup;
       // every other step keeps the right-side spot.
       if (bhTut) {
-        bhTut.classList.toggle('is-low', step === 4);
-        bhTut.classList.toggle('is-flower', step === 1);
-        if (step !== 4) bhTut.style.top = '';
+        bhTut.classList.toggle('is-low', step === 5);
+        bhTut.classList.toggle('is-flower', step === 1 || step === 2);
+        if (step !== 5) bhTut.style.top = '';
       }
+      // The "Even if it's empty" step shows the flower with
+      // no petals at all: the count is set aside on entry
+      // and put back on exit, so the lesson changes nothing.
+      if (step === 2) enterEmptyFlowerStep();
+      else restoreEmptyFlowerStep();
       if (step === last) {
         // Reaching the last step counts as having seen the
         // tutorial: it never auto-starts again after this.
         lsSet(BIN_TUTORIAL_KEY, '1');
       }
-      if (step === 4) showBinTutorialPetalPopup();
+      if (step === 5) showBinTutorialPetalPopup();
+    }
+
+    function enterEmptyFlowerStep() {
+      if (!binTutorial || binTutorial.savedPetals !== null) return;
+      const f = binTutorial.bin ? getBinFlower(binTutorial.bin) : null;
+      if (!f) return;
+      binTutorial.savedPetals = f.petalsLeft;
+      f.petalsLeft = 0;
+      setBinFlower(binTutorial.bin, f);
+      saveGarden();
+      if (pageBin === binTutorial.bin && binPage.classList.contains('is-open')) renderBinPage();
+    }
+
+    function restoreEmptyFlowerStep() {
+      if (!binTutorial || binTutorial.savedPetals === null) return;
+      const saved = binTutorial.savedPetals;
+      binTutorial.savedPetals = null;
+      const f = binTutorial.bin ? getBinFlower(binTutorial.bin) : null;
+      if (!f) return;
+      f.petalsLeft = saved;
+      setBinFlower(binTutorial.bin, f);
+      saveGarden();
+      if (pageBin === binTutorial.bin && binPage.classList.contains('is-open')) renderBinPage();
     }
 
     function advanceBinTutorial() {
       if (!binTutorial) return;
       if (binTutorial.step >= BIN_TUTORIAL_STEPS.length - 1) return;
       // Leaving the petal step puts its popup demonstration away.
-      if (binTutorial.step === 4) closePetalPopup();
+      if (binTutorial.step === 5) closePetalPopup();
       binTutorial.step += 1;
       showBinTutorialStep();
     }
@@ -6352,7 +6397,7 @@ document.body.innerHTML = HG_MARKUP;
       if (!binTutorial || !pageBin) return;
       const f = getBinFlower(pageBin);
       if (!f) return;
-      let target = binTutorial.drop;
+      let target = binTutorial.drops[0] || null;
       if (!target) {
         const days = Object.keys(f.drops).filter(d => f.drops[d] && f.drops[d].length).sort();
         if (days.length) {
@@ -6362,7 +6407,7 @@ document.body.innerHTML = HG_MARKUP;
       }
       if (!target) {
         dropPetal();
-        target = binTutorial.drop;
+        target = binTutorial.drops[binTutorial.drops.length - 1] || null;
         if (!target) return;
         // The drop re-renders the page as its animation lands;
         // open the popup on the new petal icon once it exists.
@@ -6409,18 +6454,34 @@ document.body.innerHTML = HG_MARKUP;
         bhTut.style.top = '';
       }
       closePetalPopup();
-      // Take back the tutorial's own drop, if it made one:
-      // the petal goes back on the flower and the record
-      // goes, so the lesson leaves no fake history behind.
-      if (tut.drop && tut.bin) {
+      // Undo the lesson's own traces: the petal count the
+      // "Even if it's empty" step set aside goes back, and
+      // every drop the tutorial made is taken back (newest
+      // first, so the earlier records keep their places) —
+      // a taken-back petal goes back on the flower, and the
+      // lesson leaves no fake history behind.
+      if (tut.bin) {
         const f = getBinFlower(tut.bin);
         if (f) {
-          const list = f.drops[tut.drop.date];
-          if (list && list[tut.drop.index]) {
-            const rec = list[tut.drop.index];
-            list.splice(tut.drop.index, 1);
-            if (!list.length) delete f.drops[tut.drop.date];
-            if (!rec.b && f.petalsLeft < BIN_PETALS) f.petalsLeft += 1;
+          let changed = false;
+          if (tut.savedPetals !== null && tut.savedPetals !== undefined) {
+            f.petalsLeft = tut.savedPetals;
+            changed = true;
+          }
+          if (tut.drops) {
+            for (let i = tut.drops.length - 1; i >= 0; i--) {
+              const d = tut.drops[i];
+              const list = f.drops[d.date];
+              if (list && list[d.index]) {
+                const rec = list[d.index];
+                list.splice(d.index, 1);
+                if (!list.length) delete f.drops[d.date];
+                if (!rec.b && f.petalsLeft < BIN_PETALS) f.petalsLeft += 1;
+                changed = true;
+              }
+            }
+          }
+          if (changed) {
             setBinFlower(tut.bin, f);
             saveGarden();
             if (pageBin === tut.bin && binPage.classList.contains('is-open')) renderBinPage();
@@ -6451,13 +6512,13 @@ document.body.innerHTML = HG_MARKUP;
     // While the tutorial runs, the page's clicks are the
     // lesson's "continue": they are held back from the page
     // and advance the step — except the flower click on its
-    // own step (dropPetal advances it), the close button, and
-    // the create-plant text, which keep their own jobs.
+    // own steps (dropPetal advances those), the close button,
+    // and the create-plant text, which keep their own jobs.
     binPage.addEventListener('click', (e) => {
       if (!binTutorial) return;
       const t = e.target;
       if (t && t.closest && t.closest('#bh-tut-create, #bh-close')) return;
-      if (binTutorial.step === 1) {
+      if (binTutorial.step === 1 || binTutorial.step === 2) {
         if (t && t.closest && t.closest('#bh-centre')) return;
         e.preventDefault();
         e.stopPropagation();
@@ -6487,15 +6548,7 @@ document.body.innerHTML = HG_MARKUP;
       const bin = activeBin;
       if (!bin) return;
       if (!getBinFlower(bin)) {
-        setBinFlower(bin, {
-          name: 'example',
-          type: 'placeholder',
-          created: getLocalDateStr(getGameDate()),
-          petalsLeft: BIN_PETALS,
-          petalsDay: getLocalDateStr(getGameDate()),
-          example: true,
-          drops: {},
-        });
+        setBinFlower(bin, freshExampleFlower());
         saveGarden();
       }
       binTutorialArmed = true;
