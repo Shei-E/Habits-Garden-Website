@@ -2575,11 +2575,11 @@ body {
    page in the garden tutorial's own style — the same bobbing
    hint line and the same little arrow. The line sits mainly
    on the right side of the page, its arrow turned to point
-   left at the flower. The block starts at x 152: the flower
-   drawing's ink ends at x 146, so the text clears it. */
+   left at the flower. The block starts at x 147: the flower
+   drawing's ink ends at x 146, so the text just clears it. */
 .bh-tut {
   position: absolute;
-  right: calc(14px * var(--scale));
+  right: calc(19px * var(--scale));
   top: calc(26px * var(--scale));
   width: calc(90px * var(--scale));
   z-index: 21;
