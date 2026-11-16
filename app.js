@@ -2272,8 +2272,8 @@ body {
 
 /* "How does this method work?" sits next to the Add Flower
    title, in the remove button's small beige style. Clicking
-   it answers "Pick a flower to get started!" — the tutorial
-   itself waits inside the bin page. */
+   it plants an "example" flower in an empty bin and starts
+   the tutorial inside the bin page. */
 .af-howto {
   position: static;
   margin: 0;
@@ -2573,19 +2573,27 @@ body {
 
 /* Bin tutorial: the bad-habit method, taught inside this
    page in the garden tutorial's own style — the same bobbing
-   hint line and the same little down arrow, centred over the
-   top of the panel, the arrow pointing down at the flower. */
+   hint line and the same little arrow. The line sits mainly
+   on the right side of the page, its arrow turned to point
+   left at the flower. */
 .bh-tut {
   position: absolute;
-  left: calc(28px * var(--scale));
-  right: calc(28px * var(--scale));
-  top: calc(13px * var(--scale));
+  right: calc(14px * var(--scale));
+  top: calc(26px * var(--scale));
+  width: calc(112px * var(--scale));
   z-index: 21;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: calc(3px * var(--scale));
 }
 
 .bh-tut[hidden] {
   display: none;
+}
+
+.bh-tut-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .bh-hint {
@@ -2595,25 +2603,52 @@ body {
   font-size: calc(7px * var(--scale));
   line-height: 1.45;
   color: #000;
+  text-align: left;
   animation: hint-bob 2s steps(1) infinite;
 }
 
 .bh-hint-arrow {
-  display: block;
-  margin: calc(2px * var(--scale)) auto 0;
+  flex: none;
   width: calc(9px * var(--scale));
   height: calc(9px * var(--scale));
+  transform: rotate(90deg);
   image-rendering: -webkit-crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
+/* The petal step: the line moves below the petal popup,
+   centred, its arrow on top pointing up at the card. (The
+   script can also place it exactly under the card; this low
+   spot is the fallback.) */
+.bh-tut.is-low {
+  left: calc(58px * var(--scale));
+  right: auto;
+  top: calc(102px * var(--scale));
+  width: calc(140px * var(--scale));
+  flex-direction: column;
+  gap: calc(2px * var(--scale));
+}
+
+.bh-tut.is-low .bh-hint-arrow {
+  transform: rotate(180deg);
+}
+
+.bh-tut.is-low .bh-hint {
+  text-align: center;
+}
+
+.bh-tut.is-low .bh-tut-create {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* The last step's way forward: a small, greyed "create
    plant?" under the closing line. */
 .bh-tut-create {
   display: block;
-  margin: calc(3px * var(--scale)) auto 0;
+  margin: calc(3px * var(--scale)) 0 0;
   padding: 0;
   font-family: "Tiny5", monospace;
   font-size: calc(5px * var(--scale));
@@ -2997,9 +3032,11 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
              tutorial's style: a bobbing hint line and the
              little down arrow over the top of the panel. -->
         <div class="bh-tut" id="bh-tut" hidden>
-          <p class="bh-hint" id="bh-hint"></p>
           <img class="bh-hint-arrow" id="bh-hint-arrow" src="assets/ui-arrow-down.png" alt="">
-          <button class="bh-tut-create" id="bh-tut-create" type="button" hidden>create plant?</button>
+          <div class="bh-tut-text">
+            <p class="bh-hint" id="bh-hint"></p>
+            <button class="bh-tut-create" id="bh-tut-create" type="button" hidden>create plant?</button>
+          </div>
         </div>
       </div>
     </div>
@@ -6246,6 +6283,12 @@ document.body.innerHTML = HG_MARKUP;
       const last = BIN_TUTORIAL_STEPS.length - 1;
       if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[step];
       if (bhTutCreate) bhTutCreate.hidden = step !== last;
+      // The petal step's line moves low, below the popup;
+      // every other step keeps the right-side spot.
+      if (bhTut) {
+        bhTut.classList.toggle('is-low', step === 4);
+        if (step !== 4) bhTut.style.top = '';
+      }
       if (step === last) {
         // Reaching the last step counts as having seen the
         // tutorial: it never auto-starts again after this.
@@ -6286,13 +6329,32 @@ document.body.innerHTML = HG_MARKUP;
         // The drop re-renders the page as its animation lands;
         // open the popup on the new petal icon once it exists.
         setTimeout(() => {
-          if (binTutorial) openPetalPopup(target.date, target.index, binPage._todayPetalEl || null);
+          if (binTutorial) {
+            openPetalPopup(target.date, target.index, binPage._todayPetalEl || null);
+            placeBinTutorialHintBelowPopup();
+          }
         }, 1200);
         return;
       }
       const todayStr = getLocalDateStr(getGameDate());
       openPetalPopup(target.date, target.index,
         target.date === todayStr ? (binPage._todayPetalEl || null) : (document.getElementById('bh-centre') || null));
+      placeBinTutorialHintBelowPopup();
+    }
+
+    // The petal step's line belongs below the petal popup,
+    // its arrow pointing up at the card: when the popup was
+    // positioned on a real petal, the line goes just under
+    // the card's ink (the popup group sits at container
+    // (10.49, 10) and the card ink ends 85 under its shift).
+    function placeBinTutorialHintBelowPopup() {
+      if (!bhTut) return;
+      const shift = document.getElementById('bh-pp-shift');
+      const m = shift && shift.style && typeof shift.style.top === 'string'
+        ? shift.style.top.match(/calc\((-?[\d.]+)px/) : null;
+      if (!m) return; // the stylesheet's low spot is the fallback
+      const top = Math.min(10 + parseFloat(m[1]) + 85 + 4, 106);
+      bhTut.style.top = `calc(${top}px * var(--scale))`;
     }
 
     function endBinTutorial(createPlant) {
@@ -6300,7 +6362,11 @@ document.body.innerHTML = HG_MARKUP;
       const tut = binTutorial;
       binTutorial = null;
       binTutorialArmed = false;
-      if (bhTut) bhTut.hidden = true;
+      if (bhTut) {
+        bhTut.hidden = true;
+        bhTut.classList.remove('is-low');
+        bhTut.style.top = '';
+      }
       closePetalPopup();
       // Take back the tutorial's own drop, if it made one:
       // the petal goes back on the flower and the record
@@ -6358,6 +6424,12 @@ document.body.innerHTML = HG_MARKUP;
       }
       e.preventDefault();
       e.stopPropagation();
+      // On the last step, a click anywhere but create plant
+      // simply ends the tutorial.
+      if (binTutorial.step >= BIN_TUTORIAL_STEPS.length - 1) {
+        endBinTutorial(false);
+        return;
+      }
       advanceBinTutorial();
     }, true);
     bhTutCreate?.addEventListener('click', (e) => {
@@ -6366,18 +6438,27 @@ document.body.innerHTML = HG_MARKUP;
     });
 
     // "How does this method work?" on the Add Flower page:
-    // it answers "Pick a flower to get started!" and arms the
-    // tutorial, which then starts when the bin page opens. A
-    // bin that already has its flower goes straight there.
+    // an empty bin gets a flower called "example" on the
+    // spot, so the tutorial has a flower to teach on, and the
+    // tutorial starts right away in the bin page. (A bin that
+    // already has its flower keeps it — no example is made.)
     afHowto?.addEventListener('click', () => {
       const bin = activeBin;
-      binTutorialArmed = true;
-      if (bin && getBinFlower(bin)) {
-        closeFlowerModal();
-        openBinPage(bin);
-      } else {
-        afHowto.textContent = 'Pick a flower to get started!';
+      if (!bin) return;
+      if (!getBinFlower(bin)) {
+        setBinFlower(bin, {
+          name: 'example',
+          type: 'placeholder',
+          created: getLocalDateStr(getGameDate()),
+          petalsLeft: BIN_PETALS,
+          petalsDay: getLocalDateStr(getGameDate()),
+          drops: {},
+        });
+        saveGarden();
       }
+      binTutorialArmed = true;
+      closeFlowerModal();
+      openBinPage(bin);
     });
 
     // ---- Sign-in page ----
