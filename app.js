@@ -2600,7 +2600,7 @@ body {
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
-  font-size: calc(7px * var(--scale));
+  font-size: calc(6px * var(--scale));
   line-height: 1.45;
   color: #000;
   text-align: left;
@@ -2616,6 +2616,10 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.bh-hint-arrow[hidden] {
+  display: none;
 }
 
 /* The petal step: the line moves below the petal popup,
@@ -6264,6 +6268,7 @@ document.body.innerHTML = HG_MARKUP;
     let binTutorialArmed = false;
     const bhTut = document.getElementById('bh-tut');
     const bhHint = document.getElementById('bh-hint');
+    const bhHintArrow = document.getElementById('bh-hint-arrow');
     const bhTutCreate = document.getElementById('bh-tut-create');
 
     function binTutorialDone() {
@@ -6283,6 +6288,10 @@ document.body.innerHTML = HG_MARKUP;
       const last = BIN_TUTORIAL_STEPS.length - 1;
       if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[step];
       if (bhTutCreate) bhTutCreate.hidden = step !== last;
+      // The arrow only appears on the two steps that point
+      // at something: the flower (step 2) and the petal
+      // popup (step 5).
+      if (bhHintArrow) bhHintArrow.hidden = !(step === 1 || step === 4);
       // The petal step's line moves low, below the popup;
       // every other step keeps the right-side spot.
       if (bhTut) {
@@ -6345,15 +6354,15 @@ document.body.innerHTML = HG_MARKUP;
     // The petal step's line belongs below the petal popup,
     // its arrow pointing up at the card: when the popup was
     // positioned on a real petal, the line goes just under
-    // the card's ink (the popup group sits at container
-    // (10.49, 10) and the card ink ends 85 under its shift).
+    // the card's ink — the ink's bottom edge sits at 85 in
+    // container units before the popup's own shift is added.
     function placeBinTutorialHintBelowPopup() {
       if (!bhTut) return;
       const shift = document.getElementById('bh-pp-shift');
       const m = shift && shift.style && typeof shift.style.top === 'string'
         ? shift.style.top.match(/calc\((-?[\d.]+)px/) : null;
       if (!m) return; // the stylesheet's low spot is the fallback
-      const top = Math.min(10 + parseFloat(m[1]) + 85 + 4, 106);
+      const top = Math.min(85 + parseFloat(m[1]) + 2, 110);
       bhTut.style.top = `calc(${top}px * var(--scale))`;
     }
 
