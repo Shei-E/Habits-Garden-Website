@@ -5062,7 +5062,7 @@ document.body.innerHTML = HG_MARKUP;
           bin: true,
           left: Number(bin.dataset.binLeft),
           row: bin.dataset.binRow,
-          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, petalsDay: f.petalsDay || '', drops: f.drops } : null,
+          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, petalsDay: f.petalsDay || '', example: f.example || undefined, drops: f.drops } : null,
         });
       }
       return entries;
@@ -5184,6 +5184,7 @@ document.body.innerHTML = HG_MARKUP;
             created: be.flower.created || '',
             petalsLeft: be.flower.petalsLeft !== undefined ? be.flower.petalsLeft : BIN_PETALS,
             petalsDay: be.flower.petalsDay || '',
+            example: !!be.flower.example,
             drops: be.flower.drops || {},
           });
         }
@@ -5582,6 +5583,7 @@ document.body.innerHTML = HG_MARKUP;
         created: bin.dataset.flowerCreated || '',
         petalsLeft: parseInt(bin.dataset.petalsLeft, 10) || 0,
         petalsDay: bin.dataset.petalsDay || '',
+        example: bin.dataset.flowerExample === '1',
         drops,
       };
     }
@@ -5595,6 +5597,7 @@ document.body.innerHTML = HG_MARKUP;
         delete bin.dataset.flowerCreated;
         delete bin.dataset.petalsLeft;
         delete bin.dataset.petalsDay;
+        delete bin.dataset.flowerExample;
         delete bin.dataset.drops;
         bin.setAttribute('aria-label', 'Add a flower');
         return;
@@ -5610,6 +5613,8 @@ document.body.innerHTML = HG_MARKUP;
       bin.dataset.petalsLeft = String(f.petalsLeft);
       if (f.petalsDay) bin.dataset.petalsDay = f.petalsDay;
       else delete bin.dataset.petalsDay;
+      if (f.example) bin.dataset.flowerExample = '1';
+      else delete bin.dataset.flowerExample;
       bin.dataset.drops = JSON.stringify(f.drops || {});
       bin.setAttribute('aria-label', `${f.name || 'Flower'} flower`);
     }
@@ -5955,6 +5960,17 @@ document.body.innerHTML = HG_MARKUP;
 
     function openBinPage(bin) {
       pageBin = bin;
+      // The example flower (the one "How does this method
+      // work?" plants) is a demo: it always shows as a full
+      // flower, so opening its page tops its petals back up.
+      // Its dropped-petal history is kept.
+      const bf = getBinFlower(bin);
+      if (bf && bf.example && bf.petalsLeft < BIN_PETALS) {
+        bf.petalsLeft = BIN_PETALS;
+        bf.petalsDay = getLocalDateStr(getGameDate());
+        setBinFlower(bin, bf);
+        saveGarden();
+      }
       binPageIndex = 999; // opens on the last page: today's page
       if (bhRemove) {
         bhRemove.classList.remove('is-confirming');
@@ -6477,6 +6493,7 @@ document.body.innerHTML = HG_MARKUP;
           created: getLocalDateStr(getGameDate()),
           petalsLeft: BIN_PETALS,
           petalsDay: getLocalDateStr(getGameDate()),
+          example: true,
           drops: {},
         });
         saveGarden();
