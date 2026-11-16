@@ -3758,8 +3758,10 @@ document.body.innerHTML = HG_MARKUP;
         dragState.pot.style.zIndex = 50;
         // Show the delete marker above the drag's starting spot.
         // Every pot can be deleted, even the last one — the
-        // shelf is allowed to stand empty.
-        if (deleteXEl) {
+        // shelf is allowed to stand empty. But not during the
+        // intro tutorial: while it runs, the X never appears
+        // (and never arms — arming keys off deleteShown).
+        if (deleteXEl && hasMovedFirstPot) {
           const box = deleteXBox(dragState.origPos);
           deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
           deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
@@ -5439,7 +5441,9 @@ document.body.innerHTML = HG_MARKUP;
         armBinClickSuppression();
         bin.classList.add('is-dragging');
         bin.style.zIndex = 50;
-        if (deleteXEl) {
+        // Same rule as the pots: no delete marker during the
+        // intro tutorial.
+        if (deleteXEl && hasMovedFirstPot) {
           const box = deleteXBox(orig, 1); // bins: the X floats 1 unit higher than for pots
           deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
           deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
