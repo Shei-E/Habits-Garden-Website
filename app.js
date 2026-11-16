@@ -2633,10 +2633,10 @@ body {
    centred, its arrow on top pointing up at the card. (The
    script can also place it exactly under the card; this low
    spot is the fallback.) */
-/* The flower step sits 5 units further left, so its arrow
+/* The flower step sits 10 units further left, so its arrow
    nearly reaches the flower it points at. */
 .bh-tut.is-flower {
-  right: calc(24px * var(--scale));
+  right: calc(29px * var(--scale));
 }
 
 .bh-tut.is-low {
