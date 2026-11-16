@@ -50,6 +50,28 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
             return data && Array.isArray(data.garden) ? data.garden : null;
           });
         },
+        // Tutorial flags live in the account's own cloud row,
+        // alongside the garden, so they follow the account to
+        // any device (a browser-local flag cannot). They are
+        // separate fields, not part of the garden bundle.
+        loadTutorialFlags() {
+          if (!user) return Promise.resolve(null);
+          return getDoc(doc(db, 'gardens', user.uid)).then(snap => {
+            if (!snap.exists()) return null;
+            const data = snap.data() || {};
+            return { binTutorialDone: !!data.binTutorialDone };
+          });
+        },
+        saveBinTutorialDone() {
+          if (!user) return;
+          // Bound to the account that finished the tutorial,
+          // like save(): a sign-in change must not deliver it
+          // to a different account's row. Merge, so the garden
+          // field in the same row is left untouched.
+          const uid = user.uid;
+          setDoc(doc(db, 'gardens', uid), { binTutorialDone: true }, { merge: true })
+            .catch(err => { try { console.warn('Habits Garden: tutorial flag save failed', err); } catch (e) { } });
+        },
         save(bundle) {
           if (!user) return;
           // The row is bound NOW, to the account that made this

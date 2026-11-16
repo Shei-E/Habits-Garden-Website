@@ -6312,13 +6312,20 @@ document.body.innerHTML = HG_MARKUP;
     // garden tutorial's own style: a bobbing hint line and the
     // little down arrow over the top of the panel. It starts
     // when the bin page opens — on a first visit, until it has
-    // been seen through (hg.binTutorialDone.v1), and whenever
+    // been seen through (hg.binTutorialDone.v1; for a guest,
+    // once per session instead), and whenever
     // the Add Flower page's "How does this method work?" text
     // armed it. Most steps advance on a click anywhere in the
     // page; the second waits for a real click on the flower,
     // and the petal step opens the petal popup as its
     // demonstration.
     const BIN_TUTORIAL_KEY = 'hg.binTutorialDone.v1';
+    // For a guest there is no account to tie the seen flag
+    // to, so it is kept per session instead: this key lives
+    // in the tab's session storage (the ss* helpers), so the
+    // tutorial shows once in a tab — reloads included — and
+    // again in a new tab, when a new session starts.
+    const BIN_TUTORIAL_SESSION_KEY = 'hg.binTutorialDone.session.v1';
     const BIN_TUTORIAL_STEPS = [
       'Here’s how this method works (click to continue)',
       'Whenever you act on a bad habit, come to your garden and click the flower.',
@@ -6331,8 +6338,14 @@ document.body.innerHTML = HG_MARKUP;
       'This is called habit replacement.',
       'Let’s try to keep this up for a week!',
     ];
-    let binTutorial = null; // { bin, step, drops: [{date, index, blank}], savedPetals, awaitingProceed }
+    let binTutorial = null; // { bin, step, drops: [{date, index, blank}], savedPetals, awaitingProceed, savedFlower }
     let binTutorialArmed = false;
+    // The bin tutorial's seen flag as the cloud knows it for
+    // the signed-in account (see hgCloudHook, which loads it
+    // from the account's cloud row at sign-in). The local flag
+    // below is only a per-browser mirror: on its own it cannot
+    // follow the account to another device.
+    let cloudBinTutorialDone = false;
     const bhTut = document.getElementById('bh-tut');
     const bhHint = document.getElementById('bh-hint');
     const bhHintArrow = document.getElementById('bh-hint-arrow');
@@ -6342,17 +6355,23 @@ document.body.innerHTML = HG_MARKUP;
     // The seen flag belongs to the account, not the browser:
     // signed in, it lives under the account's own key, so each
     // account on this browser has its own (the plain key is
-    // the signed-out bucket).
+    // the signed-out bucket) — and it is also kept in the
+    // account's cloud row (cloudBinTutorialDone, loaded at
+    // sign-in), because the local key alone stays on this one
+    // device and a second device would show the tutorial
+    // again.
     function binTutorialKey() {
       return signedInEmail ? BIN_TUTORIAL_KEY + '.' + signedInEmail : BIN_TUTORIAL_KEY;
     }
 
     function binTutorialDone() {
-      // A guest (signed out) always gets the tutorial: the
-      // seen flag only counts for an account — the same rule
-      // as the intro tutorial's flag.
-      if (!signedInEmail) return false;
-      return !!lsGet(binTutorialKey());
+      // A guest (signed out) gets the tutorial once per
+      // session: the seen flag for a guest is the per-tab
+      // session flag, set when the tutorial starts. For an
+      // account the flag is the account's own (local mirror
+      // or cloud), as below.
+      if (!signedInEmail) return !!ssGet(BIN_TUTORIAL_SESSION_KEY);
+      return cloudBinTutorialDone || !!lsGet(binTutorialKey());
     }
 
     // A freshly planted example flower: full petals, no
@@ -6372,19 +6391,28 @@ document.body.innerHTML = HG_MARKUP;
 
     function startBinTutorial(bin) {
       if (!bhTut || binTutorial) return;
+      // A guest's showing counts from the moment it starts:
+      // the per-session flag is set here, so closing the bin
+      // page mid-tutorial does not bring it back again in
+      // the same tab. (The "How does this method work?" text
+      // can still replay it on purpose — it arms the tutorial
+      // explicitly, which bypasses the seen check.)
+      if (!signedInEmail) ssSet(BIN_TUTORIAL_SESSION_KEY, '1');
       const tutBin = bin || pageBin;
       // The tutorial always teaches on a freshly planted
-      // example, so a bin holding the example (or nothing)
-      // gets a fresh one here: the page then shows only
-      // today, as if the flower were new. A flower of the
-      // user's own is taught on as it is.
-      const f = tutBin ? getBinFlower(tutBin) : null;
-      if (tutBin && (!f || f.example)) {
+      // example — full petals, no history, made today, named
+      // "example" — never on a flower of the user's own. The
+      // bin's real flower (if it has one) is set aside whole
+      // and put back exactly as it was when the tutorial ends
+      // (see endBinTutorial), so the lesson never shows, or
+      // touches, the user's own name or status.
+      const savedFlower = tutBin ? getBinFlower(tutBin) : null;
+      if (tutBin) {
         setBinFlower(tutBin, freshExampleFlower());
         saveGarden();
         if (pageBin === tutBin && binPage.classList.contains('is-open')) renderBinPage();
       }
-      binTutorial = { bin: tutBin, step: 0, drops: [], savedPetals: null, awaitingProceed: false };
+      binTutorial = { bin: tutBin, step: 0, drops: [], savedPetals: null, awaitingProceed: false, savedFlower };
       bhTut.hidden = false;
       showBinTutorialStep();
     }
@@ -6415,8 +6443,14 @@ document.body.innerHTML = HG_MARKUP;
       if (step === last) {
         // Reaching the last step counts as having seen the
         // tutorial: it never auto-starts again after this —
-        // for this account.
+        // for this account. The flag is mirrored into the
+        // account's cloud row, so it follows the account to
+        // any device, not just this browser.
         lsSet(binTutorialKey(), '1');
+        cloudBinTutorialDone = true;
+        if (signedInEmail && window.hgCloud && window.hgCloud.saveBinTutorialDone) {
+          try { window.hgCloud.saveBinTutorialDone(); } catch (e) { }
+        }
       }
       if (step === 5) showBinTutorialPetalPopup();
     }
@@ -6518,13 +6552,22 @@ document.body.innerHTML = HG_MARKUP;
         bhTut.style.top = '';
       }
       closePetalPopup();
+      // If the bin had a flower of the user's own, it was set
+      // aside whole when the tutorial started: put it back
+      // exactly as it was. That also undoes everything the
+      // lesson did, since the lesson only ever touched the
+      // fresh example.
+      if (tut.bin && tut.savedFlower) {
+        setBinFlower(tut.bin, tut.savedFlower);
+        saveGarden();
+        if (pageBin === tut.bin && binPage.classList.contains('is-open')) renderBinPage();
+      } else if (tut.bin) {
       // Undo the lesson's own traces: the petal count the
       // "Even if it's empty" step set aside goes back, and
       // every drop the tutorial made is taken back (newest
       // first, so the earlier records keep their places) —
       // a taken-back petal goes back on the flower, and the
       // lesson leaves no fake history behind.
-      if (tut.bin) {
         const f = getBinFlower(tut.bin);
         if (f) {
           let changed = false;
@@ -6613,17 +6656,13 @@ document.body.innerHTML = HG_MARKUP;
     });
 
     // "How does this method work?" on the Add Flower page:
-    // an empty bin gets a flower called "example" on the
-    // spot, so the tutorial has a flower to teach on, and the
-    // tutorial starts right away in the bin page. (A bin that
-    // already has its flower keeps it — no example is made.)
+    // the tutorial starts right away in the bin page, and
+    // startBinTutorial gives it a fresh flower called
+    // "example" to teach on (the bin's own flower, if any,
+    // is set aside and restored when the tutorial ends).
     afHowto?.addEventListener('click', () => {
       const bin = activeBin;
       if (!bin) return;
-      if (!getBinFlower(bin)) {
-        setBinFlower(bin, freshExampleFlower());
-        saveGarden();
-      }
       binTutorialArmed = true;
       closeFlowerModal();
       openBinPage(bin);
@@ -6684,7 +6723,7 @@ document.body.innerHTML = HG_MARKUP;
 
     // The second signed-out message: after the tutorial is
     // finished, "sign in to save your plants" slides out of
-    // the pill and scrolls back in after 3s. It shows once
+    // the pill and scrolls back in after 6s. It shows once
     // per page load — when the tutorial is finished during
     // the visit (updateHint calls window.hgOnTutorialDone),
     // or, for a visitor who finished it on an earlier visit,
@@ -6697,7 +6736,7 @@ document.body.innerHTML = HG_MARKUP;
       saveNoteShown = true;
       signInText.textContent = 'sign in to save your plants';
       signInText.classList.add('is-visible');
-      showSignInText(3000);
+      showSignInText(6000);
     }
     window.hgOnTutorialDone = maybeShowSaveNote;
 
@@ -6742,6 +6781,7 @@ document.body.innerHTML = HG_MARKUP;
     window.hgCloudStatus = function (msg, isError) { setSiStatus(msg, isError); };
     window.hgCloudHook = function (user) {
       if (!user) {
+        cloudBinTutorialDone = false;
         // Signed out (or no session): only the in-memory state
         // clears. The sign-out BUTTON does the page reset itself.
         if (cloudUid) {
@@ -6789,6 +6829,24 @@ document.body.innerHTML = HG_MARKUP;
         updateHint();
       }
       const bridge = window.hgCloud;
+      // The bin tutorial's seen flag follows the account: it
+      // is kept in the account's cloud row, so finishing the
+      // tutorial on one device counts on every device. Load
+      // it now that sign-in is confirmed; a flag this browser
+      // already has (finished here before the flag was kept
+      // in the cloud) is pushed up, so it starts following
+      // the account from this visit on.
+      cloudBinTutorialDone = false;
+      Promise.resolve(bridge && bridge.loadTutorialFlags ? bridge.loadTutorialFlags() : null).then(flags => {
+        if (cloudUid !== myUid) return; // superseded while loading
+        if (flags && flags.binTutorialDone) {
+          cloudBinTutorialDone = true;
+          lsSet(binTutorialKey(), '1');
+        } else if (lsGet(binTutorialKey()) && bridge && bridge.saveBinTutorialDone) {
+          cloudBinTutorialDone = true;
+          try { bridge.saveBinTutorialDone(); } catch (e) { }
+        }
+      }).catch(() => { });
       Promise.resolve(bridge && bridge.load ? bridge.load() : null).then(cloudGarden => {
         // A newer sign-in (or a sign-out) superseded this one
         // while the garden was loading: do not apply it.
