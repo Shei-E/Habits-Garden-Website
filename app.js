@@ -2211,10 +2211,10 @@ body {
 .bin.is-dragging.is-blocked::after {
   content: "";
   position: absolute;
-  left: calc(12px * var(--scale));
+  left: calc(13px * var(--scale));
   bottom: calc(0px * var(--scale));
-  width: calc(8px * var(--scale));
-  height: calc(13px * var(--scale));
+  width: calc(6px * var(--scale));
+  height: calc(12px * var(--scale));
   outline: 2px dashed #e05656;
 }
 
@@ -3501,9 +3501,10 @@ document.body.innerHTML = HG_MARKUP;
         const s = getPotPos(p);
         if (s.row === row && Math.abs(s.left - left) < (w + getPotDetectWidth(p)) / 2) return false;
       }
-      // Bins block pots too (a bin's detection width is 8).
+      // Bins block pots too (a bin's detection width is 4:
+      // its jar ink is 6 wide, shrunk by 2 like the pots).
       for (const b of bins) {
-        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < (w + 6) / 2) return false;
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < (w + 4) / 2) return false;
       }
       return true;
     }
@@ -5247,11 +5248,11 @@ document.body.innerHTML = HG_MARKUP;
     function binSpotFree(left, row, exceptBin) {
       for (const b of bins) {
         if (b === exceptBin) continue;
-        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 8) return false;
+        if (b.dataset.binRow === row && Math.abs(Number(b.dataset.binLeft) - left) < 6) return false;
       }
       for (const p of pots) {
         const s = getPotPos(p);
-        if (s.row === row && Math.abs(s.left - left) < (6 + getPotDetectWidth(p)) / 2) return false;
+        if (s.row === row && Math.abs(s.left - left) < (4 + getPotDetectWidth(p)) / 2) return false;
       }
       return true;
     }
@@ -5303,18 +5304,18 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // The bin's visible artwork inside its 32x48 box: the jar
-    // alone is 8x13 at (12,35); a flower's stem and head rise
-    // above it (9x19 at (11,29)), and once every petal has
-    // been picked only the stem is left (8x16 at (12,32)).
+    // alone is 6x12 at (13,36); a flower's stem and head rise
+    // above it (8x18 at (11,30)), and once every petal has
+    // been picked only the stem is left (6x15 at (13,33)).
     // Presses and clicks count only on the artwork, like the
     // pots' zones — the rest of the box is clear canvas and
     // lets whatever is beneath it (another bin's jar, a pot)
     // take the press instead.
     function binInkBox(bin) {
-      if (!bin.classList.contains('has-flower')) return { x: 12, y: 35, w: 8, h: 13 };
+      if (!bin.classList.contains('has-flower')) return { x: 13, y: 36, w: 6, h: 12 };
       return bin.classList.contains('is-stem')
-        ? { x: 12, y: 32, w: 8, h: 16 }
-        : { x: 11, y: 29, w: 9, h: 19 };
+        ? { x: 13, y: 33, w: 6, h: 15 }
+        : { x: 11, y: 30, w: 8, h: 18 };
     }
 
     function pointInBinInk(bin, designX, designY) {
