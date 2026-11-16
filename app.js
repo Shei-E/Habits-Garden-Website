@@ -2270,6 +2270,29 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* "How does this method work?" sits next to the Add Flower
+   title, in the remove button's small beige style. Clicking
+   it answers "Pick a flower to get started!" — the tutorial
+   itself waits inside the bin page. */
+.af-howto {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-size: calc(5px * var(--scale));
+  line-height: normal;
+  color: #bda499;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.af-howto:hover {
+  color: #000;
+}
+
 /* Bin flower page: full-panel layers (the jar drawing and one
    layer per petal still on the flower), the month/day columns
    on either side, and an invisible button over the jar that
@@ -2546,6 +2569,67 @@ body {
   background: url("assets/ui-tiny-x.png") center / contain no-repeat;
   border: 0;
   cursor: pointer;
+}
+
+/* Bin tutorial: the bad-habit method, taught inside this
+   page in the garden tutorial's own style — the same bobbing
+   hint line and the same little down arrow, centred over the
+   top of the panel, the arrow pointing down at the flower. */
+.bh-tut {
+  position: absolute;
+  left: calc(28px * var(--scale));
+  right: calc(28px * var(--scale));
+  top: calc(13px * var(--scale));
+  z-index: 21;
+  text-align: center;
+}
+
+.bh-tut[hidden] {
+  display: none;
+}
+
+.bh-hint {
+  margin: 0;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(7px * var(--scale));
+  line-height: 1.45;
+  color: #000;
+  animation: hint-bob 2s steps(1) infinite;
+}
+
+.bh-hint-arrow {
+  display: block;
+  margin: calc(2px * var(--scale)) auto 0;
+  width: calc(9px * var(--scale));
+  height: calc(9px * var(--scale));
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* The last step's way forward: a small, greyed "create
+   plant?" under the closing line. */
+.bh-tut-create {
+  display: block;
+  margin: calc(3px * var(--scale)) auto 0;
+  padding: 0;
+  font-family: "Tiny5", monospace;
+  font-size: calc(5px * var(--scale));
+  color: #bda499;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.bh-tut-create:hover {
+  color: #000;
+}
+
+.bh-tut-create[hidden] {
+  display: none;
 }
 
 .bh-centre {
@@ -2841,6 +2925,7 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
 
         <div class="ap-header">
           <h2 class="ap-title" id="af-title">Fix bad habits</h2>
+          <button class="af-howto" id="af-howto" type="button">How does this method work?</button>
           <button class="ap-remove" id="af-remove" type="button" hidden>remove</button>
         </div>
         <button class="ap-close" id="af-close" type="button" aria-label="Close"></button>
@@ -2907,6 +2992,14 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
             <div class="bh-pp-notesrow"><label class="bh-pp-label" for="bh-pp-notes">notes:</label><textarea class="bh-pp-notes" id="bh-pp-notes" placeholder="type here..." rows="1"></textarea></div>
             <button class="bh-pp-close" id="bh-pp-close" type="button" aria-label="Close"></button>
           </div>
+        </div>
+        <!-- The bin tutorial lives here, in the garden
+             tutorial's style: a bobbing hint line and the
+             little down arrow over the top of the panel. -->
+        <div class="bh-tut" id="bh-tut" hidden>
+          <p class="bh-hint" id="bh-hint"></p>
+          <img class="bh-hint-arrow" id="bh-hint-arrow" src="assets/ui-arrow-down.png" alt="">
+          <button class="bh-tut-create" id="bh-tut-create" type="button" hidden>create plant?</button>
         </div>
       </div>
     </div>
@@ -5494,6 +5587,7 @@ document.body.innerHTML = HG_MARKUP;
     // ---- Add Flower menu ----
     const flowerModal = document.getElementById('add-flower-modal');
     const afTitle = document.getElementById('af-title');
+    const afHowto = document.getElementById('af-howto');
     const afRemove = document.getElementById('af-remove');
     const flowerInput = document.getElementById('flower-name');
     const afCommit = document.getElementById('af-commit');
@@ -5553,6 +5647,7 @@ document.body.innerHTML = HG_MARKUP;
       activeBin = bin;
       const f = getBinFlower(bin);
       if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Fix bad habits';
+      if (afHowto) afHowto.textContent = 'How does this method work?';
       if (afRemove) {
         afRemove.hidden = !f;
         afRemove.classList.remove('is-confirming');
@@ -5816,10 +5911,18 @@ document.body.innerHTML = HG_MARKUP;
       binPage.classList.remove('is-closing');
       binPage.classList.add('is-open');
       binPage.setAttribute('aria-hidden', 'false');
+      // The bin tutorial starts here, inside the page: on a
+      // first visit, until it has been seen through — and
+      // whenever "How does this method work?" armed it.
+      if (!binTutorial && (binTutorialArmed || !binTutorialDone())) {
+        binTutorialArmed = false;
+        startBinTutorial(bin);
+      }
     }
 
     function closeBinPage() {
       if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
+      if (binTutorial) endBinTutorial(false);
       closePetalPopup();
       binPage.classList.remove('is-open');
       binPage.classList.add('is-closing');
@@ -6059,6 +6162,14 @@ document.body.innerHTML = HG_MARKUP;
       dropList.push({ t: new Date().toISOString(), b: !isNormal, note: '' });
       setBinFlower(pageBin, f);
       saveGarden();
+      // The bin tutorial's click-the-flower step listens for a
+      // real drop on its bin: the drop is the lesson's
+      // demonstration and advances that step. endBinTutorial
+      // takes the drop back, so it leaves no fake history.
+      if (binTutorial && pageBin === binTutorial.bin && !binTutorial.drop) {
+        binTutorial.drop = { date: todayStr, index: dropList.length - 1, blank: !isNormal };
+        if (binTutorial.step === 1) advanceBinTutorial();
+      }
       binAnimating = true;
       bounceBinFlower();
       const scale = (stageEl.getBoundingClientRect().width || 256) / 256;
@@ -6088,6 +6199,186 @@ document.body.innerHTML = HG_MARKUP;
         binAnimating = false;
       })();
     }
+
+    // ---- Bin tutorial ----
+    // The bad-habit method, taught inside the bin page in the
+    // garden tutorial's own style: a bobbing hint line and the
+    // little down arrow over the top of the panel. It starts
+    // when the bin page opens — on a first visit, until it has
+    // been seen through (hg.binTutorialDone.v1), and whenever
+    // the Add Flower page's "How does this method work?" text
+    // armed it. Most steps advance on a click anywhere in the
+    // page; the second waits for a real click on the flower,
+    // and the petal step opens the petal popup as its
+    // demonstration.
+    const BIN_TUTORIAL_KEY = 'hg.binTutorialDone.v1';
+    const BIN_TUTORIAL_STEPS = [
+      'Here’s how this method works (click to continue)',
+      'Whenever you act on a bad habit, come to your garden and click the flower.',
+      'You don’t have to stop yourself from doing your bad habit. You can do your bad habit however long and often as you please.',
+      'Just come to your garden and report it. Raising awareness is the goal.',
+      'The petals will keep track of your actions.',
+      'If you can keep this up for a week, you will build a habit of reporting your habits.',
+      'And once this new habit is internalized, it will override your old habit, effectively removing it.',
+      'This is called habit replacement.',
+      'Let’s try to keep this up for a week!',
+    ];
+    let binTutorial = null; // { bin, step, drop: {date, index, blank} | null }
+    let binTutorialArmed = false;
+    const bhTut = document.getElementById('bh-tut');
+    const bhHint = document.getElementById('bh-hint');
+    const bhTutCreate = document.getElementById('bh-tut-create');
+
+    function binTutorialDone() {
+      return !!lsGet(BIN_TUTORIAL_KEY);
+    }
+
+    function startBinTutorial(bin) {
+      if (!bhTut || binTutorial) return;
+      binTutorial = { bin: bin || pageBin, step: 0, drop: null };
+      bhTut.hidden = false;
+      showBinTutorialStep();
+    }
+
+    function showBinTutorialStep() {
+      if (!binTutorial) return;
+      const step = binTutorial.step;
+      const last = BIN_TUTORIAL_STEPS.length - 1;
+      if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[step];
+      if (bhTutCreate) bhTutCreate.hidden = step !== last;
+      if (step === last) {
+        // Reaching the last step counts as having seen the
+        // tutorial: it never auto-starts again after this.
+        lsSet(BIN_TUTORIAL_KEY, '1');
+      }
+      if (step === 4) showBinTutorialPetalPopup();
+    }
+
+    function advanceBinTutorial() {
+      if (!binTutorial) return;
+      if (binTutorial.step >= BIN_TUTORIAL_STEPS.length - 1) return;
+      // Leaving the petal step puts its popup demonstration away.
+      if (binTutorial.step === 4) closePetalPopup();
+      binTutorial.step += 1;
+      showBinTutorialStep();
+    }
+
+    // The petal step's demonstration: open the petal popup on
+    // a real petal of the tutorial's flower — the tutorial's
+    // own drop if it made one, else the latest recorded petal,
+    // else a fresh drop (taken back when the tutorial ends).
+    function showBinTutorialPetalPopup() {
+      if (!binTutorial || !pageBin) return;
+      const f = getBinFlower(pageBin);
+      if (!f) return;
+      let target = binTutorial.drop;
+      if (!target) {
+        const days = Object.keys(f.drops).filter(d => f.drops[d] && f.drops[d].length).sort();
+        if (days.length) {
+          const d = days[days.length - 1];
+          target = { date: d, index: f.drops[d].length - 1 };
+        }
+      }
+      if (!target) {
+        dropPetal();
+        target = binTutorial.drop;
+        if (!target) return;
+        // The drop re-renders the page as its animation lands;
+        // open the popup on the new petal icon once it exists.
+        setTimeout(() => {
+          if (binTutorial) openPetalPopup(target.date, target.index, binPage._todayPetalEl || null);
+        }, 1200);
+        return;
+      }
+      const todayStr = getLocalDateStr(getGameDate());
+      openPetalPopup(target.date, target.index,
+        target.date === todayStr ? (binPage._todayPetalEl || null) : (document.getElementById('bh-centre') || null));
+    }
+
+    function endBinTutorial(createPlant) {
+      if (!binTutorial) return;
+      const tut = binTutorial;
+      binTutorial = null;
+      binTutorialArmed = false;
+      if (bhTut) bhTut.hidden = true;
+      closePetalPopup();
+      // Take back the tutorial's own drop, if it made one:
+      // the petal goes back on the flower and the record
+      // goes, so the lesson leaves no fake history behind.
+      if (tut.drop && tut.bin) {
+        const f = getBinFlower(tut.bin);
+        if (f) {
+          const list = f.drops[tut.drop.date];
+          if (list && list[tut.drop.index]) {
+            const rec = list[tut.drop.index];
+            list.splice(tut.drop.index, 1);
+            if (!list.length) delete f.drops[tut.drop.date];
+            if (!rec.b && f.petalsLeft < BIN_PETALS) f.petalsLeft += 1;
+            setBinFlower(tut.bin, f);
+            saveGarden();
+            if (pageBin === tut.bin && binPage.classList.contains('is-open')) renderBinPage();
+          }
+        }
+      }
+      if (createPlant) {
+        if (binPage.classList.contains('is-open')) closeBinPage();
+        const before = pots.length;
+        addPot();
+        if (pots.length > before) {
+          openModal(pots[pots.length - 1], false);
+          // The companion good habit, filled in and set to a
+          // weekly Sunday repeat: pick a plant and commit.
+          if (plantInput) plantInput.value = 'review my bad habits';
+          repeatIndex = repeatOptions.indexOf('weekly');
+          updateRepeat();
+          dayBtns.forEach(btn => {
+            const on = btn.textContent.trim() === 'sun';
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+          checkCommitReady();
+        }
+      }
+    }
+
+    // While the tutorial runs, the page's clicks are the
+    // lesson's "continue": they are held back from the page
+    // and advance the step — except the flower click on its
+    // own step (dropPetal advances it), the close button, and
+    // the create-plant text, which keep their own jobs.
+    binPage.addEventListener('click', (e) => {
+      if (!binTutorial) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('#bh-tut-create, #bh-close')) return;
+      if (binTutorial.step === 1) {
+        if (t && t.closest && t.closest('#bh-centre')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      advanceBinTutorial();
+    }, true);
+    bhTutCreate?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      endBinTutorial(true);
+    });
+
+    // "How does this method work?" on the Add Flower page:
+    // it answers "Pick a flower to get started!" and arms the
+    // tutorial, which then starts when the bin page opens. A
+    // bin that already has its flower goes straight there.
+    afHowto?.addEventListener('click', () => {
+      const bin = activeBin;
+      binTutorialArmed = true;
+      if (bin && getBinFlower(bin)) {
+        closeFlowerModal();
+        openBinPage(bin);
+      } else {
+        afHowto.textContent = 'Pick a flower to get started!';
+      }
+    });
 
     // ---- Sign-in page ----
     const signInModal = document.getElementById('signin-modal');
@@ -6403,7 +6694,16 @@ document.body.innerHTML = HG_MARKUP;
     // ever adopting a different account's garden into the
     // one signing in.
     const lastGarden = lsGet(LAST_GARDEN_KEY);
-    if (lastGarden && Array.isArray(lastGarden.bundle) && lastGarden.bundle.length) {
+    // A signed-out tab only ever reopens a signed-out garden:
+    // a garden that belongs to an account is never adopted by
+    // the signed-out shelf — most sharply right after signing
+    // out, when the reload must come back to a fresh shelf. A
+    // tab with a session on record may reopen its own
+    // account's garden; the cloud hook reconciles it when it
+    // reports in.
+    const sessionEmail = ssGet('hg.cloudEmail.v1');
+    if (lastGarden && Array.isArray(lastGarden.bundle) && lastGarden.bundle.length
+      && (!lastGarden.email || lastGarden.email === sessionEmail)) {
       shelfGardenOwner = lastGarden.email || null;
       restoreGarden(lastGarden.bundle);
       if (lastGarden.bundle.some(e => e && e.plant)) {
