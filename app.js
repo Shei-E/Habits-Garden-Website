@@ -6256,7 +6256,7 @@ document.body.innerHTML = HG_MARKUP;
       'You don’t have to stop yourself from doing your bad habit. You can do your bad habit however long and often as you please.',
       'Just come to your garden and report it. Raising awareness is the goal.',
       'The petals will keep track of your actions.',
-      'If you can keep this up for a week, you will build a habit of reporting your habits.',
+      'If you keep this up for a week, you can build a habit of reporting your habits.',
       'And once this new habit is internalized, it will override your old habit, effectively removing it.',
       'This is called habit replacement.',
       'Let’s try to keep this up for a week!',
