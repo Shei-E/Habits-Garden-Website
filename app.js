@@ -2627,9 +2627,9 @@ body {
    script can also place it exactly under the card; this low
    spot is the fallback.) */
 .bh-tut.is-low {
-  left: calc(58px * var(--scale));
+  left: calc(43px * var(--scale));
   right: auto;
-  top: calc(102px * var(--scale));
+  top: calc(87px * var(--scale));
   width: calc(140px * var(--scale));
   flex-direction: column;
   gap: calc(2px * var(--scale));
@@ -6355,14 +6355,16 @@ document.body.innerHTML = HG_MARKUP;
     // its arrow pointing up at the card: when the popup was
     // positioned on a real petal, the line goes just under
     // the card's ink — the ink's bottom edge sits at 85 in
-    // container units before the popup's own shift is added.
+    // container units before the popup's own shift is added —
+    // then 15 units back up, matching the block's 15-unit
+    // shift to the left in the stylesheet.
     function placeBinTutorialHintBelowPopup() {
       if (!bhTut) return;
       const shift = document.getElementById('bh-pp-shift');
       const m = shift && shift.style && typeof shift.style.top === 'string'
         ? shift.style.top.match(/calc\((-?[\d.]+)px/) : null;
       if (!m) return; // the stylesheet's low spot is the fallback
-      const top = Math.min(85 + parseFloat(m[1]) + 2, 110);
+      const top = Math.min(85 + parseFloat(m[1]) - 13, 95);
       bhTut.style.top = `calc(${top}px * var(--scale))`;
     }
 
