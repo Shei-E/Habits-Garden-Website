@@ -2270,28 +2270,6 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* "How does this method work?" sits next to the Add Flower
-   title, in the remove button's small beige style; clicking
-   it starts the bin tutorial. */
-.af-howto {
-  position: static;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-family: "Tiny5", monospace;
-  font-size: calc(5px * var(--scale));
-  line-height: normal;
-  color: #bda499;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s ease;
-}
-
-.af-howto:hover {
-  color: #000;
-}
-
 /* Bin flower page: full-panel layers (the jar drawing and one
    layer per petal still on the flower), the month/day columns
    on either side, and an invisible button over the jar that
@@ -2568,81 +2546,6 @@ body {
   background: url("assets/ui-tiny-x.png") center / contain no-repeat;
   border: 0;
   cursor: pointer;
-}
-
-/* Bin tutorial: a full-stage overlay carrying one step of
-   text on a dark card at the bottom centre. It sits above
-   the modals (z 300); on the click-the-flower step it turns
-   passive so the click reaches the page (or shelf) below. */
-.bt-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 300;
-}
-
-.bt-overlay[hidden] {
-  display: none;
-}
-
-.bt-overlay.is-passive {
-  pointer-events: none;
-}
-
-.bt-card {
-  position: absolute;
-  left: 50%;
-  bottom: calc(8px * var(--scale));
-  transform: translateX(-50%);
-  width: calc(200px * var(--scale));
-  box-sizing: border-box;
-  padding: calc(6px * var(--scale)) calc(8px * var(--scale));
-  background: rgba(24, 24, 24, 0.88);
-  text-align: center;
-  cursor: pointer;
-}
-
-.bt-text {
-  margin: 0;
-  font-family: "Tiny5", monospace;
-  font-size: calc(6px * var(--scale));
-  line-height: 1.6;
-  color: #fff;
-}
-
-/* The last step's way out: a small, greyed "create plant?"
-   under the closing line. */
-.bt-create {
-  display: block;
-  margin: calc(4px * var(--scale)) auto 0;
-  padding: 0;
-  font-family: "Tiny5", monospace;
-  font-size: calc(5px * var(--scale));
-  color: #9a9a9a;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.bt-create:hover {
-  color: #fff;
-}
-
-.bt-create[hidden] {
-  display: none;
-}
-
-.bt-close {
-  position: absolute;
-  top: calc(4px * var(--scale));
-  right: calc(4px * var(--scale));
-  width: calc(11px * var(--scale));
-  height: calc(11px * var(--scale));
-  padding: 0;
-  background: url("assets/ui-tiny-x.png") center / contain no-repeat;
-  border: 0;
-  cursor: pointer;
-  image-rendering: pixelated;
 }
 
 .bh-centre {
@@ -2938,7 +2841,6 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
 
         <div class="ap-header">
           <h2 class="ap-title" id="af-title">Fix bad habits</h2>
-          <button class="af-howto" id="af-howto" type="button">How does this method work?</button>
           <button class="ap-remove" id="af-remove" type="button" hidden>remove</button>
         </div>
         <button class="ap-close" id="af-close" type="button" aria-label="Close"></button>
@@ -3007,19 +2909,6 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Bin tutorial: the bad-habit method, taught step by
-         step over the bin page (or the shelf, when the bin has
-         no flower yet). One line at a time on the dark card;
-         most steps advance on a click, one waits for a real
-         click on the flower. -->
-    <div class="bt-overlay" id="bin-tutorial" hidden>
-      <div class="bt-card">
-        <p class="bt-text" id="bt-text"></p>
-        <button class="bt-create" id="bt-create" type="button" hidden>create plant?</button>
-      </div>
-      <button class="bt-close" id="bt-close" type="button" aria-label="Close tutorial"></button>
     </div>
   </main>
 
@@ -5927,16 +5816,10 @@ document.body.innerHTML = HG_MARKUP;
       binPage.classList.remove('is-closing');
       binPage.classList.add('is-open');
       binPage.setAttribute('aria-hidden', 'false');
-      // Opening a bin page before the method has been taught
-      // starts the bin tutorial over it — once it has been
-      // seen through, it only comes back via the "How does
-      // this method work?" text on the Add Flower page.
-      if (!binTutorial && !binTutorialDone()) startBinTutorial(bin);
     }
 
     function closeBinPage() {
       if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
-      if (binTutorial) endBinTutorial(false);
       closePetalPopup();
       binPage.classList.remove('is-open');
       binPage.classList.add('is-closing');
@@ -6176,14 +6059,6 @@ document.body.innerHTML = HG_MARKUP;
       dropList.push({ t: new Date().toISOString(), b: !isNormal, note: '' });
       setBinFlower(pageBin, f);
       saveGarden();
-      // The bin tutorial's click-the-flower step listens for a
-      // real drop on its bin: the drop is the lesson's
-      // demonstration and advances that step. endBinTutorial
-      // takes the drop back, so it leaves no fake history.
-      if (binTutorial && pageBin === binTutorial.bin && !binTutorial.drop) {
-        binTutorial.drop = { date: todayStr, index: dropList.length - 1, blank: !isNormal };
-        if (binTutorial.step === 1) advanceBinTutorial();
-      }
       binAnimating = true;
       bounceBinFlower();
       const scale = (stageEl.getBoundingClientRect().width || 256) / 256;
@@ -6213,186 +6088,6 @@ document.body.innerHTML = HG_MARKUP;
         binAnimating = false;
       })();
     }
-
-    // ---- Bin tutorial ----
-    // The bad-habit method, taught in nine steps over the bin
-    // page (or over the shelf, when it is started from the Add
-    // Flower page of a bin with no flower yet). Most steps
-    // advance on a click; the second waits for a real click on
-    // the flower, and the petal step opens the petal popup as
-    // its demonstration. Seeing the last step marks the
-    // tutorial done (hg.binTutorialDone.v1): from then on the
-    // bin page no longer starts it — only the "How does this
-    // method work?" text on the Add Flower page does.
-    const BIN_TUTORIAL_KEY = 'hg.binTutorialDone.v1';
-    const BIN_TUTORIAL_STEPS = [
-      'Here’s how this method works (click to continue)',
-      'Whenever you act on a bad habit, come to your garden and click the flower.',
-      'You don’t have to stop yourself from doing your bad habit. You can do your bad habit however long and often as you please.',
-      'Just come to your garden and report it. Raising awareness is the goal.',
-      'The petals will keep track of your actions.',
-      'If you can keep this up for a week, you will build a habit of reporting your habits.',
-      'And once this new habit is internalized, it will override your old habit, effectively removing it.',
-      'This is called habit replacement.',
-      'Let’s try to keep this up for a week!',
-    ];
-    let binTutorial = null; // { bin, step, drop: {date, index, blank} | null }
-    const btOverlay = document.getElementById('bin-tutorial');
-    const btText = document.getElementById('bt-text');
-    const btCreate = document.getElementById('bt-create');
-
-    function binTutorialDone() {
-      return !!lsGet(BIN_TUTORIAL_KEY);
-    }
-
-    function startBinTutorial(bin) {
-      if (!btOverlay || binTutorial) return;
-      binTutorial = { bin: bin || pageBin || activeBin, step: 0, drop: null };
-      btOverlay.hidden = false;
-      showBinTutorialStep();
-    }
-
-    function showBinTutorialStep() {
-      if (!binTutorial) return;
-      const step = binTutorial.step;
-      const last = BIN_TUTORIAL_STEPS.length - 1;
-      if (btText) btText.textContent = BIN_TUTORIAL_STEPS[step];
-      if (btCreate) btCreate.hidden = step !== last;
-      // The click-the-flower step turns the overlay passive,
-      // so the click lands on the flower (or the bin) below.
-      btOverlay.classList.toggle('is-passive', step === 1);
-      if (step === last) {
-        // Reaching the last step counts as having seen the
-        // tutorial: it never auto-starts again after this.
-        lsSet(BIN_TUTORIAL_KEY, '1');
-      }
-      if (step === 4) showBinTutorialPetalPopup();
-    }
-
-    function advanceBinTutorial() {
-      if (!binTutorial) return;
-      if (binTutorial.step >= BIN_TUTORIAL_STEPS.length - 1) return;
-      binTutorial.step += 1;
-      showBinTutorialStep();
-    }
-
-    // The petal step's demonstration: open the petal popup on
-    // a real petal of the tutorial's flower — the tutorial's
-    // own drop if it made one, else the latest recorded petal,
-    // else a fresh drop (taken back when the tutorial ends).
-    function showBinTutorialPetalPopup() {
-      if (!binTutorial) return;
-      if (binPage.classList.contains('is-open') && pageBin) {
-        binTutorial.bin = pageBin;
-      }
-      const bin = binTutorial.bin;
-      if (!bin || !getBinFlower(bin)) return;
-      if (pageBin !== bin || !binPage.classList.contains('is-open')) openBinPage(bin);
-      const f = getBinFlower(bin);
-      let target = binTutorial.drop;
-      if (!target) {
-        const days = Object.keys(f.drops).filter(d => f.drops[d] && f.drops[d].length).sort();
-        if (days.length) {
-          const d = days[days.length - 1];
-          target = { date: d, index: f.drops[d].length - 1 };
-        }
-      }
-      if (!target) {
-        dropPetal();
-        target = binTutorial.drop;
-        if (!target) return;
-        // The drop re-renders the page as its animation lands;
-        // open the popup on the new petal icon once it exists.
-        setTimeout(() => {
-          if (binTutorial) openPetalPopup(target.date, target.index, binPage._todayPetalEl || null);
-        }, 1200);
-        return;
-      }
-      const todayStr = getLocalDateStr(getGameDate());
-      openPetalPopup(target.date, target.index,
-        target.date === todayStr ? (binPage._todayPetalEl || null) : (document.getElementById('bh-centre') || null));
-    }
-
-    function endBinTutorial(createPlant) {
-      if (!binTutorial) return;
-      const tut = binTutorial;
-      binTutorial = null;
-      if (btOverlay) btOverlay.hidden = true;
-      closePetalPopup();
-      // Take back the tutorial's own drop, if it made one:
-      // the petal goes back on the flower and the record
-      // goes, so the lesson leaves no fake history behind.
-      if (tut.drop && tut.bin) {
-        const f = getBinFlower(tut.bin);
-        if (f) {
-          const list = f.drops[tut.drop.date];
-          if (list && list[tut.drop.index]) {
-            const rec = list[tut.drop.index];
-            list.splice(tut.drop.index, 1);
-            if (!list.length) delete f.drops[tut.drop.date];
-            if (!rec.b && f.petalsLeft < BIN_PETALS) f.petalsLeft += 1;
-            setBinFlower(tut.bin, f);
-            saveGarden();
-            if (pageBin === tut.bin && binPage.classList.contains('is-open')) renderBinPage();
-          }
-        }
-      }
-      if (createPlant) {
-        if (binPage.classList.contains('is-open')) closeBinPage();
-        const before = pots.length;
-        addPot();
-        if (pots.length > before) {
-          openModal(pots[pots.length - 1], false);
-          // The companion good habit, filled in and set to a
-          // weekly Sunday repeat: pick a plant and commit.
-          if (plantInput) plantInput.value = 'review my bad habits';
-          repeatIndex = repeatOptions.indexOf('weekly');
-          updateRepeat();
-          dayBtns.forEach(btn => {
-            const on = btn.textContent.trim() === 'sun';
-            btn.classList.toggle('is-active', on);
-            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-          });
-          checkCommitReady();
-        }
-      }
-    }
-
-    btOverlay?.addEventListener('click', (e) => {
-      if (!binTutorial) return;
-      if (e.target && e.target.closest && e.target.closest('.bt-create, .bt-close')) return;
-      advanceBinTutorial();
-    });
-    btCreate?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      endBinTutorial(true);
-    });
-    document.getElementById('bt-close')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      endBinTutorial(false);
-    });
-    // The click-the-flower step over the shelf (no bin page
-    // open): a click on any bin counts as clicking the flower.
-    // A filled bin's page still opens as usual; an empty bin's
-    // Add Flower page is held back so the lesson can go on.
-    document.addEventListener('click', (e) => {
-      if (!binTutorial || binTutorial.step !== 1) return;
-      if (binPage.classList.contains('is-open')) return;
-      const binEl = e.target && e.target.closest ? e.target.closest('.bin') : null;
-      if (!binEl) return;
-      if (!getBinFlower(binEl)) { e.preventDefault(); e.stopImmediatePropagation(); }
-      advanceBinTutorial();
-    }, true);
-
-    // "How does this method work?" on the Add Flower page:
-    // starts the tutorial (always, even after it was seen),
-    // over the bin's page when the bin has a flower.
-    document.getElementById('af-howto')?.addEventListener('click', () => {
-      const bin = activeBin;
-      closeFlowerModal();
-      if (bin && getBinFlower(bin)) openBinPage(bin);
-      startBinTutorial(bin);
-    });
 
     // ---- Sign-in page ----
     const signInModal = document.getElementById('signin-modal');
