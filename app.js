@@ -2596,10 +2596,15 @@ body {
   flex: 1;
   min-width: 0;
   text-align: left;
+  /* The bob lives on the wrapper, not the text itself:
+     the text flows inline so the last step's "create
+     plant?" can sit on the same line as the sentence's
+     end, and wrapper and button bob together. */
+  animation: hint-bob 2s steps(1) infinite;
 }
 
 .bh-hint {
-  display: inline-block;
+  display: inline;
   margin: 0;
   font-family: "Tiny5", monospace;
   font-weight: 400;
@@ -2607,7 +2612,6 @@ body {
   line-height: 1.45;
   color: #000;
   white-space: pre-line;
-  animation: hint-bob 2s steps(1) infinite;
 }
 
 .bh-hint-arrow {
@@ -2669,7 +2673,6 @@ body {
   border: 0;
   cursor: pointer;
   transition: color 0.15s ease;
-  animation: hint-bob 2s steps(1) infinite;
 }
 
 .bh-tut-create:hover {
