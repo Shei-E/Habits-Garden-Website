@@ -3756,10 +3756,10 @@ document.body.innerHTML = HG_MARKUP;
         // (z-index 50) is overridden by an inline tier z-index, so a
         // small pot would otherwise drag underneath its neighbours.
         dragState.pot.style.zIndex = 50;
-        // Show the delete marker above the drag's starting spot —
-        // unless this is the only pot left: the shelf always keeps
-        // one, so a lone pot shows no marker and cannot be deleted.
-        if (pots.length > 1 && deleteXEl) {
+        // Show the delete marker above the drag's starting spot.
+        // Every pot can be deleted, even the last one — the
+        // shelf is allowed to stand empty.
+        if (deleteXEl) {
           const box = deleteXBox(dragState.origPos);
           deleteXEl.style.left = `calc(${box.left}px * var(--scale))`;
           deleteXEl.style.top = `calc(${box.top}px * var(--scale))`;
@@ -3839,13 +3839,23 @@ document.body.innerHTML = HG_MARKUP;
 
     // Removes a pot from the shelf for good, plant and all (the
     // plant's state lives in the pot's dataset, so it goes with the
-    // element). Only called from a drop on the delete marker, which
-    // never shows for the last remaining pot.
+    // element). Only called from a drop on the delete marker. The
+    // last pot can go too: the shelf just stands empty.
     function deletePot(pot) {
       const i = pots.indexOf(pot);
       if (i !== -1) pots.splice(i, 1);
       if (activePot === pot) activePot = null;
       pot.remove();
+      if (pots.length === 0 && !hasMovedFirstPot) {
+        // The shelf is empty and the intro never finished:
+        // nothing is left to plant, water or move, so the intro
+        // ends here — the corner stack appears, and a pot can
+        // be added back.
+        hasPlantedFirstPlant = true;
+        hasWateredFirstPlant = true;
+        hasMovedFirstPot = true;
+        updateHint();
+      }
       updateDewDrops();
       saveGarden();
     }
@@ -5152,7 +5162,10 @@ document.body.innerHTML = HG_MARKUP;
     // pot reuses the pot already on the shelf; extra pots come from
     // the add-a-pot code, then everything is put back in place.
     function restoreGarden(entries) {
-      if (!Array.isArray(entries) || entries.length === 0) return;
+      // An empty bundle is a real saved garden — a shelf with
+      // nothing on it — and restores to an empty shelf. Only a
+      // non-bundle (no saved garden at all) is turned away.
+      if (!Array.isArray(entries)) return;
       // The bundle is the pot entries followed by any bin entries.
       const binEntries = entries.filter(e => e && e.bin);
       const potEntries = entries.filter(e => !(e && e.bin));
@@ -6322,8 +6335,16 @@ document.body.innerHTML = HG_MARKUP;
     const bhTutCreate = document.getElementById('bh-tut-create');
     const bhProceed = document.getElementById('bh-proceed');
 
+    // The seen flag belongs to the account, not the browser:
+    // signed in, it lives under the account's own key, so each
+    // account on this browser has its own (the plain key is
+    // the signed-out bucket).
+    function binTutorialKey() {
+      return signedInEmail ? BIN_TUTORIAL_KEY + '.' + signedInEmail : BIN_TUTORIAL_KEY;
+    }
+
     function binTutorialDone() {
-      return !!lsGet(BIN_TUTORIAL_KEY);
+      return !!lsGet(binTutorialKey());
     }
 
     // A freshly planted example flower: full petals, no
@@ -6385,8 +6406,9 @@ document.body.innerHTML = HG_MARKUP;
       else restoreEmptyFlowerStep();
       if (step === last) {
         // Reaching the last step counts as having seen the
-        // tutorial: it never auto-starts again after this.
-        lsSet(BIN_TUTORIAL_KEY, '1');
+        // tutorial: it never auto-starts again after this —
+        // for this account.
+        lsSet(binTutorialKey(), '1');
       }
       if (step === 5) showBinTutorialPetalPopup();
     }
