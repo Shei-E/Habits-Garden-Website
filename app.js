@@ -2650,13 +2650,13 @@ body {
 
 .bh-tut.is-low .bh-hint-arrow {
   position: relative;
-  left: calc(-25px * var(--scale));
+  left: calc(-20px * var(--scale));
   transform: rotate(180deg);
 }
 
 .bh-tut.is-low .bh-tut-text {
   position: relative;
-  left: calc(-35px * var(--scale));
+  left: calc(-15px * var(--scale));
   text-align: center;
 }
 
