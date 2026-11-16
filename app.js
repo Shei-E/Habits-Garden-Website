@@ -2614,6 +2614,21 @@ body {
   white-space: pre-line;
 }
 
+/* The flower steps' "(click to proceed)": a line of its
+   own under the sentence, shown once the drop has landed. */
+.bh-proceed {
+  display: block;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  font-size: calc(6px * var(--scale));
+  line-height: 1.45;
+  color: #000;
+}
+
+.bh-proceed[hidden] {
+  display: none;
+}
+
 .bh-hint-arrow {
   flex: none;
   width: calc(9px * var(--scale));
@@ -3051,6 +3066,7 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
           <img class="bh-hint-arrow" id="bh-hint-arrow" src="assets/ui-arrow-down.png" alt="">
           <div class="bh-tut-text">
             <p class="bh-hint" id="bh-hint"></p>
+            <span class="bh-proceed" id="bh-proceed" hidden>(click to proceed)</span>
             <button class="bh-tut-create" id="bh-tut-create" type="button" hidden>create plant?</button>
           </div>
         </div>
@@ -6227,11 +6243,12 @@ document.body.innerHTML = HG_MARKUP;
       if (binTutorial && pageBin === binTutorial.bin) {
         binTutorial.drops.push({ date: todayStr, index: dropList.length - 1, blank: !isNormal });
         if (binTutorial.step === 1 || binTutorial.step === 2) {
-          // The flower steps don't move on at the drop: the
-          // line gains a "(click to proceed)", and the next
-          // click — anywhere — goes to the next line.
+          // The flower steps don't move on at the drop: a
+          // "(click to proceed)" line appears under the
+          // sentence, and the next click — anywhere — goes
+          // to the next line.
           binTutorial.awaitingProceed = true;
-          if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[binTutorial.step] + ' (click to proceed)';
+          if (bhProceed) bhProceed.hidden = false;
         }
       }
       binAnimating = true;
@@ -6294,6 +6311,7 @@ document.body.innerHTML = HG_MARKUP;
     const bhHint = document.getElementById('bh-hint');
     const bhHintArrow = document.getElementById('bh-hint-arrow');
     const bhTutCreate = document.getElementById('bh-tut-create');
+    const bhProceed = document.getElementById('bh-proceed');
 
     function binTutorialDone() {
       return !!lsGet(BIN_TUTORIAL_KEY);
@@ -6339,6 +6357,7 @@ document.body.innerHTML = HG_MARKUP;
       const last = BIN_TUTORIAL_STEPS.length - 1;
       if (bhHint) bhHint.textContent = BIN_TUTORIAL_STEPS[step];
       if (bhTutCreate) bhTutCreate.hidden = step !== last;
+      if (bhProceed) bhProceed.hidden = true;
       // The arrow only appears on the steps that point at
       // something: the flower (steps 2 and 3) and the petal
       // popup (step 6).
