@@ -2606,6 +2606,7 @@ body {
   font-size: calc(6px * var(--scale));
   line-height: 1.45;
   color: #000;
+  white-space: pre-line;
   animation: hint-bob 2s steps(1) infinite;
 }
 
@@ -2638,6 +2639,8 @@ body {
 }
 
 .bh-tut.is-low .bh-hint-arrow {
+  position: relative;
+  left: calc(-8px * var(--scale));
   transform: rotate(180deg);
 }
 
@@ -6255,7 +6258,7 @@ document.body.innerHTML = HG_MARKUP;
       'Whenever you act on a bad habit, come to your garden and click the flower.',
       'You don’t have to stop yourself from doing your bad habit. You can do your bad habit however long and often as you please.',
       'Just come to your garden and report it. Raising awareness is the goal.',
-      'The petals will keep track of your actions.',
+      'The petals will keep track\nof your actions.',
       'If you keep this up for a week, you can build a habit of reporting your habits.',
       'And once this new habit is internalized, it will override your old habit, effectively removing it.',
       'This is called habit replacement.',
