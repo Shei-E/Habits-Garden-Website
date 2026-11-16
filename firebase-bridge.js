@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { initializeFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: 'AIzaSyDu0TofMptHrwVYgQqzowfZRFL8q48y9Dk',
@@ -22,7 +22,10 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
       // all the other tabs to that account.) A tab keeps its
       // account across reloads; closing the tab ends it.
       setPersistence(auth, browserSessionPersistence).catch(() => { });
-      const db = getFirestore(app);
+      // ignoreUndefinedProperties: a stray undefined in a
+      // garden bundle must never sink the whole save — the
+      // database otherwise refuses the write outright.
+      const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
       let user = null;
       let saveTimer = null;
 
@@ -58,7 +61,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
           saveTimer = setTimeout(() => {
             if (!user || user.uid !== uid) return;
             setDoc(doc(db, 'gardens', uid), { garden: bundle, updatedAt: serverTimestamp() })
-              .catch(() => { });
+              .catch(err => { try { console.warn('Habits Garden: cloud save failed', err); } catch (e) { } });
           }, 1200);
         },
       };

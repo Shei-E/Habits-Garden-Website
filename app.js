@@ -5071,14 +5071,22 @@ document.body.innerHTML = HG_MARKUP;
         return entry;
       });
       // Bins ride along in the same bundle, after the pots, so a
-      // saved garden (and the live sync) carries them too.
+      // saved garden (and the live sync) carries them too. The
+      // bundle must never carry an undefined value: the cloud
+      // database refuses a write that has one, whole garden and
+      // all — so the example mark is only added when it is set.
       for (const bin of bins) {
         const f = getBinFlower(bin);
+        let flower = null;
+        if (f) {
+          flower = { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, petalsDay: f.petalsDay || '', drops: f.drops };
+          if (f.example) flower.example = true;
+        }
         entries.push({
           bin: true,
           left: Number(bin.dataset.binLeft),
           row: bin.dataset.binRow,
-          flower: f ? { name: f.name, type: f.type, created: f.created, petalsLeft: f.petalsLeft, petalsDay: f.petalsDay || '', example: f.example || undefined, drops: f.drops } : null,
+          flower,
         });
       }
       return entries;
