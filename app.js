@@ -3445,6 +3445,17 @@ document.body.innerHTML = HG_MARKUP;
       if (prev && prev !== pot) updatePotZOrder(prev);
     }
     const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
+    // Dragging up from the bottom shelf is stricter: the top
+    // shelf only takes the item once the grab point (where the
+    // pointer is holding it) has been dragged to 4 units below
+    // the top shelf row's top edge (21 + 4 = 25). Applies to
+    // pots and bins alike; drags that start on the top shelf
+    // keep the midpoint rule above.
+    const TOP_SNAP_POINTER_Y = SLOT_ROW_TOP.top + 4; // 25
+    function dragRow(origRow, centreY, pointerY) {
+      if (origRow === 'bottom') return pointerY <= TOP_SNAP_POINTER_Y ? 'top' : 'bottom';
+      return centreY < ROW_MID_Y ? 'top' : 'bottom';
+    }
 
     // The pot's starting slot, from its pot--cN/pot--hN + row classes.
     function getPotSlot(pot) {
@@ -3774,9 +3785,11 @@ document.body.innerHTML = HG_MARKUP;
       const pot = dragState.pot;
       const orig = dragState.origPos;
       const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
-      // Row from the pot centre's Y: above the midpoint is the top shelf.
+      // Row from the drag (see dragRow): the centre/midpoint
+      // rule, except a bottom-shelf drag needs the grab point
+      // dragged to 4 below the top row's top edge first.
       const centreY = SLOT_ROW_TOP[orig.row] + POT_SIZE / 2 + dy;
-      const row = centreY < ROW_MID_Y ? 'top' : 'bottom';
+      const row = dragRow(orig.row, centreY, dragState.startDesignY + dy);
       setPotPos(pot, left, row);
       // Blocked feedback while the drop point is occupied.
       pot.classList.toggle('is-blocked', !posIsFree(left, row, pot));
@@ -5454,9 +5467,11 @@ document.body.innerHTML = HG_MARKUP;
       }
       e.preventDefault();
       const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
-      // Row from the bin centre's Y: above the midpoint is the top shelf.
+      // Row from the drag (see dragRow): the centre/midpoint
+      // rule, except a bottom-shelf drag needs the grab point
+      // dragged to 4 below the top row's top edge first.
       const centreY = SLOT_ROW_TOP[orig.row] - 16 + 24 + dy;
-      const row = centreY < ROW_MID_Y ? 'top' : 'bottom';
+      const row = dragRow(orig.row, centreY, binDragState.startDesignY + dy);
       setBinPos(bin, left, row);
       bin.style.zIndex = 50; // setBinPos restores the row z; keep the drag lift
       bin.classList.toggle('is-blocked', !binSpotFree(left, row, bin));
