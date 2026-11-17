@@ -2461,10 +2461,13 @@ body {
    hovering the card counts as hovering the card (which
    keeps it open — see the hover code below) — but only
    the VISIBLE card: the group's box is the whole 247x134
-   canvas while the card's ink is just x 98.49..165.49,
-   y 41..85 of it, so the clip trims the hover area to
-   exactly the card. The picture is unchanged (everything
-   outside the ink is transparent anyway). */
+   canvas while the card's ink is just x 98.49..166.49,
+   y 41..86 of it (the outer edges of the ink pixels —
+   ending the window on the last ink pixel's near edge
+   shaved a unit off the right and bottom), so the clip
+   trims the hover area to exactly the card. The picture
+   is unchanged (everything outside the ink is
+   transparent anyway). */
 .bh-pp-shift {
   position: absolute;
   left: 0;
@@ -2472,14 +2475,14 @@ body {
   width: calc(247px * var(--scale));
   height: calc(134px * var(--scale));
   pointer-events: auto;
-  clip-path: inset(30.6% 33% 36.57% 39.87%);
+  clip-path: inset(30.6% 32.6% 35.82% 39.87%);
 }
 
 /* In the flipped case the sprite sits 5 lower inside the
    group, so the clip's window moves down with it (the ink
-   is then at y 46..90 of the group). */
+   is then at y 46..91 of the group). */
 .bh-petal-popup.is-flipped .bh-pp-shift {
-  clip-path: inset(34.33% 33% 32.84% 39.87%);
+  clip-path: inset(34.33% 32.6% 32.09% 39.87%);
 }
 
 .bh-popup-card {
