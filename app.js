@@ -2458,8 +2458,13 @@ body {
 /* The card and its content, shifted as one group so the
    card lands below the hovered petal. The group is given
    the card canvas's own size and takes pointer events, so
-   hovering anywhere on the card counts as hovering the
-   card (which keeps it open — see the hover code below). */
+   hovering the card counts as hovering the card (which
+   keeps it open — see the hover code below) — but only
+   the VISIBLE card: the group's box is the whole 247x134
+   canvas while the card's ink is just x 98.49..165.49,
+   y 41..85 of it, so the clip trims the hover area to
+   exactly the card. The picture is unchanged (everything
+   outside the ink is transparent anyway). */
 .bh-pp-shift {
   position: absolute;
   left: 0;
@@ -2467,6 +2472,14 @@ body {
   width: calc(247px * var(--scale));
   height: calc(134px * var(--scale));
   pointer-events: auto;
+  clip-path: inset(30.6% 33% 36.57% 39.87%);
+}
+
+/* In the flipped case the sprite sits 5 lower inside the
+   group, so the clip's window moves down with it (the ink
+   is then at y 46..90 of the group). */
+.bh-petal-popup.is-flipped .bh-pp-shift {
+  clip-path: inset(34.33% 33% 32.84% 39.87%);
 }
 
 .bh-popup-card {
@@ -6193,9 +6206,7 @@ document.body.innerHTML = HG_MARKUP;
           const t = new Date(rec.t);
           const hh = String(t.getHours()).padStart(2, '0');
           const mi = String(t.getMinutes()).padStart(2, '0');
-          timeEl.textContent = dateStr === getLocalDateStr(getGameDate())
-            ? `picked at ${hh}:${mi}`
-            : `picked at ${hh}:${mi} on ${when}`;
+          timeEl.textContent = `picked at ${hh}:${mi}`;
         } else {
           // Drops recorded before times were kept.
           timeEl.textContent = `picked on ${when}`;
