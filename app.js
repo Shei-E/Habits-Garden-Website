@@ -6527,12 +6527,15 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // A freshly planted example flower: full petals, no
-    // history, made today, named "example".
-    function freshExampleFlower() {
+    // history, made today, named "example". Its type
+    // follows the flower it stands in for, so the lesson
+    // shows the same kind of flower the bin really holds
+    // (an empty bin gets the default, the yellow flower).
+    function freshExampleFlower(type) {
       const today = getLocalDateStr(getGameDate());
       return {
         name: 'example',
-        type: 'placeholder',
+        type: binFlowerType(type).id,
         created: today,
         petalsLeft: BIN_PETALS,
         petalsDay: today,
@@ -6560,7 +6563,7 @@ document.body.innerHTML = HG_MARKUP;
       // touches, the user's own name or status.
       const savedFlower = tutBin ? getBinFlower(tutBin) : null;
       if (tutBin) {
-        setBinFlower(tutBin, freshExampleFlower());
+        setBinFlower(tutBin, freshExampleFlower(savedFlower ? savedFlower.type : undefined));
         saveGarden();
         if (pageBin === tutBin && binPage.classList.contains('is-open')) renderBinPage();
       }
