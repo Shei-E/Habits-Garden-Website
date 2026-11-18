@@ -2221,6 +2221,11 @@ body {
   background-image: url("assets/bin-white-flower.png");
 }
 
+/* The blue flower's jar — same shape, its own sprite. */
+.bin.has-flower.is-blue {
+  background-image: url("assets/bin-blue-flower.png");
+}
+
 /* Every petal picked: only the stem is left in the jar. */
 .bin.has-flower.is-stem {
   background-image: url("assets/bin-stem.png");
@@ -2306,11 +2311,15 @@ body {
 }
 
 .af-flower--placeholder {
-  left: calc(54px * var(--scale));
+  left: calc(36px * var(--scale));
 }
 
 .af-flower--white {
-  left: calc(90px * var(--scale));
+  left: calc(72px * var(--scale));
+}
+
+.af-flower--blue {
+  left: calc(108px * var(--scale));
 }
 
 /* "How does this method work?" sits next to the Add Flower
@@ -3073,6 +3082,10 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
             <button class="af-flower af-flower--white" type="button" aria-label="White flower"
               data-flower="white">
               <img class="af-flower-sprite" src="assets/bin-white-flower.png" alt="">
+            </button>
+            <button class="af-flower af-flower--blue" type="button" aria-label="Blue flower"
+              data-flower="blue">
+              <img class="af-flower-sprite" src="assets/bin-blue-flower.png" alt="">
             </button>
           </div>
         </div>
@@ -5351,6 +5364,10 @@ document.body.innerHTML = HG_MARKUP;
     const BIN_FLOWER_TYPES = [
       { id: 'placeholder', name: 'Placeholder flower', src: 'assets/bin-yellow-flower.png', drawingLong: 'assets/bin-flower-drawing-long.png', drawingShort: 'assets/bin-flower-drawing.png', petal: 'assets/petal', icon: 'assets/petal-icon1.png' },
       { id: 'white', name: 'White flower', src: 'assets/bin-white-flower.png', drawingLong: 'assets/bin-flower-drawing-white-long.png', drawingShort: 'assets/bin-flower-drawing-white-short.png', petal: 'assets/petal-white', icon: 'assets/petal-icon-white.png' },
+      // The blue flower's big drawing is the white flower's
+      // for now (Shusuke's call): its own petal layers carry
+      // the blue on the bin page.
+      { id: 'blue', name: 'Blue flower', src: 'assets/bin-blue-flower.png', drawingLong: 'assets/bin-flower-drawing-white-long.png', drawingShort: 'assets/bin-flower-drawing-white-short.png', petal: 'assets/petal-blue', icon: 'assets/petal-blue.png' },
     ];
     function binFlowerType(id) {
       return BIN_FLOWER_TYPES.find(t => t.id === id) || BIN_FLOWER_TYPES[0];
@@ -5737,6 +5754,7 @@ document.body.innerHTML = HG_MARKUP;
         bin.classList.remove('has-flower');
         bin.classList.remove('is-stem');
         bin.classList.remove('is-white');
+        bin.classList.remove('is-blue');
         delete bin.dataset.flowerName;
         delete bin.dataset.flowerType;
         delete bin.dataset.flowerCreated;
@@ -5755,6 +5773,7 @@ document.body.innerHTML = HG_MARKUP;
       // The white flower's jar sprite (the stem state above
       // is shared: with no petals left the two look alike).
       bin.classList.toggle('is-white', f.type === 'white');
+      bin.classList.toggle('is-blue', f.type === 'blue');
       bin.dataset.flowerName = f.name;
       bin.dataset.flowerType = f.type;
       bin.dataset.flowerCreated = f.created;
