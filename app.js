@@ -2531,10 +2531,16 @@ body {
 }
 
 /* In the flipped case the sprite sits 5 lower inside the
-   group, so the clip's window moves down with it (the ink
-   is then at y 46..91 of the group). */
+   group AND turns 180 degrees around the ink's centre,
+   which mirrors the ink inside its box: it lands 1 unit
+   left of its unflipped spot and, with the 5-unit drop,
+   4 lower — ink at x 97.47..165.47, y 45..90 of the
+   group. (An earlier version of this window only counted
+   the 5-unit drop, so it started 1 unit inside the ink
+   on the top and left and those two card edges were
+   clipped away.) */
 .bh-petal-popup.is-flipped .bh-pp-shift {
-  clip-path: inset(34.33% 32.6% 32.09% 39.87%);
+  clip-path: inset(33.58% 33% 32.83% 39.46%);
 }
 
 .bh-popup-card {
