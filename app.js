@@ -1851,11 +1851,15 @@ body {
 
 /* Each streak box's date label, sitting just above its box
    (where the lone "today" label used to sit above the last
-   box), centred on the box. */
+   box), centred on the box. The top is set so the bottom
+   of the text sits exactly 2 units above the box's top:
+   in Tiny5 the baseline rests 0.875 × the font size below
+   the label's top, so at size 5 that is 4.375 down, and
+   -6.375 + 4.375 = -2. */
 .pd-streak-label {
   position: absolute;
   left: 0;
-  top: calc(-7px * var(--scale));
+  top: calc(-6.375px * var(--scale));
   width: 100%;
   font-family: "Tiny5", monospace;
   font-weight: 400;
@@ -1866,12 +1870,16 @@ body {
   color: #bda499;
 }
 
-/* "this week" / "last week" labels (weekly habits with
-   one due day): at the normal label size the words run
-   about 21 units wide — nearly two boxes. At 2.5 they
-   measure about 10 units, inside one 11-wide box. */
+/* "this wk" / "last wk" labels (weekly habits with one
+   due day): at the normal label size the words would run
+   about 16 units wide — wider than one box. At 3.3 they
+   measure 10.31 units, inside one 11-wide box (the same
+   width the full "this week" / "last week" took at 2.5).
+   The top keeps the text's bottom 2 units above the box,
+   like every label: -4.8875 + 0.875 × 3.3 = -2. */
 .pd-streak-label--week {
-  font-size: calc(2.5px * var(--scale));
+  font-size: calc(3.3px * var(--scale));
+  top: calc(-4.8875px * var(--scale));
 }
 
 .pd-streak {
@@ -7343,14 +7351,14 @@ document.body.innerHTML = HG_MARKUP;
         const label = document.createElement('span');
         label.className = 'pd-streak-label';
         if (singleDayWeekly && i >= 6) {
-          // The last two boxes read "this week" and "last
-          // week", in the smaller week-label font so each
-          // fits above its box; the boxes before them are
-          // labelled with the day of the month.
-          label.textContent = i === 7 ? 'this week' : 'last week';
+          // The last two boxes read "this wk" and "last
+          // wk", in the week-label font so each fits above
+          // its box; the box before them reads "…", and
+          // the boxes before that carry no label at all.
+          label.textContent = i === 7 ? 'this wk' : 'last wk';
           label.classList.add('pd-streak-label--week');
         } else if (singleDayWeekly) {
-          label.textContent = displayDates[i] ? String(Number(displayDates[i].split('-')[2])) : '';
+          label.textContent = i === 5 ? '…' : '';
         } else {
           label.textContent = i === 7 && pdRepeatType !== 'monthly' && pdRepeatType !== 'yearly' ? 'today' : streakLabel(displayDates[i]);
         }
