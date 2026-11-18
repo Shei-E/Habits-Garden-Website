@@ -2262,7 +2262,7 @@ body {
 .af-flower {
   position: absolute;
   left: calc(72px * var(--scale));
-  top: calc(31px * var(--scale));
+  top: calc(35px * var(--scale));
   width: calc(32px * var(--scale));
   height: calc(62px * var(--scale));
   background: none;
@@ -7164,6 +7164,9 @@ document.body.innerHTML = HG_MARKUP;
 
       pdDialog.style.left = `calc(${cfg.left}px * var(--scale))`;
       pdDialog.style.top = `calc(${cfg.top}px * var(--scale))`;
+      // At the shelf's right edge the popup's art flips, and
+      // the plant name box runs 5 units shorter there.
+      pdTitle.style.width = cfg.flipX ? 'calc(117px * var(--scale))' : '';
       pdContent.style.transform = cfg.flipY ? 'translateY(calc(-20px * var(--scale)))' : 'none';
 
       pdRepeat.textContent = pot.dataset.repeat || 'daily';
@@ -7219,7 +7222,41 @@ document.body.innerHTML = HG_MARKUP;
       let oppDates = [];
       try { oppDates = JSON.parse(pot.dataset.streakOppDates || '[]'); } catch (e) { }
       let displayDates = oppDates;
-      if (pot.dataset.streakLastOppLabel !== 'today') {
+      const pdRepeatType = pot.dataset.repeatType || 'daily';
+      if ((pdRepeatType === 'monthly' || pdRepeatType === 'yearly') && oppDates.length === 8) {
+        // Monthly and yearly habits are anchored to the
+        // calendar instead: the last box is the current
+        // month/year (it reads "today"), with last month/
+        // year to its left. When this period's due day has
+        // come, the last box is that opportunity as-is, no
+        // shift. When the due day is still ahead, the marks
+        // move one box back and the last box shows the
+        // current period so far: a check if the habit was
+        // already watered in it, else a dash.
+        const today = getGameDate();
+        const lastParts = oppDates[7].split('-').map(Number);
+        const samePeriod = pdRepeatType === 'monthly'
+          ? (lastParts[0] === today.getFullYear() && lastParts[1] - 1 === today.getMonth())
+          : lastParts[0] === today.getFullYear();
+        if (!samePeriod) {
+          let hist = [];
+          try { hist = JSON.parse(pot.dataset.waterHistory || '[]'); } catch (e) { }
+          const todayIso = getLocalDateStr(today);
+          if (pot.dataset.wateredToday === 'true' && !hist.includes(todayIso)) hist.push(todayIso);
+          if (pot.dataset.lastWateredDate) {
+            const lastIso = getLocalDateStr(new Date(pot.dataset.lastWateredDate));
+            if (lastIso && !hist.includes(lastIso)) hist.push(lastIso);
+          }
+          const wateredThisPeriod = hist.some(h => {
+            const hp = h.split('-').map(Number);
+            return pdRepeatType === 'monthly'
+              ? (hp[0] === today.getFullYear() && hp[1] - 1 === today.getMonth())
+              : hp[0] === today.getFullYear();
+          });
+          displayStreak = streakData.slice(1).concat(wateredThisPeriod ? 'check' : '-');
+          displayDates = oppDates.slice(1).concat(todayIso);
+        }
+      } else if (pot.dataset.streakLastOppLabel !== 'today') {
         displayStreak = streakData.slice(1).concat('-');
         displayDates = oppDates.slice(1).concat(getLocalDateStr(getGameDate()));
       }
