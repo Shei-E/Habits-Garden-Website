@@ -28,6 +28,26 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
       const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
       let user = null;
       let saveTimer = null;
+      // The newest bundle handed to save() that has not been
+      // written yet, bound to the account that made it. When
+      // the write lands, the game code is told (its unlanded-
+      // save record can go); flush() writes it immediately
+      // instead of waiting out the debounce.
+      let pendingSave = null;
+      function writePendingSave() {
+        if (!pendingSave) return;
+        const uid = pendingSave.uid;
+        const bundle = pendingSave.bundle;
+        if (!user || user.uid !== uid) return;
+        setDoc(doc(db, 'gardens', uid), { garden: bundle, updatedAt: serverTimestamp() })
+          .then(() => {
+            if (pendingSave && pendingSave.bundle === bundle) {
+              pendingSave = null;
+              if (window.hgCloudSaveLanded) { try { window.hgCloudSaveLanded(uid); } catch (e) { } }
+            }
+          })
+          .catch(err => { try { console.warn('Habits Garden: cloud save failed', err); } catch (e) { } });
+      }
 
       window.hgCloud = {
         signIn() {
@@ -78,15 +98,30 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
           // garden: if the sign-in changes before the write
           // lands, the write is dropped rather than delivered
           // to the new account's row.
-          const uid = user.uid;
+          pendingSave = { uid: user.uid, bundle };
           if (saveTimer) clearTimeout(saveTimer);
           saveTimer = setTimeout(() => {
-            if (!user || user.uid !== uid) return;
-            setDoc(doc(db, 'gardens', uid), { garden: bundle, updatedAt: serverTimestamp() })
-              .catch(err => { try { console.warn('Habits Garden: cloud save failed', err); } catch (e) { } });
+            saveTimer = null;
+            writePendingSave();
           }, 1200);
         },
+        flush() {
+          if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+          writePendingSave();
+        },
       };
+
+      // A tab that closes (or is hidden) inside the debounce
+      // window must not take a pending save with it: write it
+      // immediately. The game code's unlanded-save record
+      // covers the rest — if even this write is cut off, the
+      // recorded garden is kept and sent up again on the
+      // next visit instead of being undone by the cloud's
+      // older copy.
+      window.addEventListener('pagehide', () => { try { window.hgCloud.flush(); } catch (e) { } });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') { try { window.hgCloud.flush(); } catch (e) { } }
+      });
 
       let unwatch = null;
       onAuthStateChanged(auth, u => {
