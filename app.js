@@ -2254,12 +2254,15 @@ body {
 }
 
 /* Flower choices in the picker: one 32x48 jar-and-flower
-   sprite per type, centred in the carousel viewport. The
-   selected flower lifts, like the plants do. */
+   sprite per type, side by side in the carousel viewport
+   like the plant choices (each type's rule below gives its
+   button a left at the same 36-unit pitch; the pair is
+   centred as a group). The selected flower lifts, like
+   the plants do. */
 .af-flower {
   position: absolute;
   left: calc(72px * var(--scale));
-  top: calc(41px * var(--scale));
+  top: calc(31px * var(--scale));
   width: calc(32px * var(--scale));
   height: calc(62px * var(--scale));
   background: none;
@@ -2284,6 +2287,14 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.af-flower--placeholder {
+  left: calc(54px * var(--scale));
+}
+
+.af-flower--white {
+  left: calc(90px * var(--scale));
 }
 
 /* "How does this method work?" sits next to the Add Flower
@@ -3039,11 +3050,12 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
           aria-label="Previous flowers"></button>
         <div class="ap-carousel-viewport">
           <div class="ap-carousel-track" id="af-carousel-track">
-            <button class="af-flower" type="button" aria-label="Placeholder flower"
+            <button class="af-flower af-flower--placeholder" type="button" aria-label="Placeholder flower"
               data-flower="placeholder">
               <img class="af-flower-sprite" src="assets/bin-yellow-flower.png" alt="">
             </button>
-            <button class="af-flower" type="button" aria-label="White flower" data-flower="white">
+            <button class="af-flower af-flower--white" type="button" aria-label="White flower"
+              data-flower="white">
               <img class="af-flower-sprite" src="assets/bin-white-flower.png" alt="">
             </button>
           </div>
