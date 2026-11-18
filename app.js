@@ -4498,6 +4498,24 @@ document.body.innerHTML = HG_MARKUP;
         startIndex = 7;
       }
 
+      // A monthly or yearly opportunity stays open until
+      // its month/year ends, so while the last opportunity
+      // sits in the current period it cannot count as
+      // missed yet, even once its due day has passed.
+      const missedRepeatType = pot.dataset.repeatType || 'daily';
+      if (startIndex === 7 && (missedRepeatType === 'monthly' || missedRepeatType === 'yearly')) {
+        let oppDates = [];
+        try { oppDates = JSON.parse(pot.dataset.streakOppDates || '[]'); } catch (e) { }
+        if (oppDates.length === streak.length && oppDates.length > 0) {
+          const today = getGameDate();
+          const lp = oppDates[oppDates.length - 1].split('-').map(Number);
+          const inCurrentPeriod = missedRepeatType === 'monthly'
+            ? (lp[0] === today.getFullYear() && lp[1] - 1 === today.getMonth())
+            : lp[0] === today.getFullYear();
+          if (inCurrentPeriod) startIndex = 6;
+        }
+      }
+
       let missed = 0;
       for (let i = startIndex; i >= 0; i--) {
         if (streak[i] === 'x') {
@@ -7226,19 +7244,24 @@ document.body.innerHTML = HG_MARKUP;
       if ((pdRepeatType === 'monthly' || pdRepeatType === 'yearly') && oppDates.length === 8) {
         // Monthly and yearly habits are anchored to the
         // calendar instead: the last box is the current
-        // month/year (it reads "today"), with last month/
-        // year to its left. When this period's due day has
-        // come, the last box is that opportunity as-is, no
-        // shift. When the due day is still ahead, the marks
-        // move one box back and the last box shows the
-        // current period so far: a check if the habit was
-        // already watered in it, else a dash.
+        // month/year (labelled with its name, like the
+        // boxes before it), with last month/year to its
+        // left. The current period is still running, so
+        // its box shows a check if the habit was watered
+        // in it, else a dash — never an X: a month/year
+        // is only missed once it has ended. When this
+        // period's due day has come, the last box is that
+        // opportunity; when it is still ahead, the marks
+        // move one box back to make room for it.
         const today = getGameDate();
         const lastParts = oppDates[7].split('-').map(Number);
         const samePeriod = pdRepeatType === 'monthly'
           ? (lastParts[0] === today.getFullYear() && lastParts[1] - 1 === today.getMonth())
           : lastParts[0] === today.getFullYear();
-        if (!samePeriod) {
+        if (samePeriod) {
+          displayStreak = streakData.slice();
+          if (displayStreak[7] !== 'check') displayStreak[7] = '-';
+        } else {
           let hist = [];
           try { hist = JSON.parse(pot.dataset.waterHistory || '[]'); } catch (e) { }
           const todayIso = getLocalDateStr(today);
@@ -7264,8 +7287,10 @@ document.body.innerHTML = HG_MARKUP;
       // Each box is labelled with the date it shows: the day
       // of the week for daily and weekly habits, the month
       // for monthly ones, the year for yearly ones. The
-      // labels shift back together with the marks; the last
-      // box always reads "today".
+      // labels shift back together with the marks. The last
+      // box reads "today" for daily and weekly habits; for
+      // monthly and yearly ones it names the current month/
+      // year instead, like the boxes before it.
       const streakLabel = (iso) => {
         if (!iso) return '';
         const parts = iso.split('-').map(Number);
@@ -7293,7 +7318,7 @@ document.body.innerHTML = HG_MARKUP;
         li.innerHTML = `<img src="${iconSrc}" alt="${alt}">`;
         const label = document.createElement('span');
         label.className = 'pd-streak-label';
-        label.textContent = i === 7 ? 'today' : streakLabel(displayDates[i]);
+        label.textContent = i === 7 && pdRepeatType !== 'monthly' && pdRepeatType !== 'yearly' ? 'today' : streakLabel(displayDates[i]);
         li.appendChild(label);
         pdStreak.appendChild(li);
       }
