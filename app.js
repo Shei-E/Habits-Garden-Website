@@ -3468,6 +3468,16 @@ document.body.innerHTML = HG_MARKUP;
     // it too, so it can only ever eat its own press's click.
     let dewSwallowPot = null;
 
+    // The last collection, stamped as it happens (collectDew
+    // is the one funnel every collecting path goes through).
+    // handlePotClick also refuses to open a popup for a click
+    // that lands on the just-collected plant within a moment
+    // of the stamp — a second net in case the press's own
+    // click reaches the handler by a route the swallow flag
+    // did not cover.
+    let lastDewCollectPot = null;
+    let lastDewCollectAt = 0;
+
     // Paint order by pot size, then by last drag within a size: the
     // smallest pot goes on top, so a tiny pot tucked against a big one
     // stays visible instead of being swallowed by it; among pots of the
@@ -4872,6 +4882,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function collectDew(pot) {
       if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
+      lastDewCollectPot = pot;
+      lastDewCollectAt = Date.now();
       // The drops shoot from the floating drop icon above the
       // plant (its rect, captured before collecting removes it).
       const iconEl = pot._dewIconEl;
@@ -7477,6 +7489,13 @@ document.body.innerHTML = HG_MARKUP;
           const swallowedPot = dewSwallowPot;
           dewSwallowPot = null;
           if (isInPlantZone(swallowedPot, e.clientX, e.clientY)) return;
+        }
+        // Second net: a click landing on a plant whose dew
+        // was collected a moment ago belongs to the
+        // collecting press, whatever route it took here.
+        if (!isKeyboard && lastDewCollectPot && Date.now() - lastDewCollectAt < 600
+          && isInPlantZone(lastDewCollectPot, e.clientX, e.clientY)) {
+          return;
         }
         // Collecting has first precedence for clicks too. This is
         // the path keyboard clicks take (they have no
