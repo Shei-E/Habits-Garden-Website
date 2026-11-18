@@ -7264,13 +7264,14 @@ document.body.innerHTML = HG_MARKUP;
       }
 
       // A habit that is due today but has not been watered
-      // yet is pending: today's box shows nothing, not an
-      // X. The X only appears once the day is over (from
-      // tomorrow, the same opportunity sits in the earlier
-      // boxes as a real miss).
+      // yet is pending: today's box shows nothing at all,
+      // not an X and not even the blank box sprite. The X
+      // only appears once the day is over (from tomorrow,
+      // the same opportunity sits in the earlier boxes as
+      // a real miss).
       if (pot.dataset.streakLastOppLabel === 'today' && displayStreak[7] === 'x') {
         displayStreak = displayStreak.slice();
-        displayStreak[7] = '-';
+        displayStreak[7] = 'none';
       }
 
       // Each box is labelled with the date it shows: the day
@@ -7304,7 +7305,8 @@ document.body.innerHTML = HG_MARKUP;
           iconSrc = 'assets/ui-strek-x.png';
           alt = 'not watered';
         }
-        li.innerHTML = `<img src="${iconSrc}" alt="${alt}">`;
+        // A pending box ('none') gets no icon at all.
+        li.innerHTML = val === 'none' ? '' : `<img src="${iconSrc}" alt="${alt}">`;
         const label = document.createElement('span');
         label.className = 'pd-streak-label';
         label.textContent = i === 7 && pdRepeatType !== 'monthly' && pdRepeatType !== 'yearly' ? 'today' : streakLabel(displayDates[i]);
