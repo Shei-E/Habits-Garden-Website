@@ -1866,6 +1866,14 @@ body {
   color: #bda499;
 }
 
+/* "this week" / "last week" labels (weekly habits with
+   one due day): at the normal label size the words run
+   about 21 units wide — nearly two boxes. At 2.5 they
+   measure about 10 units, inside one 11-wide box. */
+.pd-streak-label--week {
+  font-size: calc(2.5px * var(--scale));
+}
+
 .pd-streak {
   margin: 0;
   padding: 0;
@@ -7223,6 +7231,19 @@ document.body.innerHTML = HG_MARKUP;
       try { oppDates = JSON.parse(pot.dataset.streakOppDates || '[]'); } catch (e) { }
       let displayDates = oppDates;
       const pdRepeatType = pot.dataset.repeatType || 'daily';
+      // A weekly habit with a single due day gets week
+      // labels instead of weekday ones (see the render
+      // loop below).
+      let singleDayWeekly = false;
+      if (pdRepeatType === 'weekly') {
+        let dueDays = [];
+        try { dueDays = JSON.parse(pot.dataset.repeatDays || '[]'); } catch (e) { }
+        if (!dueDays.length && pot.dataset.repeat) {
+          const dayNameList = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+          dueDays = pot.dataset.repeat.split(/\s+/).filter(tok => dayNameList.indexOf(tok.toLowerCase()) !== -1);
+        }
+        singleDayWeekly = dueDays.length === 1;
+      }
       if ((pdRepeatType === 'monthly' || pdRepeatType === 'yearly') && oppDates.length === 8) {
         // Monthly and yearly habits are anchored to the
         // calendar instead: the last box is the current
@@ -7309,7 +7330,18 @@ document.body.innerHTML = HG_MARKUP;
         li.innerHTML = val === 'none' ? '' : `<img src="${iconSrc}" alt="${alt}">`;
         const label = document.createElement('span');
         label.className = 'pd-streak-label';
-        label.textContent = i === 7 && pdRepeatType !== 'monthly' && pdRepeatType !== 'yearly' ? 'today' : streakLabel(displayDates[i]);
+        if (singleDayWeekly && i >= 6) {
+          // The last two boxes read "this week" and "last
+          // week", in the smaller week-label font so each
+          // fits above its box; the boxes before them are
+          // labelled with the day of the month.
+          label.textContent = i === 7 ? 'this week' : 'last week';
+          label.classList.add('pd-streak-label--week');
+        } else if (singleDayWeekly) {
+          label.textContent = displayDates[i] ? String(Number(displayDates[i].split('-')[2])) : '';
+        } else {
+          label.textContent = i === 7 && pdRepeatType !== 'monthly' && pdRepeatType !== 'yearly' ? 'today' : streakLabel(displayDates[i]);
+        }
         li.appendChild(label);
         pdStreak.appendChild(li);
       }
