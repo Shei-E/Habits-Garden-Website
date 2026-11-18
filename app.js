@@ -7263,6 +7263,16 @@ document.body.innerHTML = HG_MARKUP;
         displayDates = oppDates.slice(1).concat(getLocalDateStr(getGameDate()));
       }
 
+      // A habit that is due today but has not been watered
+      // yet is pending: today's box shows nothing, not an
+      // X. The X only appears once the day is over (from
+      // tomorrow, the same opportunity sits in the earlier
+      // boxes as a real miss).
+      if (pot.dataset.streakLastOppLabel === 'today' && displayStreak[7] === 'x') {
+        displayStreak = displayStreak.slice();
+        displayStreak[7] = '-';
+      }
+
       // Each box is labelled with the date it shows: the day
       // of the week for daily and weekly habits, the month
       // for monthly ones, the year for yearly ones. The
