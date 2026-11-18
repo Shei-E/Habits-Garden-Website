@@ -4498,24 +4498,6 @@ document.body.innerHTML = HG_MARKUP;
         startIndex = 7;
       }
 
-      // A monthly or yearly opportunity stays open until
-      // its month/year ends, so while the last opportunity
-      // sits in the current period it cannot count as
-      // missed yet, even once its due day has passed.
-      const missedRepeatType = pot.dataset.repeatType || 'daily';
-      if (startIndex === 7 && (missedRepeatType === 'monthly' || missedRepeatType === 'yearly')) {
-        let oppDates = [];
-        try { oppDates = JSON.parse(pot.dataset.streakOppDates || '[]'); } catch (e) { }
-        if (oppDates.length === streak.length && oppDates.length > 0) {
-          const today = getGameDate();
-          const lp = oppDates[oppDates.length - 1].split('-').map(Number);
-          const inCurrentPeriod = missedRepeatType === 'monthly'
-            ? (lp[0] === today.getFullYear() && lp[1] - 1 === today.getMonth())
-            : lp[0] === today.getFullYear();
-          if (inCurrentPeriod) startIndex = 6;
-        }
-      }
-
       let missed = 0;
       for (let i = startIndex; i >= 0; i--) {
         if (streak[i] === 'x') {
@@ -7246,22 +7228,19 @@ document.body.innerHTML = HG_MARKUP;
         // calendar instead: the last box is the current
         // month/year (labelled with its name, like the
         // boxes before it), with last month/year to its
-        // left. The current period is still running, so
-        // its box shows a check if the habit was watered
-        // in it, else a dash — never an X: a month/year
-        // is only missed once it has ended. When this
-        // period's due day has come, the last box is that
-        // opportunity; when it is still ahead, the marks
-        // move one box back to make room for it.
+        // left. The due date stays the deadline: when
+        // this period's due day has come, the last box is
+        // that opportunity, with its real mark. When the
+        // due day is still ahead, the marks move one box
+        // back and the last box shows the current period
+        // so far: a check if the habit was already
+        // watered in it, else a dash.
         const today = getGameDate();
         const lastParts = oppDates[7].split('-').map(Number);
         const samePeriod = pdRepeatType === 'monthly'
           ? (lastParts[0] === today.getFullYear() && lastParts[1] - 1 === today.getMonth())
           : lastParts[0] === today.getFullYear();
-        if (samePeriod) {
-          displayStreak = streakData.slice();
-          if (displayStreak[7] !== 'check') displayStreak[7] = '-';
-        } else {
+        if (!samePeriod) {
           let hist = [];
           try { hist = JSON.parse(pot.dataset.waterHistory || '[]'); } catch (e) { }
           const todayIso = getLocalDateStr(today);
