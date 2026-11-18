@@ -7191,8 +7191,8 @@ document.body.innerHTML = HG_MARKUP;
       // Each box is labelled with the date it shows: the day
       // of the week for daily and weekly habits, the month
       // for monthly ones, the year for yearly ones. The
-      // labels shift back together with the marks, and the
-      // last box is labelled with today.
+      // labels shift back together with the marks; the last
+      // box always reads "today".
       const streakLabel = (iso) => {
         if (!iso) return '';
         const parts = iso.split('-').map(Number);
@@ -7220,7 +7220,7 @@ document.body.innerHTML = HG_MARKUP;
         li.innerHTML = `<img src="${iconSrc}" alt="${alt}">`;
         const label = document.createElement('span');
         label.className = 'pd-streak-label';
-        label.textContent = streakLabel(displayDates[i]);
+        label.textContent = i === 7 ? 'today' : streakLabel(displayDates[i]);
         li.appendChild(label);
         pdStreak.appendChild(li);
       }
