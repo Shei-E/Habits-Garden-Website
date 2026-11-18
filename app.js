@@ -5109,16 +5109,6 @@ document.body.innerHTML = HG_MARKUP;
     // or null for a signed-out garden) so a new visit opens
     // with it — see the restore near the end of the page.
     const LAST_GARDEN_KEY = 'hg.lastGarden.v1';
-    // The newest garden this browser saved to an account
-    // whose cloud write has not landed yet, per account
-    // (the cloud save is debounced, so a tab closed inside
-    // the window would otherwise lose the change — and the
-    // cloud's older garden would then be handed back on the
-    // next visit as if the change never happened). The
-    // bridge clears the record when a write lands (see
-    // hgCloudSaveLanded); while it stands, the sign-in hook
-    // and the live-sync handler both defer to it.
-    const PENDING_SAVE_KEY_PREFIX = 'hg.pendingSave.v1.';
     // Whose garden is on the shelf right now, as far as this
     // page knows: an account email, or null for a garden that
     // grew here signed out. The sign-in hook reads it to keep
@@ -5230,11 +5220,8 @@ document.body.innerHTML = HG_MARKUP;
       lastSavedBundleJson = bundleJson(bundle);
       lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
       // The same bundle goes to the account's cloud row, so the
-      // garden follows the account to any device. It is kept
-      // on record as unlanded until the bridge reports the
-      // write (see PENDING_SAVE_KEY_PREFIX above).
+      // garden follows the account to any device.
       if (window.hgCloud && window.hgCloud.save) {
-        lsSet(PENDING_SAVE_KEY_PREFIX + signedInEmail, bundle);
         try { window.hgCloud.save(bundle); } catch (e) { }
       }
     }
@@ -7019,26 +7006,7 @@ document.body.innerHTML = HG_MARKUP;
         // A newer sign-in (or a sign-out) superseded this one
         // while the garden was loading: do not apply it.
         if (cloudUid !== myUid) return;
-        // A garden this browser saved whose cloud write never
-        // landed (the tab closed inside the save window) is
-        // NEWER than the cloud's copy: while its record
-        // stands, the cloud does not win — the recorded
-        // garden stays and is sent up again. If the cloud's
-        // copy turns out to BE the recorded bundle, the write
-        // did land after all and the record can go.
-        const pendingSave = lsGet(PENDING_SAVE_KEY_PREFIX + signedInEmail);
-        if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length
-          && Array.isArray(pendingSave) && bundleJson(pendingSave) === bundleJson(cloudGarden)) {
-          lsRemove(PENDING_SAVE_KEY_PREFIX + signedInEmail);
-        }
-        if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length
-          && Array.isArray(pendingSave) && bundleJson(pendingSave) !== bundleJson(cloudGarden)) {
-          restoreGarden(pendingSave);
-          const bundle = serializeGarden();
-          lsSet(GARDEN_KEY_PREFIX + signedInEmail, bundle);
-          lastSavedBundleJson = bundleJson(bundle);
-          if (bridge && bridge.save) { try { bridge.save(bundle); } catch (e) { } }
-        } else if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length) {
+        if (cloudGarden && Array.isArray(cloudGarden) && cloudGarden.length) {
           // The account's garden, from the cloud: it wins over
           // whatever is on the shelf right now.
           restoreGarden(cloudGarden);
@@ -7122,36 +7090,12 @@ document.body.innerHTML = HG_MARKUP;
     // one we sent) and ignored. If a pot is mid-drag when a
     // change arrives, it waits until the drag ends.
     let pendingRemoteGarden = null;
-    // The bridge reports each cloud write that lands here:
-    // the account's unlanded-save record (see saveGarden)
-    // can go. A write bound to a different account than the
-    // one applied in this tab leaves that account's record
-    // standing — it is checked against the cloud copy the
-    // next time that account signs in.
-    window.hgCloudSaveLanded = function (uid) {
-      if (uid && cloudUid && uid !== cloudUid) return;
-      if (signedInEmail) lsRemove(PENDING_SAVE_KEY_PREFIX + signedInEmail);
-    };
-
     window.hgRemoteGarden = function (bundle, uid) {
       // A bundle tagged with a different account than the one
       // applied here is not ours to show (an account switch in
       // another tab can race the watch over).
       if (uid && cloudUid && uid !== cloudUid) return;
       if (!signedInEmail || !Array.isArray(bundle) || !bundle.length) return;
-      // While a save of ours is still unlanded, an incoming
-      // garden that is not that bundle predates it — the
-      // cloud has not seen our newest change yet — so it
-      // must not overwrite the shelf. If the incoming garden
-      // IS the unlanded bundle, the save landed after all:
-      // the record goes and the bundle is our own echo.
-      const pendingSave = lsGet(PENDING_SAVE_KEY_PREFIX + signedInEmail);
-      if (Array.isArray(pendingSave)) {
-        if (bundleJson(bundle) === bundleJson(pendingSave)) {
-          lsRemove(PENDING_SAVE_KEY_PREFIX + signedInEmail);
-        }
-        return;
-      }
       if (bundleJson(bundle) === lastSavedBundleJson) return; // our own echo
       pendingRemoteGarden = bundle;
       applyPendingRemoteGarden();
