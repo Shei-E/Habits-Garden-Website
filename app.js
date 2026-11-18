@@ -7163,7 +7163,18 @@ document.body.innerHTML = HG_MARKUP;
       for (let i = 0; i < 8; i++) {
         const li = document.createElement('li');
         li.className = `pd-streak-day pd-streak-day--${i + 1}`;
-        const val = streakData[i] || '-';
+        let val = streakData[i] || '-';
+        // The last box sits under the "today" label, but for a
+        // repeating habit it really shows the most recent due
+        // day, which may be days ago — a Sunday-only habit
+        // would carry Sunday's check under "today" all week.
+        // When today is not itself a due day, the box shows a
+        // dash instead. (Display only: the streak data is
+        // untouched, so the missed-watering count still reads
+        // the real last opportunity.)
+        if (i === 7 && pot.dataset.streakLastOppLabel !== 'today') {
+          val = '-';
+        }
         let iconSrc = 'assets/ui-strek-blank.png';
         let alt = 'n/a';
         if (val === 'check') {
