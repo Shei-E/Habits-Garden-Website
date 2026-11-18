@@ -1799,8 +1799,7 @@ body {
 }
 
 .pd-title,
-.pd-repeat,
-.pd-today {
+.pd-repeat {
   position: absolute;
   margin: 0;
   font-family: "Tiny5", monospace;
@@ -1850,9 +1849,19 @@ body {
   color: #000;
 }
 
-.pd-today {
-  left: calc(156px * var(--scale));
-  top: calc(63px * var(--scale));
+/* Each streak box's date label, sitting just above its box
+   (where the lone "today" label used to sit above the last
+   box), centred on the box. */
+.pd-streak-label {
+  position: absolute;
+  left: 0;
+  top: calc(-7px * var(--scale));
+  width: 100%;
+  font-family: "Tiny5", monospace;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  text-align: center;
   font-size: calc(5px * var(--scale));
   color: #bda499;
 }
@@ -2985,7 +2994,6 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
           <h2 class="pd-title" id="pd-title">Plant Name</h2>
           <p class="pd-repeat" id="pd-repeat">Repeat</p>
 
-          <p class="pd-today">today</p>
           <ul class="pd-streak" id="pd-streak">
             <!-- 8 days rendered dynamically -->
           </ul>
@@ -4397,6 +4405,10 @@ document.body.innerHTML = HG_MARKUP;
           pot.dataset.streakLastOppLabel = `${monthNames[lastOpp.getMonth()]} ${lastOpp.getDate()}`;
         }
       }
+
+      // The dates behind the marks, kept for the details
+      // popup, which labels each streak box with its date.
+      pot.dataset.streakOppDates = JSON.stringify(oppDates.map(d => getLocalDateStr(d)));
 
       const streak = [];
       for (let i = 0; i < 8; i++) {
@@ -7159,18 +7171,37 @@ document.body.innerHTML = HG_MARKUP;
       // elements below); each plant's name starts at its start.
       pdTitle.scrollLeft = 0;
 
-      // What the bar shows: the last box is labelled "today",
-      // so it only carries a check or an X when today is
-      // itself a due day. When today is not a due day, every
-      // mark moves one box back (the oldest falls off the
-      // left end) and the "today" box shows a dash instead.
-      // (Display only: streakData itself is untouched, so
-      // the missed-watering count still reads the real
+      // What the bar shows: the last box is today's, so it
+      // only carries a check or an X when today is itself a
+      // due day. When today is not a due day, every mark
+      // moves one box back (the oldest falls off the left
+      // end) and the last box shows a dash instead. (Display
+      // only: streakData itself is untouched, so the
+      // missed-watering count still reads the real
       // opportunities.)
       let displayStreak = streakData;
+      let oppDates = [];
+      try { oppDates = JSON.parse(pot.dataset.streakOppDates || '[]'); } catch (e) { }
+      let displayDates = oppDates;
       if (pot.dataset.streakLastOppLabel !== 'today') {
         displayStreak = streakData.slice(1).concat('-');
+        displayDates = oppDates.slice(1).concat(getLocalDateStr(getGameDate()));
       }
+
+      // Each box is labelled with the date it shows: the day
+      // of the week for daily and weekly habits, the month
+      // for monthly ones, the year for yearly ones. The
+      // labels shift back together with the marks, and the
+      // last box is labelled with today.
+      const streakLabel = (iso) => {
+        if (!iso) return '';
+        const parts = iso.split('-').map(Number);
+        const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+        const rt = pot.dataset.repeatType || 'daily';
+        if (rt === 'monthly') return monthNames[dt.getMonth()].toLowerCase();
+        if (rt === 'yearly') return String(dt.getFullYear());
+        return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dt.getDay()];
+      };
 
       pdStreak.innerHTML = '';
       for (let i = 0; i < 8; i++) {
@@ -7187,16 +7218,11 @@ document.body.innerHTML = HG_MARKUP;
           alt = 'not watered';
         }
         li.innerHTML = `<img src="${iconSrc}" alt="${alt}">`;
+        const label = document.createElement('span');
+        label.className = 'pd-streak-label';
+        label.textContent = streakLabel(displayDates[i]);
+        li.appendChild(label);
         pdStreak.appendChild(li);
-      }
-
-      // The small text above the streak bar always says "today".
-      // (streakLastOppLabel itself still records what the bar's
-      // last slot really is — the missed-watering count reads it —
-      // only the displayed text is fixed.)
-      const pdToday = document.querySelector('.pd-today');
-      if (pdToday) {
-        pdToday.textContent = 'today';
       }
 
       pdModal.classList.add('is-open');
