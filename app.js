@@ -2198,6 +2198,13 @@ body {
   background-image: url("assets/bin-yellow-flower.png");
 }
 
+/* The white flower's jar — same shape, its own sprite. (The
+   stem rule below still wins when both classes are on: it
+   comes later at the same specificity.) */
+.bin.has-flower.is-white {
+  background-image: url("assets/bin-white-flower.png");
+}
+
 /* Every petal picked: only the stem is left in the jar. */
 .bin.has-flower.is-stem {
   background-image: url("assets/bin-stem.png");
@@ -3035,6 +3042,9 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
             <button class="af-flower" type="button" aria-label="Placeholder flower"
               data-flower="placeholder">
               <img class="af-flower-sprite" src="assets/bin-yellow-flower.png" alt="">
+            </button>
+            <button class="af-flower" type="button" aria-label="White flower" data-flower="white">
+              <img class="af-flower-sprite" src="assets/bin-white-flower.png" alt="">
             </button>
           </div>
         </div>
@@ -5292,11 +5302,19 @@ document.body.innerHTML = HG_MARKUP;
     // Flower menu; a bin with a flower opens the flower's own
     // page, where clicking the flower drops one of its six
     // petals next to today's date (see the bin page below).
-    // The flower types the picker offers — only the placeholder
-    // until real flower artwork exists.
+    // The flower types the picker offers, with the artwork
+    // each one uses: the jar sprite for the shelf and the
+    // picker, the bin page's two drawings (tall and short),
+    // the petal layers (petal + number + .png) and the
+    // fallen-petal icon. Blank drops (past the sixth petal)
+    // share one outline icon for every flower.
     const BIN_FLOWER_TYPES = [
-      { id: 'placeholder', name: 'Placeholder flower', src: 'assets/bin-yellow-flower.png' },
+      { id: 'placeholder', name: 'Placeholder flower', src: 'assets/bin-yellow-flower.png', drawingLong: 'assets/bin-flower-drawing-long.png', drawingShort: 'assets/bin-flower-drawing.png', petal: 'assets/petal', icon: 'assets/petal-icon1.png' },
+      { id: 'white', name: 'White flower', src: 'assets/bin-white-flower.png', drawingLong: 'assets/bin-flower-drawing-white-long.png', drawingShort: 'assets/bin-flower-drawing-white-short.png', petal: 'assets/petal-white', icon: 'assets/petal-icon-white.png' },
     ];
+    function binFlowerType(id) {
+      return BIN_FLOWER_TYPES.find(t => t.id === id) || BIN_FLOWER_TYPES[0];
+    }
     const BIN_PETALS = 6;
 
     // A spot is free for a bin when no bin is near it and no pot
@@ -5678,6 +5696,7 @@ document.body.innerHTML = HG_MARKUP;
       if (!f) {
         bin.classList.remove('has-flower');
         bin.classList.remove('is-stem');
+        bin.classList.remove('is-white');
         delete bin.dataset.flowerName;
         delete bin.dataset.flowerType;
         delete bin.dataset.flowerCreated;
@@ -5693,6 +5712,9 @@ document.body.innerHTML = HG_MARKUP;
       // stem in the jar (bin-stem.png) until the petals grow
       // back at the next day start.
       bin.classList.toggle('is-stem', (parseInt(f.petalsLeft, 10) || 0) <= 0);
+      // The white flower's jar sprite (the stem state above
+      // is shared: with no petals left the two look alike).
+      bin.classList.toggle('is-white', f.type === 'white');
       bin.dataset.flowerName = f.name;
       bin.dataset.flowerType = f.type;
       bin.dataset.flowerCreated = f.created;
@@ -5844,7 +5866,7 @@ document.body.innerHTML = HG_MARKUP;
 
     afCommit?.addEventListener('click', () => {
       if (!activeBin || !checkFlowerCommitReady()) return;
-      const typeData = BIN_FLOWER_TYPES.find(t => t.id === selectedFlower) || BIN_FLOWER_TYPES[0];
+      const typeData = binFlowerType(selectedFlower);
       const name = (flowerInput && flowerInput.value.trim()) || typeData.name;
       const existing = getBinFlower(activeBin);
       if (existing) {
@@ -5960,8 +5982,9 @@ document.body.innerHTML = HG_MARKUP;
       const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
       const nameScale = stageRect && stageRect.width ? stageRect.width / 256 : 1;
       const useLongDrawing = measureBinNameWidth(f.name || '') <= 83 * nameScale;
+      const typeData = binFlowerType(f.type);
       const bhDrawing = document.getElementById('bh-drawing');
-      if (bhDrawing) bhDrawing.src = useLongDrawing ? 'assets/bin-flower-drawing-long.png' : 'assets/bin-flower-drawing.png';
+      if (bhDrawing) bhDrawing.src = useLongDrawing ? typeData.drawingLong : typeData.drawingShort;
       if (binPage) binPage.classList.toggle('bh-long-drawing', useLongDrawing);
       // The flower keeps the petals it has not lost: petal i is
       // on the flower while i <= petalsLeft (petals fall from
@@ -5969,6 +5992,7 @@ document.body.innerHTML = HG_MARKUP;
       for (let i = 1; i <= BIN_PETALS; i++) {
         const img = document.getElementById('bh-petal-' + i);
         if (!img) continue;
+        img.src = typeData.petal + i + '.png';
         if (img.getAnimations) img.getAnimations().forEach(a => a.cancel());
         img.style.display = i <= f.petalsLeft ? '' : 'none';
       }
@@ -6024,7 +6048,7 @@ document.body.innerHTML = HG_MARKUP;
           (d.list || []).forEach((rec, j) => {
             const img = document.createElement('img');
             img.className = 'bh-petal';
-            img.src = rec.b ? 'assets/petal-icon2.png' : 'assets/petal-icon1.png';
+            img.src = rec.b ? 'assets/petal-icon2.png' : typeData.icon;
             img.alt = '';
             img.style.left = `calc(${C.petalX + (j % 7) * 8 - C.viewLeft}px * var(--scale))`;
             img.style.top = `calc(${d.y - 4 + Math.floor(j / 7) * 8.4 - COL_TOP}px * var(--scale))`;
