@@ -7159,11 +7159,24 @@ document.body.innerHTML = HG_MARKUP;
       // elements below); each plant's name starts at its start.
       pdTitle.scrollLeft = 0;
 
+      // What the bar shows: the last box is labelled "today",
+      // so it only carries a check or an X when today is
+      // itself a due day. When today is not a due day, every
+      // mark moves one box back (the oldest falls off the
+      // left end) and the "today" box shows a dash instead.
+      // (Display only: streakData itself is untouched, so
+      // the missed-watering count still reads the real
+      // opportunities.)
+      let displayStreak = streakData;
+      if (pot.dataset.streakLastOppLabel !== 'today') {
+        displayStreak = streakData.slice(1).concat('-');
+      }
+
       pdStreak.innerHTML = '';
       for (let i = 0; i < 8; i++) {
         const li = document.createElement('li');
         li.className = `pd-streak-day pd-streak-day--${i + 1}`;
-        const val = streakData[i] || '-';
+        const val = displayStreak[i] || '-';
         let iconSrc = 'assets/ui-strek-blank.png';
         let alt = 'n/a';
         if (val === 'check') {
