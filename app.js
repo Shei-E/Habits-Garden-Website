@@ -7487,17 +7487,12 @@ document.body.innerHTML = HG_MARKUP;
         if (count <= 0) count = 1;
         if (count > 7) count = 7;
 
-        if (count <= 3) {
-          // weekly, less than or equal to 3 times a week -> anytime on the third week of watering
-          const minWaters = 2 * count + 1;
-          const maxWaters = 3 * count;
-          return Math.floor(Math.random() * (maxWaters - minWaters + 1)) + minWaters;
-        } else {
-          // weekly, more than 3 times a week -> anytime on the second week of watering
-          const minWaters = count + 1;
-          const maxWaters = 2 * count;
-          return Math.floor(Math.random() * (maxWaters - minWaters + 1)) + minWaters;
-        }
+        // weekly -> anytime on the second week of watering,
+        // however many due days it has: more than one full
+        // week of due waterings, up to two weeks' worth.
+        const minWaters = count + 1;
+        const maxWaters = 2 * count;
+        return Math.floor(Math.random() * (maxWaters - minWaters + 1)) + minWaters;
       }
       if (repeatType === 'monthly') {
         // monthly -> on the first water
@@ -7814,6 +7809,21 @@ document.body.innerHTML = HG_MARKUP;
       const isDueToday = pot.dataset.streakLastOppLabel === 'today';
       const countsForGrowth = isFirstWaterToday && (isDueToday || isDead);
 
+      // A watering that does not count does nothing at all
+      // (Shusuke's rule): an off-day watering of a living
+      // plant is not recorded — it cannot feed the streak,
+      // keep the plant alive or earn tomorrow's dew — and a
+      // repeat watering on a due day has nothing left to do
+      // either. Only the water animation plays. Watering a
+      // dead plant is the exception: it revives the plant
+      // and counts, so it never lands here (isDead is part
+      // of countsForGrowth).
+      if (!countsForGrowth) {
+        closePlantDetailsModal();
+        playWateringAnimation(pot);
+        return;
+      }
+
       // If missed watering opportunities occurred, reset growth counter
       if (isDead) {
         pot.dataset.waterCount = '0';
@@ -7868,7 +7878,6 @@ document.body.innerHTML = HG_MARKUP;
             void potPlant.offsetWidth;
             potPlant.classList.add('plant-growing');
           }
-          playSparkleAnimation(pot);
         }, 700);
       }
 
@@ -7876,9 +7885,12 @@ document.body.innerHTML = HG_MARKUP;
         pot.dataset.stage = 'grown';
       }
 
-      if (isFirstWaterToday) {
-        // The sparkles — and, when this watering grows the plant,
-        // the grow animation — start at the same moment.
+      if (countsForGrowth) {
+        // The sparkles play only when the growth counter went
+        // up (Shusuke's rule) — and, when this watering grows
+        // the plant, the grow animation starts at the same
+        // moment. A reviving watering counts too, so its
+        // sparkles come from here as well.
         setTimeout(() => {
           playSparkleAnimation(pot);
           if (shouldGrow) {
