@@ -3794,6 +3794,7 @@ document.body.innerHTML = HG_MARKUP;
     // so the game never breaks on a sound.
     const SFX = {
       potplace: ['sfx/potplace1.wav', 'sfx/potplace2.wav', 'sfx/potplace3.wav'],
+      commit: ['sfx/commit.wav'],
     };
     let sfxCtx = null;
     const sfxLoads = {}; // src -> Promise<AudioBuffer|null>
@@ -6192,6 +6193,7 @@ document.body.innerHTML = HG_MARKUP;
       }
       saveGarden();
       closeFlowerModal();
+      playSfx('commit');
     });
 
     // ---- Bin flower page ----
@@ -8124,6 +8126,7 @@ document.body.innerHTML = HG_MARKUP;
       }
       saveGarden();
       closeModal();
+      playSfx('commit');
     });
 
     pdWater?.addEventListener('click', () => {
