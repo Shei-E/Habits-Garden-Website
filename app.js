@@ -7774,6 +7774,14 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function handlePdHoverMove(clientX, clientY) {
+      // While a drag or a panel is in the way, hover is
+      // suspended entirely. The latch below must not be
+      // evaluated then: during a drag the zone reads as
+      // "no pot" (blocked), which used to clear the latch
+      // the drag had just set — so the popup reopened the
+      // moment the drop landed, without the cursor ever
+      // leaving the plant.
+      if (pdHoverBlocked()) return;
       const popupOpen = pdModal.classList.contains('is-open');
       let overPopup = false;
       if (popupOpen && pdHoverInk) {
@@ -7789,10 +7797,8 @@ document.body.innerHTML = HG_MARKUP;
           && clientY <= r.top + pdHoverInk.y1 * r.height;
       }
       let zonePot = null;
-      if (!pdHoverBlocked()) {
-        const t = potAtPoint(clientX, clientY, isInPlantZone);
-        if (t && t.classList.contains('has-plant')) zonePot = t;
-      }
+      const t = potAtPoint(clientX, clientY, isInPlantZone);
+      if (t && t.classList.contains('has-plant')) zonePot = t;
       if (pdHoverSuppressedPot && zonePot !== pdHoverSuppressedPot) {
         pdHoverSuppressedPot = null;
       }
