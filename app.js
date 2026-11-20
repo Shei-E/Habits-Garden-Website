@@ -3925,15 +3925,17 @@ document.body.innerHTML = HG_MARKUP;
     const DRAG_THRESHOLD = 3; // design units of pointer travel to start a drag
     let dragState = null; // { pot, startClientX, startClientY, moved, origPos, stageRect }
     let suppressNextPotClick = false;
-    let suppressPotClickTimer = 0;
-    // Arms the post-drag click suppression (it clears itself
-    // after 300 ms). Called the moment a drag starts moving —
-    // not only when the drag ends — so the click the release
-    // produces is swallowed whenever it arrives.
+    // Arms the post-drag click suppression. Called the moment
+    // a drag starts moving — not only when the drag ends —
+    // so the click the release produces is swallowed whenever
+    // it arrives: the flag does NOT expire on a timer (a
+    // browser can deliver the click late — a drag that ends
+    // where it started, out and back, outlived the old
+    // 300 ms window and opened the edit page). It stays armed
+    // until the click consumes it, or the next press on a pot
+    // or bin supersedes it (see the begin*Drag functions).
     function armPotClickSuppression() {
       suppressNextPotClick = true;
-      clearTimeout(suppressPotClickTimer);
-      suppressPotClickTimer = setTimeout(() => { suppressNextPotClick = false; }, 300);
     }
 
     // The last press point on a pot or bin, kept so a click
@@ -3989,6 +3991,11 @@ document.body.innerHTML = HG_MARKUP;
       if (dragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
       lastPressPoint = { x: e.clientX, y: e.clientY };
+      // A fresh press supersedes any stale click suppression
+      // (a drag whose click never arrived must not eat the
+      // click this press is about to produce).
+      suppressNextPotClick = false;
+      suppressBinClick = false;
       // Start the drag on the pot whose sprite contains the pointer,
       // not necessarily the pot whose (larger, overlapping) button box
       // was on top — otherwise a drag starting on a neighbour's sprite
@@ -5823,12 +5830,10 @@ document.body.innerHTML = HG_MARKUP;
     // so the marker shows for every bin drag.
     let binDragState = null;
     let suppressBinClick = false;
-    let suppressBinClickTimer = 0;
-    // The bins' twin of armPotClickSuppression.
+    // The bins' twin of armPotClickSuppression (no timer —
+    // the flag waits for its click or the next press).
     function armBinClickSuppression() {
       suppressBinClick = true;
-      clearTimeout(suppressBinClickTimer);
-      suppressBinClickTimer = setTimeout(() => { suppressBinClick = false; }, 300);
     }
 
     function binDesignDelta(e) {
@@ -5844,6 +5849,8 @@ document.body.innerHTML = HG_MARKUP;
       if (dragState || binDragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
       lastPressPoint = { x: e.clientX, y: e.clientY };
+      suppressNextPotClick = false;
+      suppressBinClick = false;
       const stageRect = stageEl.getBoundingClientRect();
       binDragState = {
         bin,
