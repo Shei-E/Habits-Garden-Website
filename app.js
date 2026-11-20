@@ -5057,8 +5057,17 @@ document.body.innerHTML = HG_MARKUP;
         const y = seat - 2 + Math.random() * 14;
         s.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
         s.style.height = `calc(${box.toFixed(1)}px * var(--scale))`;
-        s.style.left = `calc(${(x - box / 2).toFixed(1)}px * var(--scale))`;
-        s.style.bottom = `calc(${(y - box / 2).toFixed(1)}px * var(--scale))`;
+        // The box is placed by the dot, not by the box's own
+        // centre: the pixel's centre sits at 16.5/32 across
+        // the canvas and, measured up from the bottom, also
+        // 16.5/32 up — so the box is offset by that fraction
+        // of its size and the dot itself lands exactly on
+        // (x, y). Placing by the box's centre instead left
+        // every dot shifted right and up by a sixty-fourth
+        // of its box — more for the bigger sparkles — which
+        // read as the whole effect sitting off-centre.
+        s.style.left = `calc(${(x - box * 0.515625).toFixed(1)}px * var(--scale))`;
+        s.style.bottom = `calc(${(y - box * 0.515625).toFixed(1)}px * var(--scale))`;
         // One slow breath each: 6 seconds per grow-and-
         // shrink cycle, the five offset around the cycle so
         // they never pulse together. And they fall, slowly:
