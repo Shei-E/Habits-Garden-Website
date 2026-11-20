@@ -3796,7 +3796,7 @@ document.body.innerHTML = HG_MARKUP;
       potplace: ['sfx/potplace1.wav', 'sfx/potplace2.wav', 'sfx/potplace3.wav'],
       commit: ['sfx/commit.wav'],
       hover: ['sfx/hover.wav'],
-      click: ['sfx/click.wav'],
+      opentab: ['sfx/opentab.wav'],
       close: ['sfx/close.wav'],
     };
     let sfxCtx = null;
@@ -3853,34 +3853,19 @@ document.body.innerHTML = HG_MARKUP;
       for (const name in SFX) SFX[name].forEach(loadSfx);
     });
 
-    // The UI sounds: clicking a button clicks (the pots and
-    // bins are game pieces, not buttons in this sense). The
-    // hover tick is for plants and bins only — for a plant
-    // it plays as its details popup opens (see
-    // handlePdHoverMove); for a bin, see noteSfxBinHover.
+    // The UI sounds: the hover tick is for plants and bins
+    // only — for a plant it plays as its details popup opens
+    // (see handlePdHoverMove); for a bin, see
+    // noteSfxBinHover. The opentab sound plays when a panel
+    // ("tab") opens — it lives in the open functions
+    // themselves (openModal, openFlowerModal, openBinPage,
+    // openDewModal, openSignInModal), so every route that
+    // opens one sounds the same, and plain button clicks
+    // stay silent.
     // Set by a commit press: the commit sound covers the
     // panel close that follows it, so the close stays silent
     // that once (consumed by closeModal/closeFlowerModal).
     let sfxSuppressNextClose = false;
-
-    function sfxButtonFrom(target) {
-      if (!target || !target.closest) return null;
-      const btn = target.closest('button');
-      if (!btn || btn.classList.contains('pot') || btn.classList.contains('bin')) return null;
-      return btn;
-    }
-
-    // The panels' X buttons stay out of the click sound:
-    // closing a panel already plays the close sound, and
-    // the two together sound cluttered.
-    const SFX_NO_CLICK_IDS = new Set(['ap-close', 'af-close', 'bh-close', 'dd-close', 'si-close', 'dev-date-close']);
-
-    function noteSfxClick(target) {
-      const btn = sfxButtonFrom(target);
-      if (btn && !SFX_NO_CLICK_IDS.has(btn.id)) playSfx('click');
-    }
-
-    document.addEventListener('click', (e) => noteSfxClick(e.target));
 
     function addPot() {
       const pot = document.createElement('button');
@@ -4389,6 +4374,7 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function openModal(pot, isEdit = false) {
+      playSfx('opentab');
       activePot = pot || null;
       if (isEdit && activePot) {
         if (apTitle) apTitle.textContent = 'Edit Plant';
@@ -5387,6 +5373,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function openDewModal() {
       if (!dewModal) return;
+      playSfx('opentab');
       updateDewDrops();
       dewModal.classList.remove('is-closing');
       dewModal.classList.add('is-open');
@@ -5786,11 +5773,9 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // What a click on a bin does: a filled bin opens its page,
-    // an empty one opens the Add Flower menu. The click sounds
-    // here — bins are shut out of the generic button click,
-    // same as plants.
+    // an empty one opens the Add Flower menu. (The opentab
+    // sound plays inside the open functions themselves.)
     function openBin(bin) {
-      playSfx('click');
       if (bin.classList.contains('has-flower')) openBinPage(bin);
       else openFlowerModal(bin);
     }
@@ -6192,6 +6177,7 @@ document.body.innerHTML = HG_MARKUP;
     });
 
     function openFlowerModal(bin) {
+      playSfx('opentab');
       activeBin = bin;
       const f = getBinFlower(bin);
       if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Fix bad habits';
@@ -6466,6 +6452,7 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function openBinPage(bin) {
+      playSfx('opentab');
       pageBin = bin;
       binPageIndex = 999; // opens on the last page: today's page
       if (bhRemove) {
@@ -7253,6 +7240,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function openSignInModal() {
       if (!signInModal) return;
+      playSfx('opentab');
       refreshSignInUI();
       setSiStatus('');
       signInModal.classList.remove('is-closing');
@@ -7990,12 +7978,9 @@ document.body.innerHTML = HG_MARKUP;
           // handlePdHoverMove below); a mouse click on a
           // plant opens its Edit Plant page instead. A
           // keyboard click has no hover to open the popup
-          // with, so it still opens the popup. Either way
-          // the click sounds — pots are shut out of the
-          // generic button click, so the plant click plays
-          // its own here. (A click that collects dew never
-          // reaches this branch; collecting stays silent.)
-          playSfx('click');
+          // with, so it still opens the popup. (A click that
+          // collects dew never reaches this branch; the
+          // opentab sound plays inside openModal itself.)
           if (isKeyboard) {
             openPlantDetailsModal(target);
           } else {
