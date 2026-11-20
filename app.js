@@ -3870,8 +3870,14 @@ document.body.innerHTML = HG_MARKUP;
       return btn;
     }
 
+    // The panels' X buttons stay out of the click sound:
+    // closing a panel already plays the close sound, and
+    // the two together sound cluttered.
+    const SFX_NO_CLICK_IDS = new Set(['ap-close', 'af-close', 'bh-close', 'dd-close', 'si-close', 'dev-date-close']);
+
     function noteSfxClick(target) {
-      if (sfxButtonFrom(target)) playSfx('click');
+      const btn = sfxButtonFrom(target);
+      if (btn && !SFX_NO_CLICK_IDS.has(btn.id)) playSfx('click');
     }
 
     document.addEventListener('click', (e) => noteSfxClick(e.target));
