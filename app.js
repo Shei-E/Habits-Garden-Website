@@ -5759,8 +5759,11 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // What a click on a bin does: a filled bin opens its page,
-    // an empty one opens the Add Flower menu.
+    // an empty one opens the Add Flower menu. The click sounds
+    // here — bins are shut out of the generic button click,
+    // same as plants.
     function openBin(bin) {
+      playSfx('click');
       if (bin.classList.contains('has-flower')) openBinPage(bin);
       else openFlowerModal(bin);
     }
@@ -7955,7 +7958,12 @@ document.body.innerHTML = HG_MARKUP;
           // handlePdHoverMove below); a mouse click on a
           // plant opens its Edit Plant page instead. A
           // keyboard click has no hover to open the popup
-          // with, so it still opens the popup.
+          // with, so it still opens the popup. Either way
+          // the click sounds — pots are shut out of the
+          // generic button click, so the plant click plays
+          // its own here. (A click that collects dew never
+          // reaches this branch; collecting stays silent.)
+          playSfx('click');
           if (isKeyboard) {
             openPlantDetailsModal(target);
           } else {
