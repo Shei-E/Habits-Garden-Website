@@ -4964,8 +4964,10 @@ document.body.innerHTML = HG_MARKUP;
         s.alt = '';
         // sparkle1.png is a single yellow pixel in a 32px
         // canvas, so the dot's size is the box divided by 32:
-        // boxes of 38-58 units give dots of about 1.2-1.8.
-        const box = (1.2 + Math.random() * 0.6) * 32;
+        // boxes of 29-43 units give dots of about 0.9-1.35
+        // (three quarters of the size they first shipped at,
+        // at Shusuke's word).
+        const box = (0.9 + Math.random() * 0.45) * 32;
         // Spread wide (Shusuke's ask): anywhere across the
         // pot and well above it — they do not have to hug
         // the plant.
