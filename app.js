@@ -5067,15 +5067,26 @@ document.body.innerHTML = HG_MARKUP;
     // state actually changes, like renderDew; refreshed from
     // updateDewDrops, which every watering, unwatering,
     // restore and day rollover runs through.
+    // Whether the plant is one counting watering away from
+    // growing AND that watering can happen tomorrow. This
+    // is the grow-hint sparkles' condition, and the details
+    // popup's "(about to grow)" label reads it too, so the
+    // two always agree.
+    function isAboutToGrow(pot) {
+      if (!pot || !pot.classList.contains('has-plant')) return false;
+      if (pot.dataset.stage !== 'bud') return false;
+      const wc = parseInt(pot.dataset.waterCount || '0', 10) || 0;
+      const th = parseInt(pot.dataset.growThreshold || '5', 10) || 5;
+      return wc === th - 1
+        && getMissedOpportunitiesCount(pot) === 0
+        && isDueTomorrow(pot);
+    }
+
     function renderGrowHint(pot) {
       if (!pot) return;
       const wc = parseInt(pot.dataset.waterCount || '0', 10) || 0;
       const th = parseInt(pot.dataset.growThreshold || '5', 10) || 5;
-      const show = pot.classList.contains('has-plant')
-        && pot.dataset.stage === 'bud'
-        && wc === th - 1
-        && getMissedOpportunitiesCount(pot) === 0
-        && isDueTomorrow(pot);
+      const show = isAboutToGrow(pot);
       const state = show
         ? `on:${getLocalDateStr(getGameDate())}:${wc}:${th}:${pot.dataset.plantType || ''}:${pot.dataset.potType || ''}`
         : 'off';
@@ -7582,7 +7593,7 @@ document.body.innerHTML = HG_MARKUP;
       } else if (isBud) {
         const span = document.createElement('span');
         span.className = 'pd-title-status pd-title-status--bud';
-        span.textContent = '(bud)';
+        span.textContent = isAboutToGrow(pot) ? '(about to grow)' : '(bud)';
         titleLine.appendChild(span);
       }
       pdTitle.appendChild(titleLine);
