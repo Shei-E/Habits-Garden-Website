@@ -3785,6 +3785,70 @@ document.body.innerHTML = HG_MARKUP;
     // pots, the nearest free spot to the first slot is used instead;
     // if a shelf is completely full, nothing happens. The new pot's
     // home is where it appears, so "reset position" returns it there.
+    // ---------- Sound effects ----------
+    // Hand-rolled Web Audio playback (the route Shusuke
+    // chose, with files he makes himself): each effect is
+    // one or more takes under sfx/, fetched and decoded once
+    // and replayed from memory. A play picks a take at
+    // random. A missing or unreadable file plays as silence,
+    // so the game never breaks on a sound.
+    const SFX = {
+      potplace: ['sfx/potplace1.wav', 'sfx/potplace2.wav', 'sfx/potplace3.wav'],
+    };
+    let sfxCtx = null;
+    const sfxLoads = {}; // src -> Promise<AudioBuffer|null>
+
+    function sfxContext() {
+      if (sfxCtx) return sfxCtx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { sfxCtx = new AC(); } catch (err) { return null; }
+      return sfxCtx;
+    }
+
+    function loadSfx(src) {
+      if (!sfxLoads[src]) {
+        const ctx = sfxContext();
+        const doFetch = typeof fetch === 'function' ? fetch : window.fetch;
+        if (!ctx || !doFetch) {
+          sfxLoads[src] = Promise.resolve(null);
+        } else {
+          sfxLoads[src] = doFetch(src)
+            .then(r => r.arrayBuffer())
+            .then(buf => ctx.decodeAudioData(buf))
+            .catch(() => null);
+        }
+      }
+      return sfxLoads[src];
+    }
+
+    function playSfx(name) {
+      const takes = SFX[name];
+      if (!takes) return;
+      const ctx = sfxContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const src = takes[(Math.random() * takes.length) | 0];
+      loadSfx(src).then(buffer => {
+        if (!buffer) return;
+        try {
+          const node = ctx.createBufferSource();
+          node.buffer = buffer;
+          node.connect(ctx.destination);
+          node.start();
+        } catch (err) { /* a sound must never break the game */ }
+      });
+    }
+
+    // Warm the sounds on the first press: the context may
+    // only start inside a user gesture, and having the takes
+    // decoded ahead of time keeps the first real play instant.
+    document.addEventListener('pointerdown', () => {
+      const ctx = sfxContext();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      for (const name in SFX) SFX[name].forEach(loadSfx);
+    });
+
     function addPot() {
       const pot = document.createElement('button');
       pot.classList.add('pot');
@@ -3812,6 +3876,8 @@ document.body.innerHTML = HG_MARKUP;
       updatePotZOrder(pot);
       wirePotDrag(pot);
       wirePotClick(pot);
+      // A new pot lands on the shelf: the place sound.
+      playSfx('potplace');
     }
 
     document.getElementById('ui-addplant')?.addEventListener('click', addPot);
@@ -3997,12 +4063,15 @@ document.body.innerHTML = HG_MARKUP;
       const target = resolveDrop(pos.left, pos.row, pot);
       if (!target) {
         setPotPos(pot, state.origPos.left, state.origPos.row); // row full — snap back
+        playSfx('potplace'); // it still lands, back where it started
         return;
       }
       setPotPos(pot, target.left, target.row);
       if (target.left !== state.origPos.left || target.row !== state.origPos.row) {
         noteFirstPotMoved();
       }
+      // Let go after a drag: the pot lands with the place sound.
+      playSfx('potplace');
     }
 
     // Removes a pot from the shelf for good, plant and all (the
