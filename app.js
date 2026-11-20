@@ -3853,12 +3853,11 @@ document.body.innerHTML = HG_MARKUP;
       for (const name in SFX) SFX[name].forEach(loadSfx);
     });
 
-    // The UI sounds: hovering a button ticks, clicking a
-    // button clicks. The pots and bins are game pieces, not
-    // buttons in this sense — plants get their hover tick
-    // through the details popup (see handlePdHoverMove) and
-    // petals through theirs (the petal mouseenter).
-    let sfxHoverBtn = null;
+    // The UI sounds: clicking a button clicks (the pots and
+    // bins are game pieces, not buttons in this sense). The
+    // hover tick is for plants and bins only — for a plant
+    // it plays as its details popup opens (see
+    // handlePdHoverMove); for a bin, see noteSfxBinHover.
     // Set by a commit press: the commit sound covers the
     // panel close that follows it, so the close stays silent
     // that once (consumed by closeModal/closeFlowerModal).
@@ -3871,18 +3870,10 @@ document.body.innerHTML = HG_MARKUP;
       return btn;
     }
 
-    function noteSfxHover(target) {
-      const btn = sfxButtonFrom(target);
-      if (btn === sfxHoverBtn) return;
-      sfxHoverBtn = btn;
-      if (btn) playSfx('hover');
-    }
-
     function noteSfxClick(target) {
       if (sfxButtonFrom(target)) playSfx('click');
     }
 
-    document.addEventListener('pointerover', (e) => noteSfxHover(e.target));
     document.addEventListener('click', (e) => noteSfxClick(e.target));
 
     function addPot() {
@@ -6418,7 +6409,6 @@ document.body.innerHTML = HG_MARKUP;
               petalPopupPetalHovered = true;
               cancelPetalPopupHoverClose();
               if (binTutorial) return; // the tutorial opens the card itself
-              playSfx('hover');
               openPetalPopup(d.str, j, img);
             });
             img.addEventListener('mouseleave', () => {
@@ -7793,9 +7783,20 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
+    // The bin half of the hover tick: entering a bin's jar
+    // ticks once; leaving and coming back ticks again.
+    let sfxHoverBin = null;
+    function noteSfxBinHover(clientX, clientY) {
+      const bin = pdHoverBlocked() ? null : binAtPoint(clientX, clientY);
+      if (bin === sfxHoverBin) return;
+      sfxHoverBin = bin;
+      if (bin) playSfx('hover');
+    }
+
     document.addEventListener('pointermove', (e) => {
       if (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
       handlePdHoverMove(e.clientX, e.clientY);
+      noteSfxBinHover(e.clientX, e.clientY);
     });
 
     function playWateringAnimation(pot) {
