@@ -3936,6 +3936,25 @@ document.body.innerHTML = HG_MARKUP;
       suppressPotClickTimer = setTimeout(() => { suppressNextPotClick = false; }, 300);
     }
 
+    // The last press point on a pot or bin, kept so a click
+    // can be told apart from the tail of a drag gesture the
+    // suppression flag never saw: a press on a PLANT starts
+    // no drag at all (only the pot's sprite is a drag
+    // handle), so dragging a plant and letting go while
+    // still over it would otherwise read as a plain click.
+    // A real click presses and releases at (nearly) the same
+    // spot; a release a drag's distance from its press is a
+    // drag, wherever the gesture started.
+    let lastPressPoint = null;
+
+    function clickWasDrag(e) {
+      if (!lastPressPoint || !e || typeof e.clientX !== 'number') return false;
+      const rect = stageEl.getBoundingClientRect();
+      const dx = (e.clientX - lastPressPoint.x) * (256 / (rect.width || 1));
+      const dy = (e.clientY - lastPressPoint.y) * (144 / (rect.height || 1));
+      return Math.hypot(dx, dy) >= DRAG_THRESHOLD;
+    }
+
     // Pointer travel since dragstart, converted to design units.
     function designDelta(e) {
       const w = dragState.stageRect.width || 1;
@@ -3969,6 +3988,7 @@ document.body.innerHTML = HG_MARKUP;
     function beginPotDrag(pot, e) {
       if (dragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
+      lastPressPoint = { x: e.clientX, y: e.clientY };
       // Start the drag on the pot whose sprite contains the pointer,
       // not necessarily the pot whose (larger, overlapping) button box
       // was on top — otherwise a drag starting on a neighbour's sprite
@@ -5777,6 +5797,7 @@ document.body.innerHTML = HG_MARKUP;
       bin.addEventListener('click', (e) => {
         if (suppressBinClick) return; // the tail of a drag, not a click
         const isKeyboard = (!e.clientX && !e.clientY); // keyboard clicks carry no point
+        if (!isKeyboard && clickWasDrag(e)) return; // a drag gesture's tail, not a click
         if (isKeyboard) { openBin(bin); return; }
         // Route the click to the bin whose artwork was actually
         // clicked, not the bin whose clear box sits on top.
@@ -5822,6 +5843,7 @@ document.body.innerHTML = HG_MARKUP;
     function beginBinDrag(bin, e) {
       if (dragState || binDragState) return;
       if (e.button !== undefined && e.button !== 0) return; // primary pointer only
+      lastPressPoint = { x: e.clientX, y: e.clientY };
       const stageRect = stageEl.getBoundingClientRect();
       binDragState = {
         bin,
@@ -7912,6 +7934,9 @@ document.body.innerHTML = HG_MARKUP;
           return; // was a drag, not a click
         }
         const isKeyboard = (e.clientX === 0 && e.clientY === 0);
+        // The tail of a drag gesture the suppression flag
+        // never saw (see clickWasDrag): not a click.
+        if (!isKeyboard && clickWasDrag(e)) return;
         // The click half of a press that collected dew on
         // pointerdown: already handled — don't open anything.
         if (!isKeyboard && dewSwallowPot) {
