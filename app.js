@@ -4988,6 +4988,9 @@ document.body.innerHTML = HG_MARKUP;
         s.style.setProperty('--fall', `calc(${fall.toFixed(1)}px * var(--scale))`);
         const sway = 1 + Math.random() * 1.5;
         s.style.setProperty('--sway', `calc(${sway.toFixed(1)}px * var(--scale))`);
+        // Each sparkle also gets its own brightness, so the
+        // five do not read as copies of one another.
+        s.style.opacity = (0.45 + Math.random() * 0.55).toFixed(2);
         s.style.animationDuration = '6s';
         s.style.animationDelay = `${(-Math.random() * 6).toFixed(2)}s`;
         effect.appendChild(s);
