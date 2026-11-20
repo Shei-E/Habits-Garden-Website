@@ -3862,9 +3862,11 @@ document.body.innerHTML = HG_MARKUP;
     // openDewModal, openSignInModal), so every route that
     // opens one sounds the same, and plain button clicks
     // stay silent.
-    // Set by a commit press: the commit sound covers the
-    // panel close that follows it, so the close stays silent
-    // that once (consumed by closeModal/closeFlowerModal).
+    // Set by a commit press (the commit sound covers the
+    // panel close that follows it) and by a panel swap (the
+    // opentab of the incoming panel covers the outgoing
+    // one's close): the close stays silent that once
+    // (consumed by the close functions).
     let sfxSuppressNextClose = false;
 
     function addPot() {
@@ -6474,7 +6476,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeBinPage() {
       if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
-      playSfx('close');
+      if (sfxSuppressNextClose) sfxSuppressNextClose = false;
+      else playSfx('close');
       if (binTutorial) endBinTutorial(false);
       closePetalPopup();
       binPage.classList.remove('is-open');
@@ -6497,6 +6500,7 @@ document.body.innerHTML = HG_MARKUP;
     document.getElementById('bh-edit')?.addEventListener('click', () => {
       if (!pageBin) return;
       const bin = pageBin;
+      sfxSuppressNextClose = true; // swapping panels: the opentab covers it, the close stays silent
       closeBinPage();
       openFlowerModal(bin);
     });
@@ -7153,6 +7157,7 @@ document.body.innerHTML = HG_MARKUP;
       const bin = activeBin;
       if (!bin) return;
       binTutorialArmed = true;
+      sfxSuppressNextClose = true; // swapping panels: the opentab covers it, the close stays silent
       closeFlowerModal();
       openBinPage(bin);
     });
