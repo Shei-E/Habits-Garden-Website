@@ -3795,6 +3795,9 @@ document.body.innerHTML = HG_MARKUP;
     const SFX = {
       potplace: ['sfx/potplace1.wav', 'sfx/potplace2.wav', 'sfx/potplace3.wav'],
       commit: ['sfx/commit.wav'],
+      hover: ['sfx/hover.wav'],
+      click: ['sfx/click.wav'],
+      close: ['sfx/close.wav'],
     };
     let sfxCtx = null;
     const sfxLoads = {}; // src -> Promise<AudioBuffer|null>
@@ -3849,6 +3852,38 @@ document.body.innerHTML = HG_MARKUP;
       if (ctx && ctx.state === 'suspended') ctx.resume();
       for (const name in SFX) SFX[name].forEach(loadSfx);
     });
+
+    // The UI sounds: hovering a button ticks, clicking a
+    // button clicks. The pots and bins are game pieces, not
+    // buttons in this sense — plants get their hover tick
+    // through the details popup (see handlePdHoverMove) and
+    // petals through theirs (the petal mouseenter).
+    let sfxHoverBtn = null;
+    // Set by a commit press: the commit sound covers the
+    // panel close that follows it, so the close stays silent
+    // that once (consumed by closeModal/closeFlowerModal).
+    let sfxSuppressNextClose = false;
+
+    function sfxButtonFrom(target) {
+      if (!target || !target.closest) return null;
+      const btn = target.closest('button');
+      if (!btn || btn.classList.contains('pot') || btn.classList.contains('bin')) return null;
+      return btn;
+    }
+
+    function noteSfxHover(target) {
+      const btn = sfxButtonFrom(target);
+      if (btn === sfxHoverBtn) return;
+      sfxHoverBtn = btn;
+      if (btn) playSfx('hover');
+    }
+
+    function noteSfxClick(target) {
+      if (sfxButtonFrom(target)) playSfx('click');
+    }
+
+    document.addEventListener('pointerover', (e) => noteSfxHover(e.target));
+    document.addEventListener('click', (e) => noteSfxClick(e.target));
 
     function addPot() {
       const pot = document.createElement('button');
@@ -4452,6 +4487,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeModal() {
       if (!modal.classList.contains('is-open') || modal.classList.contains('is-closing')) return;
+      if (sfxSuppressNextClose) sfxSuppressNextClose = false;
+      else playSfx('close');
       modal.classList.remove('is-open');
       modal.classList.add('is-closing');
       modal.setAttribute('aria-hidden', 'true');
@@ -5334,6 +5371,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeDewModal() {
       if (!dewModal || !dewModal.classList.contains('is-open') || dewModal.classList.contains('is-closing')) return;
+      playSfx('close');
       dewModal.classList.remove('is-open');
       dewModal.classList.add('is-closing');
       dewModal.setAttribute('aria-hidden', 'true');
@@ -6148,6 +6186,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeFlowerModal() {
       if (!flowerModal.classList.contains('is-open') || flowerModal.classList.contains('is-closing')) return;
+      if (sfxSuppressNextClose) sfxSuppressNextClose = false;
+      else playSfx('close');
       flowerModal.classList.remove('is-open');
       flowerModal.classList.add('is-closing');
       flowerModal.setAttribute('aria-hidden', 'true');
@@ -6201,6 +6241,7 @@ document.body.innerHTML = HG_MARKUP;
         });
       }
       saveGarden();
+      sfxSuppressNextClose = true;
       closeFlowerModal();
       playSfx('commit');
     });
@@ -6377,6 +6418,7 @@ document.body.innerHTML = HG_MARKUP;
               petalPopupPetalHovered = true;
               cancelPetalPopupHoverClose();
               if (binTutorial) return; // the tutorial opens the card itself
+              playSfx('hover');
               openPetalPopup(d.str, j, img);
             });
             img.addEventListener('mouseleave', () => {
@@ -6417,6 +6459,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeBinPage() {
       if (!binPage.classList.contains('is-open') || binPage.classList.contains('is-closing')) return;
+      playSfx('close');
       if (binTutorial) endBinTutorial(false);
       closePetalPopup();
       binPage.classList.remove('is-open');
@@ -7191,6 +7234,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function closeSignInModal() {
       if (!signInModal || !signInModal.classList.contains('is-open') || signInModal.classList.contains('is-closing')) return;
+      playSfx('close');
       signInModal.classList.remove('is-open');
       signInModal.classList.add('is-closing');
       signInModal.setAttribute('aria-hidden', 'true');
@@ -7739,6 +7783,7 @@ document.body.innerHTML = HG_MARKUP;
       if (zonePot && zonePot !== pdHoverSuppressedPot) {
         cancelPdHoverClose();
         if (currentDetailsPot !== zonePot || !popupOpen) {
+          playSfx('hover');
           openPlantDetailsModal(zonePot);
         }
       } else if (overPopup) {
@@ -8134,6 +8179,7 @@ document.body.innerHTML = HG_MARKUP;
         }
       }
       saveGarden();
+      sfxSuppressNextClose = true;
       closeModal();
       playSfx('commit');
     });
