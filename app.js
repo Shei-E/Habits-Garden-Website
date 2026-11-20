@@ -736,10 +736,10 @@ body {
   }
 }
 
-/* The "one watering away" hint (see renderGrowHint): five
-   sparkle1 dots on and around a bud that the next counting
-   watering will grow, each swelling from size 0 and
-   shrinking back to 0 at its own pace, forever. */
+/* The "grows tomorrow" hint (see renderGrowHint): five
+   sparkle1 dots on and around a bud on the day before its
+   next counting watering will grow it, each swelling from
+   size 0 and shrinking back to 0 at its own pace. */
 .grow-hint {
   position: absolute;
   inset: 0;
@@ -4880,10 +4880,44 @@ document.body.innerHTML = HG_MARKUP;
       pot._dewIconEl = icon;
     }
 
-    // The "one watering away" sparkles: a living bud whose
+    // Is tomorrow (the next game day) one of this plant's
+    // due days? Mirrors how calculateStreak builds its
+    // opportunities, one day ahead.
+    function isDueTomorrow(pot) {
+      const t = getGameDate();
+      t.setDate(t.getDate() + 1);
+      const type = pot.dataset.repeatType || 'daily';
+      if (type === 'weekly') {
+        let days = [];
+        try { if (pot.dataset.repeatDays) days = JSON.parse(pot.dataset.repeatDays); } catch (e) { }
+        if (!days.length && pot.dataset.repeat) days = pot.dataset.repeat.split(/\s+/).filter(Boolean);
+        if (!days.length) return true; // no days recorded: every day is due
+        const names = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        return days.map(d => d.toLowerCase()).includes(names[t.getDay()]);
+      }
+      if (type === 'monthly') {
+        let dayNum = parseInt(pot.dataset.repeatDayNum, 10);
+        if (isNaN(dayNum) || dayNum < 1) dayNum = 1;
+        const maxD = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+        return t.getDate() === Math.min(dayNum, maxD);
+      }
+      if (type === 'yearly') {
+        let monthIdx = parseInt(pot.dataset.repeatMonth, 10);
+        if (isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) monthIdx = 0;
+        let dayNum = parseInt(pot.dataset.repeatDayNum, 10);
+        if (isNaN(dayNum) || dayNum < 1) dayNum = 1;
+        const maxD = new Date(t.getFullYear(), monthIdx + 1, 0).getDate();
+        return t.getMonth() === monthIdx && t.getDate() === Math.min(dayNum, maxD);
+      }
+      return true; // daily: tomorrow is always a due day
+    }
+
+    // The "grows tomorrow" sparkles: a living bud whose
     // growth counter sits exactly one below its target — so
     // the next counting watering is the one that grows it —
-    // wears five sparkle1 dots on and around the plant, each
+    // sparkles only on the day before that watering can
+    // happen: the game day right before its next due day.
+    // Five sparkle1 dots on and around the plant, each
     // swelling from size 0 and shrinking back at its own
     // pace (the dew drops' scatter recipe, with the pulse
     // running 0 -> 1 -> 0 instead). Rebuilt only when the
@@ -4897,9 +4931,10 @@ document.body.innerHTML = HG_MARKUP;
       const show = pot.classList.contains('has-plant')
         && pot.dataset.stage === 'bud'
         && wc === th - 1
-        && getMissedOpportunitiesCount(pot) === 0;
+        && getMissedOpportunitiesCount(pot) === 0
+        && isDueTomorrow(pot);
       const state = show
-        ? `on:${wc}:${th}:${pot.dataset.plantType || ''}:${pot.dataset.potType || ''}`
+        ? `on:${getLocalDateStr(getGameDate())}:${wc}:${th}:${pot.dataset.plantType || ''}:${pot.dataset.potType || ''}`
         : 'off';
       if (pot._growHintState === state) return;
       pot._growHintState = state;
