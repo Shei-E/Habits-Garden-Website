@@ -7474,8 +7474,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function calculateGrowThreshold(repeatType, repeatDays) {
       if (repeatType === 'daily') {
-        // daily -> after watering for 5-7 times
-        return Math.floor(Math.random() * 3) + 5; // 5, 6, or 7
+        // daily -> after watering for 4-6 times
+        return Math.floor(Math.random() * 3) + 4; // 4, 5, or 6
       }
       if (repeatType === 'weekly') {
         let count = 2;
