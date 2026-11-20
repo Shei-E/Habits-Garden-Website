@@ -754,6 +754,10 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  /* Grow and shrink around the dot itself: sparkle1's one
+     ink pixel sits at (16.5, 15.5) of its 32x32 canvas,
+     not the box's exact centre. */
+  transform-origin: 51.5625% 48.4375%;
   animation-name: grow-sparkle-pulse;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
@@ -761,15 +765,15 @@ body {
 
 @keyframes grow-sparkle-pulse {
   0% {
-    transform: scale(0);
+    transform: translateY(0) scale(0);
   }
 
   50% {
-    transform: scale(1);
+    transform: translateY(calc(var(--fall, 0px) / 2)) scale(1);
   }
 
   100% {
-    transform: scale(0);
+    transform: translateY(var(--fall, 0px)) scale(0);
   }
 }
 
@@ -4942,8 +4946,6 @@ document.body.innerHTML = HG_MARKUP;
       if (!show) return;
 
       const seat = getPotSprite(pot).h;
-      const ink = plantInkSize(pot);
-      const pScale = plantRenderScale(pot);
 
       const effect = document.createElement('div');
       effect.className = 'grow-hint';
@@ -4956,14 +4958,24 @@ document.body.innerHTML = HG_MARKUP;
         // canvas, so the dot's size is the box divided by 32:
         // boxes of 38-58 units give dots of about 1.2-1.8.
         const box = (1.2 + Math.random() * 0.6) * 32;
-        const x = 16 + (Math.random() * 2 - 1) * (ink.w * pScale / 2 + 3);
-        const y = seat + 1 + Math.random() * (ink.h * pScale + 1);
+        // Spread wide (Shusuke's ask): anywhere across the
+        // pot and well above it — they do not have to hug
+        // the plant.
+        const x = 16 + (Math.random() * 2 - 1) * 12;
+        const y = seat - 2 + Math.random() * 14;
         s.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
         s.style.height = `calc(${box.toFixed(1)}px * var(--scale))`;
         s.style.left = `calc(${(x - box / 2).toFixed(1)}px * var(--scale))`;
         s.style.bottom = `calc(${(y - box / 2).toFixed(1)}px * var(--scale))`;
-        s.style.animationDuration = `${(1.3 + Math.random() * 0.9).toFixed(2)}s`;
-        s.style.animationDelay = `${(-Math.random() * 2).toFixed(2)}s`;
+        // One slow breath each: 6 seconds per grow-and-
+        // shrink cycle, the five offset around the cycle so
+        // they never pulse together. And they fall, slowly:
+        // each drifts 5-8 units down over its cycle (the
+        // loop back to the top happens at size 0, unseen).
+        const fall = 5 + Math.random() * 3;
+        s.style.setProperty('--fall', `calc(${fall.toFixed(1)}px * var(--scale))`);
+        s.style.animationDuration = '6s';
+        s.style.animationDelay = `${(-Math.random() * 6).toFixed(2)}s`;
         effect.appendChild(s);
       }
       pot.appendChild(effect);
