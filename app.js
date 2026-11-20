@@ -7951,11 +7951,17 @@ document.body.innerHTML = HG_MARKUP;
           return;
         }
         if (target.classList.contains('has-plant')) {
-          // The details popup opens on hover now (see
-          // handlePdHoverMove below), so a mouse click on a
-          // planted pot does nothing. A keyboard click has no
-          // hover to open it with, so it still opens the popup.
-          if (isKeyboard) openPlantDetailsModal(target);
+          // The details popup opens on hover (see
+          // handlePdHoverMove below); a mouse click on a
+          // plant opens its Edit Plant page instead. A
+          // keyboard click has no hover to open the popup
+          // with, so it still opens the popup.
+          if (isKeyboard) {
+            openPlantDetailsModal(target);
+          } else {
+            closePlantDetailsModal();
+            openModal(target, true);
+          }
         } else {
           openModal(target);
         }
