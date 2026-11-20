@@ -765,15 +765,23 @@ body {
 
 @keyframes grow-sparkle-pulse {
   0% {
-    transform: translateY(0) scale(0);
+    transform: translate(0, 0) scale(0);
+  }
+
+  25% {
+    transform: translate(var(--sway, 0px), calc(var(--fall, 0px) * 0.25)) scale(0.71);
   }
 
   50% {
-    transform: translateY(calc(var(--fall, 0px) / 2)) scale(1);
+    transform: translate(0, calc(var(--fall, 0px) / 2)) scale(1);
+  }
+
+  75% {
+    transform: translate(calc(var(--sway, 0px) * -1), calc(var(--fall, 0px) * 0.75)) scale(0.71);
   }
 
   100% {
-    transform: translateY(var(--fall, 0px)) scale(0);
+    transform: translate(0, var(--fall, 0px)) scale(0);
   }
 }
 
@@ -4971,9 +4979,13 @@ document.body.innerHTML = HG_MARKUP;
         // shrink cycle, the five offset around the cycle so
         // they never pulse together. And they fall, slowly:
         // each drifts 5-8 units down over its cycle (the
-        // loop back to the top happens at size 0, unseen).
+        // loop back to the top happens at size 0, unseen),
+        // swaying gently side to side as it falls — one
+        // weak sine wave per cycle, 1-2.5 units each way.
         const fall = 5 + Math.random() * 3;
         s.style.setProperty('--fall', `calc(${fall.toFixed(1)}px * var(--scale))`);
+        const sway = 1 + Math.random() * 1.5;
+        s.style.setProperty('--sway', `calc(${sway.toFixed(1)}px * var(--scale))`);
         s.style.animationDuration = '6s';
         s.style.animationDelay = `${(-Math.random() * 6).toFixed(2)}s`;
         effect.appendChild(s);
