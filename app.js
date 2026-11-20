@@ -1795,7 +1795,10 @@ body {
 .pd-modal.is-open {
   opacity: 1;
   visibility: visible;
-  pointer-events: auto;
+  /* The layer stays click-through even while open: the popup
+  opens on hover, so the shelf underneath must keep receiving
+  presses (dew collecting, drags). Only the dialog's children
+  take pointer events. */
 }
 
 .pd-dialog {
@@ -3899,6 +3902,11 @@ document.body.innerHTML = HG_MARKUP;
       if (!dragState.moved) {
         dragState.moved = true;
         armPotClickSuppression();
+        // Dragging hides the details popup, and it stays
+        // hidden for this pot until the pointer leaves it
+        // and comes back (Shusuke's request).
+        closePlantDetailsModal();
+        pdHoverSuppressedPot = dragState.pot;
         dragState.pot.classList.add('is-dragging');
         // A drag counts even if the pot ends up back where it started:
         // this pot is now the front of its size tier (the previous
@@ -3961,6 +3969,10 @@ document.body.innerHTML = HG_MARKUP;
         const dx = (e.clientX - state.startClientX) * (256 / (state.stageRect.width || 1));
         const dy = (e.clientY - state.startClientY) * (144 / (state.stageRect.height || 1));
         if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) state.moved = true;
+        if (state.moved) {
+          closePlantDetailsModal();
+          pdHoverSuppressedPot = state.pot;
+        }
       }
       pot.classList.remove('is-dragging', 'is-blocked');
       // The delete marker only lives for the length of a drag.
@@ -5718,6 +5730,8 @@ document.body.innerHTML = HG_MARKUP;
       if (!binDragState.moved) {
         binDragState.moved = true;
         armBinClickSuppression();
+        // Dragging a bin hides the details popup too.
+        closePlantDetailsModal();
         bin.classList.add('is-dragging');
         bin.style.zIndex = 50;
         // Same rule as the pots: no delete marker during the
@@ -5766,6 +5780,7 @@ document.body.innerHTML = HG_MARKUP;
         const dx = (e.clientX - state.startClientX) * (256 / (state.stageRect.width || 1));
         const dy = (e.clientY - state.startClientY) * (144 / (state.stageRect.height || 1));
         if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) state.moved = true;
+        if (state.moved) closePlantDetailsModal();
       }
       bin.classList.remove('is-dragging', 'is-blocked');
       if (deleteXEl) deleteXEl.classList.remove('is-visible', 'is-armed');
@@ -7566,6 +7581,78 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
+    // The details popup opens on HOVER (Shusuke's request):
+    // hovering a plant opens its popup, and the popup stays
+    // open while the pointer is over the plant or over the
+    // popup itself; leaving both closes it after a short
+    // grace (long enough to cross the gap between the plant
+    // and the card). Clicking a planted pot no longer opens
+    // it (see handlePotClick).
+    let pdHoverCloseTimer = null;
+    // A pot whose popup an action just closed (a watering, a
+    // drag): the pointer is still resting on it, so hover
+    // must not reopen the popup until the pointer has left
+    // the plant and come back.
+    let pdHoverSuppressedPot = null;
+
+    function cancelPdHoverClose() {
+      if (pdHoverCloseTimer) {
+        clearTimeout(pdHoverCloseTimer);
+        pdHoverCloseTimer = null;
+      }
+    }
+
+    function schedulePdHoverClose() {
+      if (pdHoverCloseTimer) return;
+      pdHoverCloseTimer = setTimeout(() => {
+        pdHoverCloseTimer = null;
+        closePlantDetailsModal();
+      }, 300);
+    }
+
+    // Hover is suspended while something else owns the
+    // pointer: a pot or bin drag, or another page or modal
+    // being open over the shelf.
+    function pdHoverBlocked() {
+      return !!(dragState || binDragState
+        || modal.classList.contains('is-open')
+        || flowerModal.classList.contains('is-open')
+        || binPage.classList.contains('is-open'));
+    }
+
+    function handlePdHoverMove(clientX, clientY) {
+      const popupOpen = pdModal.classList.contains('is-open');
+      let overPopup = false;
+      if (popupOpen) {
+        const r = pdDialog.getBoundingClientRect();
+        overPopup = r.width > 0 && clientX >= r.left && clientX <= r.right
+          && clientY >= r.top && clientY <= r.bottom;
+      }
+      let zonePot = null;
+      if (!pdHoverBlocked()) {
+        const t = potAtPoint(clientX, clientY, isInPlantZone);
+        if (t && t.classList.contains('has-plant')) zonePot = t;
+      }
+      if (pdHoverSuppressedPot && zonePot !== pdHoverSuppressedPot) {
+        pdHoverSuppressedPot = null;
+      }
+      if (zonePot && zonePot !== pdHoverSuppressedPot) {
+        cancelPdHoverClose();
+        if (currentDetailsPot !== zonePot || !popupOpen) {
+          openPlantDetailsModal(zonePot);
+        }
+      } else if (overPopup) {
+        cancelPdHoverClose();
+      } else if (popupOpen) {
+        schedulePdHoverClose();
+      }
+    }
+
+    document.addEventListener('pointermove', (e) => {
+      if (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      handlePdHoverMove(e.clientX, e.clientY);
+    });
+
     function playWateringAnimation(pot) {
       const anim = document.createElement('div');
       anim.className = 'watering-anim';
@@ -7712,7 +7799,11 @@ document.body.innerHTML = HG_MARKUP;
           return;
         }
         if (target.classList.contains('has-plant')) {
-          openPlantDetailsModal(target);
+          // The details popup opens on hover now (see
+          // handlePdHoverMove below), so a mouse click on a
+          // planted pot does nothing. A keyboard click has no
+          // hover to open it with, so it still opens the popup.
+          if (isKeyboard) openPlantDetailsModal(target);
         } else {
           openModal(target);
         }
@@ -7976,6 +8067,7 @@ document.body.innerHTML = HG_MARKUP;
       // of countsForGrowth).
       if (!countsForGrowth) {
         closePlantDetailsModal();
+        pdHoverSuppressedPot = pot;
         playWateringAnimation(pot);
         return;
       }
@@ -8019,6 +8111,7 @@ document.body.innerHTML = HG_MARKUP;
       }
 
       closePlantDetailsModal();
+      pdHoverSuppressedPot = pot;
       playWateringAnimation(pot);
 
       if (isDead) {
