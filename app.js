@@ -3796,7 +3796,6 @@ document.body.innerHTML = HG_MARKUP;
       potplace: ['sfx/potplace1.wav', 'sfx/potplace2.wav', 'sfx/potplace3.wav'],
       commit: ['sfx/commit.wav'],
       hover: ['sfx/hover.wav'],
-      opentab: ['sfx/opentab.wav'],
       close: ['sfx/close.wav'],
     };
     let sfxCtx = null;
@@ -3856,17 +3855,15 @@ document.body.innerHTML = HG_MARKUP;
     // The UI sounds: the hover tick is for plants and bins
     // only — for a plant it plays as its details popup opens
     // (see handlePdHoverMove); for a bin, see
-    // noteSfxBinHover. The opentab sound plays when a panel
-    // ("tab") opens — it lives in the open functions
-    // themselves (openModal, openFlowerModal, openBinPage,
-    // openDewModal, openSignInModal), so every route that
-    // opens one sounds the same, and plain button clicks
-    // stay silent.
+    // noteSfxBinHover. Opening a panel makes no sound (the
+    // recording that briefly served as the open sound moved
+    // to commit duty — it is sfx/commit.wav now).
     // Set by a commit press (the commit sound covers the
-    // panel close that follows it) and by a panel swap (the
-    // opentab of the incoming panel covers the outgoing
-    // one's close): the close stays silent that once
-    // (consumed by the close functions).
+    // panel close that follows it) and by a panel swap (a
+    // swap is not a close: the incoming panel opens
+    // silently, so the outgoing one's close stays silent
+    // too): the close stays silent that once (consumed by
+    // the close functions).
     let sfxSuppressNextClose = false;
 
     function addPot() {
@@ -4376,7 +4373,6 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function openModal(pot, isEdit = false) {
-      playSfx('opentab');
       activePot = pot || null;
       if (isEdit && activePot) {
         if (apTitle) apTitle.textContent = 'Edit Plant';
@@ -5386,7 +5382,6 @@ document.body.innerHTML = HG_MARKUP;
 
     function openDewModal() {
       if (!dewModal) return;
-      playSfx('opentab');
       updateDewDrops();
       dewModal.classList.remove('is-closing');
       dewModal.classList.add('is-open');
@@ -5786,8 +5781,7 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // What a click on a bin does: a filled bin opens its page,
-    // an empty one opens the Add Flower menu. (The opentab
-    // sound plays inside the open functions themselves.)
+    // an empty one opens the Add Flower menu.
     function openBin(bin) {
       if (bin.classList.contains('has-flower')) openBinPage(bin);
       else openFlowerModal(bin);
@@ -6190,7 +6184,6 @@ document.body.innerHTML = HG_MARKUP;
     });
 
     function openFlowerModal(bin) {
-      playSfx('opentab');
       activeBin = bin;
       const f = getBinFlower(bin);
       if (afTitle) afTitle.textContent = f ? 'Edit Flower' : 'Fix bad habits';
@@ -6465,7 +6458,6 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function openBinPage(bin) {
-      playSfx('opentab');
       pageBin = bin;
       binPageIndex = 999; // opens on the last page: today's page
       if (bhRemove) {
@@ -6511,7 +6503,7 @@ document.body.innerHTML = HG_MARKUP;
     document.getElementById('bh-edit')?.addEventListener('click', () => {
       if (!pageBin) return;
       const bin = pageBin;
-      sfxSuppressNextClose = true; // swapping panels: the opentab covers it, the close stays silent
+      sfxSuppressNextClose = true; // swapping panels is silent: no close sound for the outgoing panel
       closeBinPage();
       openFlowerModal(bin);
     });
@@ -7168,7 +7160,7 @@ document.body.innerHTML = HG_MARKUP;
       const bin = activeBin;
       if (!bin) return;
       binTutorialArmed = true;
-      sfxSuppressNextClose = true; // swapping panels: the opentab covers it, the close stays silent
+      sfxSuppressNextClose = true; // swapping panels is silent: no close sound for the outgoing panel
       closeFlowerModal();
       openBinPage(bin);
     });
@@ -7256,7 +7248,6 @@ document.body.innerHTML = HG_MARKUP;
 
     function openSignInModal() {
       if (!signInModal) return;
-      playSfx('opentab');
       refreshSignInUI();
       setSiStatus('');
       signInModal.classList.remove('is-closing');
@@ -8001,8 +7992,7 @@ document.body.innerHTML = HG_MARKUP;
           // plant opens its Edit Plant page instead. A
           // keyboard click has no hover to open the popup
           // with, so it still opens the popup. (A click that
-          // collects dew never reaches this branch; the
-          // opentab sound plays inside openModal itself.)
+          // collects dew never reaches this branch.)
           if (isKeyboard) {
             openPlantDetailsModal(target);
           } else {
