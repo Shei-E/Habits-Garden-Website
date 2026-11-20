@@ -7391,6 +7391,16 @@ document.body.innerHTML = HG_MARKUP;
 
       pdDialog.style.left = `calc(${cfg.left}px * var(--scale))`;
       pdDialog.style.top = `calc(${cfg.top}px * var(--scale))`;
+      // Where the card's visible ink sits inside the 236x124
+      // dialog, measured from the ui-popup sprites: the ink
+      // runs 52..187 across and 31..109 down, and the rest of
+      // the box is transparent margin. Hovering the popup
+      // (handlePdHoverMove) counts only inside the ink,
+      // mirrored when the card is flipped.
+      const pdInk = { x0: 52 / 236, y0: 31 / 124, x1: 187 / 236, y1: 109 / 124 };
+      if (cfg.flipX) { const t = pdInk.x0; pdInk.x0 = 1 - pdInk.x1; pdInk.x1 = 1 - t; }
+      if (cfg.flipY) { const t = pdInk.y0; pdInk.y0 = 1 - pdInk.y1; pdInk.y1 = 1 - t; }
+      pdHoverInk = pdInk;
       // At the shelf's right edge the popup's art flips, and
       // the plant name box runs 5 units shorter there.
       pdTitle.style.width = cfg.flipX ? 'calc(117px * var(--scale))' : '';
@@ -7589,6 +7599,9 @@ document.body.innerHTML = HG_MARKUP;
     // and the card). Clicking a planted pot no longer opens
     // it (see handlePotClick).
     let pdHoverCloseTimer = null;
+    // The open popup's visible-ink box, as fractions of the
+    // dialog box (set by openPlantDetailsModal).
+    let pdHoverInk = null;
     // A pot whose popup an action just closed (a watering, a
     // drag): the pointer is still resting on it, so hover
     // must not reopen the popup until the pointer has left
@@ -7623,10 +7636,17 @@ document.body.innerHTML = HG_MARKUP;
     function handlePdHoverMove(clientX, clientY) {
       const popupOpen = pdModal.classList.contains('is-open');
       let overPopup = false;
-      if (popupOpen) {
+      if (popupOpen && pdHoverInk) {
         const r = pdDialog.getBoundingClientRect();
-        overPopup = r.width > 0 && clientX >= r.left && clientX <= r.right
-          && clientY >= r.top && clientY <= r.bottom;
+        // Only the card's visible ink counts as "over the
+        // popup" — most of the dialog box is transparent
+        // margin, and the cursor should not have to cross
+        // all of it before the popup will close.
+        overPopup = r.width > 0
+          && clientX >= r.left + pdHoverInk.x0 * r.width
+          && clientX <= r.left + pdHoverInk.x1 * r.width
+          && clientY >= r.top + pdHoverInk.y0 * r.height
+          && clientY <= r.top + pdHoverInk.y1 * r.height;
       }
       let zonePot = null;
       if (!pdHoverBlocked()) {
