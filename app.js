@@ -736,6 +736,43 @@ body {
   }
 }
 
+/* The "one watering away" hint (see renderGrowHint): five
+   sparkle1 dots on and around a bud that the next counting
+   watering will grow, each swelling from size 0 and
+   shrinking back to 0 at its own pace, forever. */
+.grow-hint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.grow-sparkle {
+  position: absolute;
+  pointer-events: none;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation-name: grow-sparkle-pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes grow-sparkle-pulse {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(0);
+  }
+}
+
 .dew-flyer {
   position: fixed;
   pointer-events: none;
@@ -4729,7 +4766,7 @@ document.body.innerHTML = HG_MARKUP;
           el.classList.remove('is-penalty');
         }
       }
-      pots.forEach(pot => renderDew(pot));
+      pots.forEach(pot => { renderDew(pot); renderGrowHint(pot); });
     }
 
     // How far each plant's visible artwork reaches, in design
@@ -4841,6 +4878,61 @@ document.body.innerHTML = HG_MARKUP;
       });
       pot.appendChild(icon);
       pot._dewIconEl = icon;
+    }
+
+    // The "one watering away" sparkles: a living bud whose
+    // growth counter sits exactly one below its target — so
+    // the next counting watering is the one that grows it —
+    // wears five sparkle1 dots on and around the plant, each
+    // swelling from size 0 and shrinking back at its own
+    // pace (the dew drops' scatter recipe, with the pulse
+    // running 0 -> 1 -> 0 instead). Rebuilt only when the
+    // state actually changes, like renderDew; refreshed from
+    // updateDewDrops, which every watering, unwatering,
+    // restore and day rollover runs through.
+    function renderGrowHint(pot) {
+      if (!pot) return;
+      const wc = parseInt(pot.dataset.waterCount || '0', 10) || 0;
+      const th = parseInt(pot.dataset.growThreshold || '5', 10) || 5;
+      const show = pot.classList.contains('has-plant')
+        && pot.dataset.stage === 'bud'
+        && wc === th - 1
+        && getMissedOpportunitiesCount(pot) === 0;
+      const state = show
+        ? `on:${wc}:${th}:${pot.dataset.plantType || ''}:${pot.dataset.potType || ''}`
+        : 'off';
+      if (pot._growHintState === state) return;
+      pot._growHintState = state;
+      if (pot._growHintEl) { pot._growHintEl.remove(); pot._growHintEl = null; }
+      if (!show) return;
+
+      const seat = getPotSprite(pot).h;
+      const ink = plantInkSize(pot);
+      const pScale = plantRenderScale(pot);
+
+      const effect = document.createElement('div');
+      effect.className = 'grow-hint';
+      for (let i = 0; i < 5; i++) {
+        const s = document.createElement('img');
+        s.src = 'assets/sparkle1.png';
+        s.className = 'grow-sparkle';
+        s.alt = '';
+        // sparkle1.png is a single yellow pixel in a 32px
+        // canvas, so the dot's size is the box divided by 32:
+        // boxes of 38-58 units give dots of about 1.2-1.8.
+        const box = (1.2 + Math.random() * 0.6) * 32;
+        const x = 16 + (Math.random() * 2 - 1) * (ink.w * pScale / 2 + 3);
+        const y = seat + 1 + Math.random() * (ink.h * pScale + 1);
+        s.style.width = `calc(${box.toFixed(1)}px * var(--scale))`;
+        s.style.height = `calc(${box.toFixed(1)}px * var(--scale))`;
+        s.style.left = `calc(${(x - box / 2).toFixed(1)}px * var(--scale))`;
+        s.style.bottom = `calc(${(y - box / 2).toFixed(1)}px * var(--scale))`;
+        s.style.animationDuration = `${(1.3 + Math.random() * 0.9).toFixed(2)}s`;
+        s.style.animationDelay = `${(-Math.random() * 2).toFixed(2)}s`;
+        effect.appendChild(s);
+      }
+      pot.appendChild(effect);
+      pot._growHintEl = effect;
     }
 
     // Collect one plant's drops: drop(s) fly from the floating
