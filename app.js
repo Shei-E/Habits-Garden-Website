@@ -6070,9 +6070,10 @@ document.body.innerHTML = HG_MARKUP;
     // garden has a bud the worm could help, a worm crawls
     // in along a shelf from one end and makes its way to
     // the other. Its 20-frame crawl strip and its movement
-    // are driven together: it only moves while the strip
-    // is in its flat, straightened-out frames (0-9); the
-    // arching frames (10-19) pull it up in place. Clicking
+    // are driven together: it only moves on frames 17-21
+    // (counting from 1) — the straightening at the end of
+    // the arch, plus the first frame after the loop wraps.
+    // Clicking
     // it sends it flying to the nearest eligible bud,
     // whose growth counter it raises by 1 — eligible means
     // a living bud at least two waterings from growing, so
@@ -6143,8 +6144,9 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // One frame of the crawl: show the frame, move if it
-    // is one of the flat ones, then advance. Reaching the
-    // far edge ends the visit with nothing delivered.
+    // is one of the moving frames (17-21 counting from 1:
+    // indexes 16-19 and 0 here), then advance. Reaching
+    // the far edge ends the visit with nothing delivered.
     function wormStep(st) {
       if (wormState !== st) {
         if (st.timer) clearInterval(st.timer);
@@ -6152,7 +6154,7 @@ document.body.innerHTML = HG_MARKUP;
       }
       if (st.flying) return;
       st.frameEl.style.backgroundPosition = `calc(${-st.frame * 16}px * var(--scale)) 0`;
-      if (st.frame < 10) {
+      if (st.frame >= 16 || st.frame === 0) {
         st.x += st.dir;
         st.el.style.left = `calc(${st.x}px * var(--scale))`;
         if ((st.dir > 0 && st.x > 258) || (st.dir < 0 && st.x < -18)) {
