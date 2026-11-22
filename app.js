@@ -6298,14 +6298,16 @@ document.body.innerHTML = HG_MARKUP;
 
     // The drop cycles its 3 frames over a short fall to
     // the shelf below, landing back in the crawl strip.
+    // The fall runs at 0.7x speed (at his word): the
+    // fall's clock advances 0.7 per tick.
     function wormLeapTick(st) {
       const strip = WORM_STRIPS.drop;
       const ticks = 8;
-      st.leapTick += 1;
+      st.leapTick += 0.7;
       const t = Math.min(1, st.leapTick / ticks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
       st.el.style.top = `calc(${st.y}px * var(--scale))`;
-      st.frame = st.leapTick % strip.frames;
+      st.frame = Math.floor(st.leapTick) % strip.frames;
       wormShowFrame(st);
       if (t >= 1) {
         st.row = st.targetRow;
