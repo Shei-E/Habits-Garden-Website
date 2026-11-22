@@ -6192,7 +6192,7 @@ document.body.innerHTML = HG_MARKUP;
         e.stopPropagation();
         wormClicked();
       });
-      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS);
+      wormSetTickRate(st, 1);
     }
 
     // One tick of the worm's clock (80ms): every phase of
@@ -6281,6 +6281,7 @@ document.body.innerHTML = HG_MARKUP;
       st.leapFrom = st.y;
       st.leapTo = wormGroundTop(st.targetRow) - (WORM_STRIPS[st.phase].h - 16);
       st.leapTick = 0;
+      wormSetTickRate(st, 1); // leaps play at 1x, not the trip's 3x
     }
 
     // The jump plays in two parts (at his word): the whole
@@ -6304,6 +6305,7 @@ document.body.innerHTML = HG_MARKUP;
         st.row = st.targetRow;
         wormSetStrip(st, 'crawl');
         st.phase = 'travel';
+        wormSetTickRate(st, 3); // back to the trip's 3x for the crawl
       }
     }
 
@@ -6323,6 +6325,7 @@ document.body.innerHTML = HG_MARKUP;
         st.row = st.targetRow;
         wormSetStrip(st, 'crawl');
         st.phase = 'travel';
+        wormSetTickRate(st, 3); // back to the trip's 3x for the crawl
       }
     }
 
@@ -6343,10 +6346,9 @@ document.body.innerHTML = HG_MARKUP;
       // against the way it travelled (at his word), so
       // the worm rolls up toward the side it was heading.
       st.frameEl.style.scale = st.frameEl.style.scale === '-1 1' ? '1 1' : '-1 1';
-      // The trip ran at 3x speed; the exit plays at the
-      // usual pace.
-      if (st.timer) clearInterval(st.timer);
-      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS);
+      // The trip's crawls ran at 3x speed; the exit plays
+      // at the usual pace.
+      wormSetTickRate(st, 1);
       wormSetStrip(st, 'entry');
       st.frame = WORM_STRIPS.entry.frames - 1;
       wormShowFrame(st);
@@ -6393,13 +6395,20 @@ document.body.innerHTML = HG_MARKUP;
       setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 40);
     }
 
+    // The worm's clock: the tick at a given rate (1 = the
+    // usual 80ms). Only the horizontal legs of a trip run
+    // fast — the jump and drop animations keep 1x (at his
+    // word), so the rate drops back for a leap and returns
+    // for the crawl after it.
+    function wormSetTickRate(st, rate) {
+      if (st.timer) clearInterval(st.timer);
+      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS / rate);
+    }
+
     function wormBeginTravel(st) {
       if (wormState !== st || st.phase !== 'clicked') return;
       st.phase = 'travel';
-      // The trip runs at 3x: the same tick, three times
-      // as often.
-      if (st.timer) clearInterval(st.timer);
-      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS / 3);
+      wormSetTickRate(st, 3);
     }
 
     // Opening the site during a bee time brings the worm —
