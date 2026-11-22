@@ -6100,7 +6100,7 @@ document.body.innerHTML = HG_MARKUP;
       jump: { file: 'worm-jump.png', frames: 49, h: 32 },
       drop: { file: 'worm-drop.png', frames: 3, h: 32 },
     };
-    let wormState = null; // { el, frameEl, x, y, row, dir, frame, timer, phase, target, targetX, targetRow, travelDir, leapFrom, leapTo, leapTick, delivered }
+    let wormState = null; // { el, frameEl, x, y, row, dir, frame, timer, phase, target, targetX, targetRow, travelDir, halfX, leapFrom, leapTo, leapTick, delivered }
 
     function wormEligiblePlants() {
       return pots.filter(pot => pot.classList.contains('has-plant')
@@ -6182,7 +6182,7 @@ document.body.innerHTML = HG_MARKUP;
         el, frameEl, x, y: 0, row,
         dir: fromLeft ? 1 : -1,
         frame: 0, timer: null, phase: 'entry',
-        target: null, targetX: 0, targetRow: row, travelDir: 0,
+        target: null, targetX: 0, targetRow: row, travelDir: 0, halfX: 0,
         leapFrom: 0, leapTo: 0, leapTick: 0, delivered: false,
       };
       wormState = st;
@@ -6241,23 +6241,34 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // Travelling to the clicked pot: the same crawl, aimed
-    // at the pot. On the wrong shelf it jumps or drops
-    // FIRST, where it stands (at his word), then crawls
-    // left or right along the pot's shelf to the pot.
+    // at the pot. On the wrong shelf it crawls HALFWAY
+    // horizontally first (at his word), then jumps or
+    // drops where it stands, then crawls the rest of the
+    // way along the pot's shelf.
     function wormTravelTick(st) {
       if (st.row !== st.targetRow) {
-        wormBeginLeap(st);
+        if (st.x === st.halfX) {
+          wormBeginLeap(st);
+          return;
+        }
+        wormTravelCrawl(st, st.halfX);
         return;
       }
       if (st.x === st.targetX) {
         wormArrive(st);
         return;
       }
+      wormTravelCrawl(st, st.targetX);
+    }
+
+    // One crawl tick toward a goal x, moving only on the
+    // moving frames and landing exactly on the goal.
+    function wormTravelCrawl(st, goalX) {
       wormShowFrame(st);
       if (st.frame >= 17 || st.frame === 0) {
-        const dir = st.targetX > st.x ? 1 : -1;
+        const dir = goalX > st.x ? 1 : -1;
         st.x += dir;
-        if ((dir > 0 && st.x > st.targetX) || (dir < 0 && st.x < st.targetX)) st.x = st.targetX;
+        if ((dir > 0 && st.x > goalX) || (dir < 0 && st.x < goalX)) st.x = goalX;
         st.el.style.left = `calc(${st.x}px * var(--scale))`;
       }
       st.frame = (st.frame + 1) % WORM_STRIPS.crawl.frames;
@@ -6371,6 +6382,7 @@ document.body.innerHTML = HG_MARKUP;
       st.target = target;
       st.targetRow = pos.row;
       st.targetX = Math.round(pos.left + box.left + box.w / 2 - 8);
+      st.halfX = Math.round((st.x + st.targetX) / 2);
       st.travelDir = Math.sign(st.targetX - st.x);
       if (st.travelDir !== 0) {
         st.frameEl.style.scale = st.travelDir > 0 ? '1 1' : '-1 1';
