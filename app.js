@@ -1547,6 +1547,13 @@ body {
   bottom: calc(3px * var(--scale));
 }
 
+/* Dorado's leaves drape over the front of its pot, so in its
+   picker preview the plant paints over the pot (the pot img
+   otherwise covers the drape: it comes later in the markup). */
+.ap-plant--dorado .ap-plant-sprite {
+  z-index: 1;
+}
+
 .ap-carousel-track.is-small-pot .ap-plant-sprite {
   bottom: calc(7px * var(--scale));
   width: 50%;
