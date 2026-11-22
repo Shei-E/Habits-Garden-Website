@@ -6114,6 +6114,14 @@ document.body.innerHTML = HG_MARKUP;
       return SLOT_ROW_TOP[row] + 32 - 10;
     }
 
+    // The shelf's two ends, as the worm's box-left: the
+    // left end is the pots' own left limit; the right end
+    // leaves the 16-wide box ending at the pots' right
+    // limit (183 + 32). The worm appears AT an edge (at
+    // his word — it used to start off-stage, too far out).
+    const WORM_EDGE_LEFT = 37;
+    const WORM_EDGE_RIGHT = 199;
+
     function startWorm(row, fromLeft) {
       if (wormState) return;
       const el = document.createElement('button');
@@ -6124,7 +6132,7 @@ document.body.innerHTML = HG_MARKUP;
       frameEl.className = 'worm-frame';
       el.appendChild(frameEl);
       const y = wormGroundTop(row);
-      const x = fromLeft ? -18 : 258;
+      const x = fromLeft ? WORM_EDGE_LEFT : WORM_EDGE_RIGHT;
       el.style.left = `calc(${x}px * var(--scale))`;
       el.style.top = `calc(${y}px * var(--scale))`;
       stageEl.appendChild(el);
@@ -6157,7 +6165,7 @@ document.body.innerHTML = HG_MARKUP;
       if (st.frame >= 16 || st.frame === 0) {
         st.x += st.dir;
         st.el.style.left = `calc(${st.x}px * var(--scale))`;
-        if ((st.dir > 0 && st.x > 258) || (st.dir < 0 && st.x < -18)) {
+        if ((st.dir > 0 && st.x >= WORM_EDGE_RIGHT) || (st.dir < 0 && st.x <= WORM_EDGE_LEFT)) {
           endWorm();
           return;
         }
