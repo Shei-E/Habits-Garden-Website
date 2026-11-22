@@ -2256,8 +2256,9 @@ body {
 /* The bee: a rare visitor that shows up when the site is
    opened during a bee time (see the bee code below). It
    hovers over a flower; clicking it sends it to the next
-   one. The bobbing lives on the img so the flight animation
-   owns the button's transform outright. */
+   one. Its floating drift is driven from JS (beeHoverTick)
+   so it can face the way it drifts; the flight animation
+   owns the button's transform while it flies. */
 .bee {
   position: absolute;
   width: calc(16px * var(--scale));
@@ -2277,15 +2278,33 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  animation: bee-bob 1.6s ease-in-out infinite;
 }
 
-@keyframes bee-bob {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(calc(1.5px * var(--scale)), calc(-2px * var(--scale))); }
-  50% { transform: translate(0, calc(-3px * var(--scale))); }
-  75% { transform: translate(calc(-1.5px * var(--scale)), calc(-2px * var(--scale))); }
-  100% { transform: translate(0, 0); }
+/* The worm: a second rare visitor (see the worm code).
+   Its crawl is a 20-frame strip shown through a one-frame
+   window; the frame step and the movement are driven
+   together from JS (wormStep). */
+.worm {
+  position: absolute;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 40;
+}
+
+.worm-frame {
+  width: 100%;
+  height: 100%;
+  background-image: url("assets/worm.png");
+  background-size: calc(320px * var(--scale)) calc(16px * var(--scale));
+  background-repeat: no-repeat;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .sparkle-anim {
@@ -5795,6 +5814,14 @@ document.body.innerHTML = HG_MARKUP;
       const st = beeState;
       if (!st) return;
       const el = st.el;
+      // A flight leaves from wherever the hover drift has
+      // carried the bee, so the drift becomes the flight's
+      // start point and the drift loop stops.
+      if (st.hoverTimer) {
+        st.x += st.hoverOx || 0;
+        st.y += st.hoverOy || 0;
+        stopBeeHover(st);
+      }
       const dx = x - st.x;
       const dy = y - st.y;
       const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
@@ -5813,7 +5840,10 @@ document.body.innerHTML = HG_MARKUP;
       // composes with the img's bobbing transform instead
       // of fighting it.
       const img = el.querySelector('img');
-      if (img && dx !== 0) img.style.scale = dx < 0 ? '1 1' : '-1 1';
+      if (img && dx !== 0) {
+        st.facing = dx < 0 ? '1 1' : '-1 1';
+        img.style.scale = st.facing;
+      }
       st.flying = true;
       let landed = false;
       const land = () => {
@@ -5824,6 +5854,7 @@ document.body.innerHTML = HG_MARKUP;
         st.x = x;
         st.y = y;
         st.flying = false;
+        if (beeState === st && !st.leaving) startBeeHover(st);
         if (done) done();
       };
       if (typeof el.animate === 'function') {
@@ -5855,6 +5886,45 @@ document.body.innerHTML = HG_MARKUP;
       const vw = (window.visualViewport && window.visualViewport.width) || window.innerWidth || rect.width;
       if (fromLeft) return -rect.left / scale - 18;
       return (vw - rect.left) / scale + 2;
+    }
+
+    // While the bee floats — at the side of the screen or
+    // around a flower — it drifts in a small slow loop,
+    // turning at each end of the loop to face the way it
+    // is drifting (at his word: it faces its movement
+    // while it floats, not just while it flies).
+    function beeHoverTick(st) {
+      if (beeState !== st) { stopBeeHover(st); return; }
+      if (st.flying) return;
+      st.hoverPhase = (st.hoverPhase || 0) + Math.PI / 24;
+      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      st.hoverOx = Math.sin(st.hoverPhase) * 3;
+      st.hoverOy = -Math.cos(st.hoverPhase) * 1.2;
+      st.el.style.transform = `translate(${(st.hoverOx * scale).toFixed(1)}px, ${(st.hoverOy * scale).toFixed(1)}px)`;
+      // The drift runs right while cos is positive and
+      // left while it is negative; the sprite faces left
+      // as drawn, so facing right is the flipped scale.
+      const want = Math.cos(st.hoverPhase) >= 0 ? '-1 1' : '1 1';
+      if (st.facing !== want) {
+        st.facing = want;
+        const img = st.el.querySelector('img');
+        if (img) img.style.scale = want;
+      }
+    }
+
+    function startBeeHover(st) {
+      stopBeeHover(st);
+      st.hoverTimer = setInterval(() => beeHoverTick(st), 50);
+    }
+
+    function stopBeeHover(st) {
+      if (st.hoverTimer) {
+        clearInterval(st.hoverTimer);
+        st.hoverTimer = null;
+      }
+      st.hoverOx = 0;
+      st.hoverOy = 0;
+      if (st.el) st.el.style.transform = '';
     }
 
     function startBee(flowers) {
@@ -5940,6 +6010,7 @@ document.body.innerHTML = HG_MARKUP;
     function leaveBee() {
       const st = beeState;
       if (!st || st.flying) return;
+      st.leaving = true; // no hover drift after this flight
       // Out through the nearer page edge, the same edges
       // it could have come in by.
       const exitLeft = st.x < 120;
@@ -5953,6 +6024,7 @@ document.body.innerHTML = HG_MARKUP;
       const st = beeState;
       if (!st) return;
       beeState = null;
+      stopBeeHover(st);
       st.el.remove();
       const tomorrow = getGameDate();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -5990,6 +6062,210 @@ document.body.innerHTML = HG_MARKUP;
       if (beeState) return;
       const flowers = beeFlowers();
       if (flowers.length) startBee(flowers);
+    }
+
+    // ---------- The worm ----------
+    // A second rare visitor on the bee's own schedule: in
+    // a bee time (its own once-per-window stamp), if the
+    // garden has a bud the worm could help, a worm crawls
+    // in along a shelf from one end and makes its way to
+    // the other. Its 20-frame crawl strip and its movement
+    // are driven together: it only moves while the strip
+    // is in its flat, straightened-out frames (0-9); the
+    // arching frames (10-19) pull it up in place. Clicking
+    // it sends it flying to the nearest eligible bud,
+    // whose growth counter it raises by 1 — eligible means
+    // a living bud at least two waterings from growing, so
+    // the worm never grows a plant itself.
+    const WORM_STAMP_KEY = 'hg.wormTime.v1';
+    const WORM_FRAME_MS = 80;
+    let wormState = null; // { el, frameEl, x, y, dir, frame, timer, flying, delivered }
+
+    function wormEligiblePlants() {
+      return pots.filter(pot => pot.classList.contains('has-plant')
+        && pot.dataset.stage === 'bud'
+        && getMissedOpportunitiesCount(pot) === 0
+        && (parseInt(pot.dataset.growThreshold || '0', 10) - parseInt(pot.dataset.waterCount || '0', 10)) >= 2);
+    }
+
+    // The eligible bud nearest to a stage point, if any.
+    function wormTargetFor(wx, wy) {
+      let best = null;
+      let bestDist = Infinity;
+      for (const pot of wormEligiblePlants()) {
+        const box = plantInkBox(pot);
+        const pos = getPotPos(pot);
+        if (!box || !pos) continue;
+        const cx = pos.left + box.left + box.w / 2;
+        const cy = SLOT_ROW_TOP[pos.row] + box.top + box.h / 2;
+        const d = Math.hypot(cx - wx, cy - wy);
+        if (d < bestDist) { bestDist = d; best = pot; }
+      }
+      return best;
+    }
+
+    // The worm box's top for a shelf row: the shelf's
+    // surface is the row's pot bottom (row top + 32), and
+    // the worm's ink floats 6 units above its frames'
+    // bottom edge, so the box sits 6 units lower than the
+    // ink's ground line — top = ground - 16 + 6.
+    function wormGroundTop(row) {
+      return SLOT_ROW_TOP[row] + 32 - 10;
+    }
+
+    function startWorm(row, fromLeft) {
+      if (wormState) return;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'worm';
+      el.setAttribute('aria-label', 'A worm — click it');
+      const frameEl = document.createElement('div');
+      frameEl.className = 'worm-frame';
+      el.appendChild(frameEl);
+      const y = wormGroundTop(row);
+      const x = fromLeft ? -18 : 258;
+      el.style.left = `calc(${x}px * var(--scale))`;
+      el.style.top = `calc(${y}px * var(--scale))`;
+      stageEl.appendChild(el);
+      const st = {
+        el, frameEl, x, y,
+        dir: fromLeft ? 1 : -1,
+        frame: 0, timer: null, flying: false, delivered: false,
+      };
+      wormState = st;
+      frameEl.style.scale = st.dir > 0 ? '1 1' : '-1 1';
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!wormState || wormState.flying || wormState.delivered) return;
+        wormClicked();
+      });
+      st.timer = setInterval(() => wormStep(st), WORM_FRAME_MS);
+    }
+
+    // One frame of the crawl: show the frame, move if it
+    // is one of the flat ones, then advance. Reaching the
+    // far edge ends the visit with nothing delivered.
+    function wormStep(st) {
+      if (wormState !== st) {
+        if (st.timer) clearInterval(st.timer);
+        return;
+      }
+      if (st.flying) return;
+      st.frameEl.style.backgroundPosition = `calc(${-st.frame * 16}px * var(--scale)) 0`;
+      if (st.frame < 10) {
+        st.x += st.dir;
+        st.el.style.left = `calc(${st.x}px * var(--scale))`;
+        if ((st.dir > 0 && st.x > 258) || (st.dir < 0 && st.x < -18)) {
+          endWorm();
+          return;
+        }
+      }
+      st.frame = (st.frame + 1) % 20;
+    }
+
+    function endWorm() {
+      const st = wormState;
+      if (!st) return;
+      wormState = null;
+      if (st.timer) clearInterval(st.timer);
+      st.el.remove();
+    }
+
+    function wormFlyTo(x, y, done) {
+      const st = wormState;
+      if (!st) return;
+      const el = st.el;
+      const dx = x - st.x;
+      const dy = y - st.y;
+      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      const frames = [];
+      const STEPS = 8;
+      for (let s = 0; s <= STEPS; s++) {
+        const t = s / STEPS;
+        frames.push({
+          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
+        });
+      }
+      // Face the way it flies; the worm faces right as drawn.
+      if (dx !== 0) st.frameEl.style.scale = dx < 0 ? '-1 1' : '1 1';
+      st.flying = true;
+      let landed = false;
+      const land = () => {
+        if (landed) return;
+        landed = true;
+        el.style.left = `calc(${x}px * var(--scale))`;
+        el.style.top = `calc(${y}px * var(--scale))`;
+        st.x = x;
+        st.y = y;
+        st.flying = false;
+        if (done) done();
+      };
+      if (typeof el.animate === 'function') {
+        const dist = Math.hypot(dx, dy);
+        const anim = el.animate(frames, { duration: Math.min(1400, 450 + dist * 9), easing: 'linear', fill: 'forwards' });
+        if (anim && anim.finished && typeof anim.finished.then === 'function') {
+          const once = () => { try { anim.cancel(); } catch (e) { } land(); };
+          anim.finished.then(once).catch(once);
+          setTimeout(once, 1600); // sweep, in case a finish never reports
+        } else {
+          land();
+        }
+      } else {
+        land();
+      }
+    }
+
+    function wormClicked() {
+      const st = wormState;
+      if (!st || st.flying || st.delivered) return;
+      const target = wormTargetFor(st.x + 8, st.y + 8);
+      if (!target) return; // nothing eligible: it crawls on
+      if (st.timer) {
+        clearInterval(st.timer);
+        st.timer = null;
+      }
+      const box = plantInkBox(target);
+      const pos = getPotPos(target);
+      if (!box || !pos) return;
+      const tx = pos.left + box.left + box.w / 2 - 8;
+      const ty = SLOT_ROW_TOP[pos.row] + box.top - 4;
+      wormFlyTo(tx, ty, () => {
+        // On the plant: its growth counter rises by 1.
+        st.delivered = true;
+        if (target.classList.contains('has-plant')) {
+          target.dataset.waterCount = String((parseInt(target.dataset.waterCount || '0', 10) || 0) + 1);
+          playSparkleAnimation(target);
+          renderGrowHint(target);
+          saveGarden();
+        }
+        setTimeout(() => {
+          if (!wormState) return;
+          const exitLeft = wormState.x < 120;
+          wormFlyTo(beePageEdgeX(exitLeft), wormState.y, () => endWorm());
+        }, 550);
+      });
+    }
+
+    // Opening the site during a bee time brings the worm —
+    // once per bee time, and only when a bud could use it.
+    function maybeShowWormAt(nowMs) {
+      if (wormState) return;
+      if (!isBeeTimeAt(nowMs)) return;
+      const idx = beeWindowIndexAt(nowMs);
+      if (lsGet(WORM_STAMP_KEY) === idx) return;
+      if (!wormEligiblePlants().length) return;
+      lsSet(WORM_STAMP_KEY, idx);
+      startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
+    }
+
+    function maybeShowWorm() {
+      maybeShowWormAt(Date.now());
+    }
+
+    // Dev command 'devworm': a worm visit on demand.
+    function forceWormVisit() {
+      if (wormState) return;
+      if (wormEligiblePlants().length) startWorm('bottom', true);
     }
 
     function serializeGarden() {
@@ -6170,6 +6446,8 @@ document.body.innerHTML = HG_MARKUP;
       resetBinPetalsForNewDay();
       // Opening the site during a bee time brings the bee.
       maybeShowBee();
+      // ...and the worm, on its own stamp.
+      maybeShowWorm();
     }
 
     // ---------- Bins: bad-habit flowers ----------
@@ -8352,9 +8630,24 @@ document.body.innerHTML = HG_MARKUP;
       noteSfxBinHover(e.clientX, e.clientY);
     });
 
+    // Pot overlay effects (the watering pour, the sparkle
+    // burst) are drawn for a full-size plant; on a smaller
+    // pot the whole layer shrinks by the plant's own scale,
+    // around the pot's bottom centre where the plant sits,
+    // so the effect hugs the plant at every pot size (at
+    // his word: every animation scales with the pot).
+    function scaleAnimToPot(anim, pot) {
+      const s = plantRenderScale(pot);
+      if (s !== 1) {
+        anim.style.transform = `scale(${s})`;
+        anim.style.transformOrigin = '50% 100%';
+      }
+    }
+
     function playWateringAnimation(pot) {
       const anim = document.createElement('div');
       anim.className = 'watering-anim';
+      scaleAnimToPot(anim, pot);
       const dropCount = 13; // 8 + 5 more drops = 13
       for (let i = 0; i < dropCount; i++) {
         const drop = document.createElement('span');
@@ -8372,6 +8665,7 @@ document.body.innerHTML = HG_MARKUP;
       pot._sparkleBurstAt = Date.now(); // the grow hint reads this: it fades in only once the burst has ended
       const anim = document.createElement('div');
       anim.className = 'sparkle-anim';
+      scaleAnimToPot(anim, pot);
 
       const isBud = pot.dataset.stage === 'bud';
       const yBase = isBud ? 4 : -6;
@@ -9290,6 +9584,9 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devbee')) {
           secretBuffer = '';
           forceBeeVisit();
+        } else if (secretBuffer.endsWith('devworm')) {
+          secretBuffer = '';
+          forceWormVisit();
         } else if (secretBuffer.endsWith('devreset')) {
           secretBuffer = '';
           devResetDay();
