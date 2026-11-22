@@ -2295,6 +2295,13 @@ body {
   z-index: 40;
 }
 
+/* A clicked worm pauses and bounces before setting off,
+   with the currency pill's own pop (and its 60ms pause
+   before the bounce, as the animation's delay). */
+.worm.is-clicked {
+  animation: dew-pill-pop 0.35s ease 0.06s;
+}
+
 .worm-frame {
   position: absolute;
   left: 0;
@@ -6413,11 +6420,13 @@ document.body.innerHTML = HG_MARKUP;
       st.targetX = pos.left + 16 - dotCentre;
       st.halfX = Math.round((st.x + st.targetX) / 2);
       st.travelDir = Math.sign(st.targetX - st.x);
-      // A beat before it sets off (at his word): a short
-      // 40ms pause, then the trip at 3x speed
-      // (wormBeginTravel).
+      // A beat before it sets off (at his word): it
+      // pauses and bounces like the currency pill — the
+      // bounce runs 60ms delay + 350ms pop — then the
+      // trip at 3x speed (wormBeginTravel).
       st.phase = 'clicked';
-      setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 40);
+      st.el.classList.add('is-clicked');
+      setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 410);
     }
 
     // The worm's clock: the tick at a given rate (1 = the
@@ -6432,6 +6441,7 @@ document.body.innerHTML = HG_MARKUP;
 
     function wormBeginTravel(st) {
       if (wormState !== st || st.phase !== 'clicked') return;
+      st.el.classList.remove('is-clicked');
       st.phase = 'travel';
       wormSetTickRate(st, 3);
     }
