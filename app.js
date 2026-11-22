@@ -6120,13 +6120,13 @@ document.body.innerHTML = HG_MARKUP;
       return SLOT_ROW_TOP[row] + 32 - 10;
     }
 
-    // The shelf's two ends, as the worm's box-left: the
-    // left end is the pots' own left limit; the right end
-    // leaves the 16-wide box ending at the pots' right
-    // limit (183 + 32). The worm appears AT an edge (at
-    // his word — it used to start off-stage, too far out).
-    const WORM_EDGE_LEFT = 37;
-    const WORM_EDGE_RIGHT = 199;
+    // The shelf's two ends, as the worm's box-left. The
+    // worm appears AT an edge (at his word — it used to
+    // start off-stage, too far out), and the ends sit 10
+    // units in from the pots' own limits (at his word):
+    // left 47, right 189 (the box ending at 205).
+    const WORM_EDGE_LEFT = 47;
+    const WORM_EDGE_RIGHT = 189;
 
     // The entry strip's dot — the roll-up's first frame
     // and the exit's last visible mark — is a single
