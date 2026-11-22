@@ -8762,7 +8762,7 @@ document.body.innerHTML = HG_MARKUP;
       pdHoverCloseTimer = setTimeout(() => {
         pdHoverCloseTimer = null;
         closePlantDetailsModal();
-      }, 60);
+      }, 80);
     }
 
     // Hover is suspended while something else owns the
