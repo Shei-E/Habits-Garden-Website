@@ -5742,16 +5742,18 @@ document.body.innerHTML = HG_MARKUP;
     // first minute of each cycle is a "bee time": opening the
     // site during one (with at least one living grown flower
     // on the shelf) brings the bee in, at most once per bee
-    // time. It hovers over a flower; each click sends it to
-    // another flower, until it has visited about a quarter of
-    // the garden's flowers (give or take one) — the next
+    // time. It comes in and floats at the side of the
+    // screen until it is clicked; that click sends it to
+    // its first flower, and each further click sends it to
+    // another flower, until it has visited about a quarter
+    // of the garden's flowers (give or take one) — the next
     // click then sends it off the screen, the visited
     // flowers sparkle, and each of them carries +3 drops
     // into tomorrow (see updateDewDrops' beeBoost stamp).
     const BEE_CYCLE_MS = 22 * 60 * 1000;
     const BEE_WINDOW_MS = 60 * 1000;
     const BEE_STAMP_KEY = 'hg.beeTime.v1';
-    let beeState = null; // { el, visits, target, currentPot, flying, x, y }
+    let beeState = null; // { el, visits, target, currentPot, phase, flying, x, y }
 
     function beeWindowIndexAt(ms) {
       return Math.floor(ms / BEE_CYCLE_MS);
@@ -5833,9 +5835,12 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function startBee(flowers) {
-      const first = flowers[Math.floor(Math.random() * flowers.length)];
-      const pt = beeHoverPoint(first);
-      if (!pt) return;
+      // The bee comes in from a side of the screen and
+      // floats there, waiting to be clicked.
+      const fromLeft = Math.random() < 0.5;
+      const entryX = fromLeft ? -24 : 264;
+      const waitX = fromLeft ? 4 : 236;
+      const waitY = 56;
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'bee';
@@ -5844,29 +5849,49 @@ document.body.innerHTML = HG_MARKUP;
       img.src = 'assets/bee.png';
       img.alt = '';
       el.appendChild(img);
-      el.style.left = `calc(-24px * var(--scale))`;
-      el.style.top = `calc(${pt.y}px * var(--scale))`;
+      el.style.left = `calc(${entryX}px * var(--scale))`;
+      el.style.top = `calc(${waitY}px * var(--scale))`;
       stageEl.appendChild(el);
       beeState = {
         el,
-        visits: [first],
+        visits: [],
         target: beeVisitCount(flowers.length),
-        currentPot: first,
+        currentPot: null,
+        phase: 'waiting',
         flying: false,
-        x: -24,
-        y: pt.y,
+        x: entryX,
+        y: waitY,
       };
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!beeState || beeState.flying) return;
         advanceBee();
       });
-      beeFlyTo(pt.x, pt.y, null);
+      beeFlyTo(waitX, waitY, null);
     }
 
     function advanceBee() {
       const st = beeState;
       if (!st) return;
+      if (st.phase === 'waiting') {
+        // The first click sends the bee in to a flower.
+        const flowers = beeFlowers();
+        if (!flowers.length) {
+          leaveBee();
+          return;
+        }
+        const pot = flowers[Math.floor(Math.random() * flowers.length)];
+        const pt = beeHoverPoint(pot);
+        if (!pt) {
+          leaveBee();
+          return;
+        }
+        st.phase = 'visiting';
+        st.visits.push(pot);
+        st.currentPot = pot;
+        beeFlyTo(pt.x, pt.y, null);
+        return;
+      }
       if (st.visits.length >= st.target) {
         leaveBee();
         return;
