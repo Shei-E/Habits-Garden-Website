@@ -5108,11 +5108,11 @@ document.body.innerHTML = HG_MARKUP;
       effect.className = 'grow-hint';
       // If the watering sparkle burst just played on this
       // pot (the watering that made it one-away), the hint
-      // waits for the burst to finish (1.35s) before its
-      // fade-in starts.
+      // waits 3 seconds from the burst before its fade-in
+      // starts (the burst itself is long over by then).
       const burstAge = Date.now() - (pot._sparkleBurstAt || 0);
-      if (burstAge < 1350) {
-        effect.style.animationDelay = `${((1350 - burstAge) / 1000).toFixed(2)}s`;
+      if (burstAge < 3000) {
+        effect.style.animationDelay = `${((3000 - burstAge) / 1000).toFixed(2)}s`;
       }
       for (let i = 0; i < 5; i++) {
         const s = document.createElement('img');
