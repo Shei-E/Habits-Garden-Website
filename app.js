@@ -2283,7 +2283,7 @@ body {
 /* The worm: a second rare visitor (see the worm code).
    Its crawl is a 20-frame strip shown through a one-frame
    window; the frame step and the movement are driven
-   together from JS (wormStep). */
+   together from JS (wormTick). */
 .worm {
   position: absolute;
   width: calc(16px * var(--scale));
@@ -2296,6 +2296,9 @@ body {
 }
 
 .worm-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
   height: 100%;
   background-image: url("assets/worm.png");
@@ -6067,20 +6070,37 @@ document.body.innerHTML = HG_MARKUP;
     // ---------- The worm ----------
     // A second rare visitor on the bee's own schedule: in
     // a bee time (its own once-per-window stamp), if the
-    // garden has a bud the worm could help, a worm crawls
-    // in along a shelf from one end and makes its way to
-    // the other. Its 20-frame crawl strip and its movement
-    // are driven together: it only moves on frames 18-21
-    // (counting from 1) — the straightening at the end of
-    // the arch, plus the first frame after the loop wraps.
-    // Clicking
-    // it sends it flying to the nearest eligible bud,
-    // whose growth counter it raises by 1 — eligible means
-    // a living bud at least two waterings from growing, so
-    // the worm never grows a plant itself.
+    // garden has a bud the worm could help, a worm appears
+    // at one of the four shelf edges, playing worm-entry
+    // (it unrolls from a dot, standing still), then crawls
+    // along that shelf with worm.png. Its crawl strip and
+    // its movement are driven together: it only moves on
+    // frames 18-21 (counting from 1) — the straightening
+    // at the end of the arch, plus the first frame after
+    // the loop wraps. Clicking it sends it crawling to the
+    // nearest eligible bud — worm-jump carries it from the
+    // bottom shelf up to the top, worm-drop from the top
+    // down to the bottom — and on arrival it raises the
+    // bud's growth counter by 1 and plays worm-entry
+    // backwards in front of the pot as it leaves. Eligible
+    // means a living bud at least two waterings from
+    // growing, so the worm never grows a plant itself.
     const WORM_STAMP_KEY = 'hg.wormTime.v1';
     const WORM_FRAME_MS = 80;
-    let wormState = null; // { el, frameEl, x, y, dir, frame, timer, flying, delivered }
+    // The worm's strips: 16-wide frames throughout; the
+    // crawl and entry frames are 16 tall, the jump and
+    // drop frames 32 (the worm rears up and sags down
+    // inside them). Frame counts measured from his files:
+    // entry 13 (a dot unrolling into the worm), jump 49
+    // (the worm stretching up tall), drop 3 (it sags,
+    // then falls).
+    const WORM_STRIPS = {
+      entry: { file: 'worm-entry.png', frames: 13, h: 16 },
+      crawl: { file: 'worm.png', frames: 20, h: 16 },
+      jump: { file: 'worm-jump.png', frames: 49, h: 32 },
+      drop: { file: 'worm-drop.png', frames: 3, h: 32 },
+    };
+    let wormState = null; // { el, frameEl, x, y, row, dir, frame, timer, phase, target, targetX, targetRow, leapFrom, leapTo, leapTick, delivered }
 
     function wormEligiblePlants() {
       return pots.filter(pot => pot.classList.contains('has-plant')
@@ -6122,6 +6142,27 @@ document.body.innerHTML = HG_MARKUP;
     const WORM_EDGE_LEFT = 37;
     const WORM_EDGE_RIGHT = 199;
 
+    // Point the worm's frame window at one of its strips,
+    // first frame showing. A tall strip (jump/drop) rides
+    // 16 units higher than the crawl box: its ink floats
+    // the same 6 units above its own bottom edge, and that
+    // bottom sits where the crawl box's bottom sits.
+    function wormSetStrip(st, key) {
+      const strip = WORM_STRIPS[key];
+      st.strip = key;
+      st.frame = 0;
+      st.frameEl.style.backgroundImage = `url("assets/${strip.file}")`;
+      st.frameEl.style.backgroundSize = `calc(${strip.frames * 16}px * var(--scale)) calc(${strip.h}px * var(--scale))`;
+      st.frameEl.style.height = `calc(${strip.h}px * var(--scale))`;
+      st.y = wormGroundTop(st.row) - (strip.h - 16);
+      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      wormShowFrame(st);
+    }
+
+    function wormShowFrame(st) {
+      st.frameEl.style.backgroundPosition = `calc(${-st.frame * 16}px * var(--scale)) 0`;
+    }
+
     function startWorm(row, fromLeft) {
       if (wormState) return;
       const el = document.createElement('button');
@@ -6131,37 +6172,59 @@ document.body.innerHTML = HG_MARKUP;
       const frameEl = document.createElement('div');
       frameEl.className = 'worm-frame';
       el.appendChild(frameEl);
-      const y = wormGroundTop(row);
       const x = fromLeft ? WORM_EDGE_LEFT : WORM_EDGE_RIGHT;
       el.style.left = `calc(${x}px * var(--scale))`;
-      el.style.top = `calc(${y}px * var(--scale))`;
       stageEl.appendChild(el);
       const st = {
-        el, frameEl, x, y,
+        el, frameEl, x, y: 0, row,
         dir: fromLeft ? 1 : -1,
-        frame: 0, timer: null, flying: false, delivered: false,
+        frame: 0, timer: null, phase: 'entry',
+        target: null, targetX: 0, targetRow: row,
+        leapFrom: 0, leapTo: 0, leapTick: 0, delivered: false,
       };
       wormState = st;
       frameEl.style.scale = st.dir > 0 ? '1 1' : '-1 1';
+      wormSetStrip(st, 'entry');
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (!wormState || wormState.flying || wormState.delivered) return;
         wormClicked();
       });
-      st.timer = setInterval(() => wormStep(st), WORM_FRAME_MS);
+      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS);
     }
 
-    // One frame of the crawl: show the frame, move if it
-    // is one of the moving frames (18-21 counting from 1:
-    // indexes 17-19 and 0 here), then advance. Reaching
-    // the far edge ends the visit with nothing delivered.
-    function wormStep(st) {
+    // One tick of the worm's clock (80ms): every phase of
+    // the visit steps from here.
+    function wormTick(st) {
       if (wormState !== st) {
         if (st.timer) clearInterval(st.timer);
         return;
       }
-      if (st.flying) return;
-      st.frameEl.style.backgroundPosition = `calc(${-st.frame * 16}px * var(--scale)) 0`;
+      if (st.phase === 'entry') wormEntryTick(st);
+      else if (st.phase === 'crawl') wormCrawlTick(st);
+      else if (st.phase === 'travel') wormTravelTick(st);
+      else if (st.phase === 'jump' || st.phase === 'drop') wormLeapTick(st);
+      else if (st.phase === 'exit') wormExitTick(st);
+    }
+
+    // The entry strip plays through once, the worm
+    // standing still where it appeared; then the crawl
+    // takes over.
+    function wormEntryTick(st) {
+      if (st.frame >= WORM_STRIPS.entry.frames - 1) {
+        wormSetStrip(st, 'crawl');
+        st.phase = 'crawl';
+        return;
+      }
+      st.frame += 1;
+      wormShowFrame(st);
+    }
+
+    // The free crawl: show the frame, move if it is one of
+    // the moving frames (18-21 counting from 1: indexes
+    // 17-19 and 0 here), then advance. Reaching the
+    // opposite edge ends the visit with nothing delivered.
+    function wormCrawlTick(st) {
+      wormShowFrame(st);
       if (st.frame >= 17 || st.frame === 0) {
         st.x += st.dir;
         st.el.style.left = `calc(${st.x}px * var(--scale))`;
@@ -6170,7 +6233,85 @@ document.body.innerHTML = HG_MARKUP;
           return;
         }
       }
-      st.frame = (st.frame + 1) % 20;
+      st.frame = (st.frame + 1) % WORM_STRIPS.crawl.frames;
+    }
+
+    // Travelling to the clicked pot: the same crawl, aimed
+    // at the pot. On the wrong shelf it first lines up
+    // with the pot, then jumps or drops to the pot's shelf.
+    function wormTravelTick(st) {
+      if (st.x === st.targetX) {
+        if (st.row !== st.targetRow) wormBeginLeap(st);
+        else wormArrive(st);
+        return;
+      }
+      wormShowFrame(st);
+      if (st.frame >= 17 || st.frame === 0) {
+        const dir = st.targetX > st.x ? 1 : -1;
+        st.x += dir;
+        if ((dir > 0 && st.x > st.targetX) || (dir < 0 && st.x < st.targetX)) st.x = st.targetX;
+        st.el.style.left = `calc(${st.x}px * var(--scale))`;
+      }
+      st.frame = (st.frame + 1) % WORM_STRIPS.crawl.frames;
+    }
+
+    function wormBeginLeap(st) {
+      const up = st.targetRow === 'top';
+      st.phase = up ? 'jump' : 'drop';
+      wormSetStrip(st, st.phase);
+      st.leapFrom = st.y;
+      st.leapTo = wormGroundTop(st.targetRow) - (WORM_STRIPS[st.phase].h - 16);
+      st.leapTick = 0;
+    }
+
+    // The jump plays its 49 frames once, rising a frame at
+    // a time; the drop cycles its 3 frames over a short
+    // fall. Either way the worm lands on the other shelf's
+    // ground line, back in its crawl strip.
+    function wormLeapTick(st) {
+      const strip = WORM_STRIPS[st.phase];
+      const ticks = st.phase === 'jump' ? strip.frames : 8;
+      st.leapTick += 1;
+      const t = Math.min(1, st.leapTick / ticks);
+      st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
+      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      st.frame = st.phase === 'jump'
+        ? Math.min(strip.frames - 1, st.leapTick)
+        : st.leapTick % strip.frames;
+      wormShowFrame(st);
+      if (t >= 1) {
+        st.row = st.targetRow;
+        wormSetStrip(st, 'crawl');
+        st.phase = 'travel';
+      }
+    }
+
+    // Arrival in front of the pot: the growth counter
+    // rises by 1, and the worm plays its entry backwards
+    // as it leaves.
+    function wormArrive(st) {
+      const pot = st.target;
+      if (pot && pot.classList.contains('has-plant') && pot.dataset.stage === 'bud'
+        && getMissedOpportunitiesCount(pot) === 0) {
+        pot.dataset.waterCount = String((parseInt(pot.dataset.waterCount || '0', 10) || 0) + 1);
+        st.delivered = true;
+        playSparkleAnimation(pot);
+        renderGrowHint(pot);
+        saveGarden();
+      }
+      wormSetStrip(st, 'entry');
+      st.frame = WORM_STRIPS.entry.frames - 1;
+      wormShowFrame(st);
+      st.phase = 'exit';
+    }
+
+    function wormExitTick(st) {
+      if (st.frame <= 0) {
+        endWorm();
+        return;
+      }
+      st.frame -= 1;
+      wormShowFrame(st);
     }
 
     function endWorm() {
@@ -6181,79 +6322,21 @@ document.body.innerHTML = HG_MARKUP;
       st.el.remove();
     }
 
-    function wormFlyTo(x, y, done) {
-      const st = wormState;
-      if (!st) return;
-      const el = st.el;
-      const dx = x - st.x;
-      const dy = y - st.y;
-      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
-      const frames = [];
-      const STEPS = 8;
-      for (let s = 0; s <= STEPS; s++) {
-        const t = s / STEPS;
-        frames.push({
-          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
-        });
-      }
-      // Face the way it flies; the worm faces right as drawn.
-      if (dx !== 0) st.frameEl.style.scale = dx < 0 ? '-1 1' : '1 1';
-      st.flying = true;
-      let landed = false;
-      const land = () => {
-        if (landed) return;
-        landed = true;
-        el.style.left = `calc(${x}px * var(--scale))`;
-        el.style.top = `calc(${y}px * var(--scale))`;
-        st.x = x;
-        st.y = y;
-        st.flying = false;
-        if (done) done();
-      };
-      if (typeof el.animate === 'function') {
-        const dist = Math.hypot(dx, dy);
-        const anim = el.animate(frames, { duration: Math.min(1400, 450 + dist * 9), easing: 'linear', fill: 'forwards' });
-        if (anim && anim.finished && typeof anim.finished.then === 'function') {
-          const once = () => { try { anim.cancel(); } catch (e) { } land(); };
-          anim.finished.then(once).catch(once);
-          setTimeout(once, 1600); // sweep, in case a finish never reports
-        } else {
-          land();
-        }
-      } else {
-        land();
-      }
-    }
-
     function wormClicked() {
       const st = wormState;
-      if (!st || st.flying || st.delivered) return;
+      if (!st || st.phase !== 'crawl') return;
       const target = wormTargetFor(st.x + 8, st.y + 8);
       if (!target) return; // nothing eligible: it crawls on
-      if (st.timer) {
-        clearInterval(st.timer);
-        st.timer = null;
-      }
       const box = plantInkBox(target);
       const pos = getPotPos(target);
       if (!box || !pos) return;
-      const tx = pos.left + box.left + box.w / 2 - 8;
-      const ty = SLOT_ROW_TOP[pos.row] + box.top - 4;
-      wormFlyTo(tx, ty, () => {
-        // On the plant: its growth counter rises by 1.
-        st.delivered = true;
-        if (target.classList.contains('has-plant')) {
-          target.dataset.waterCount = String((parseInt(target.dataset.waterCount || '0', 10) || 0) + 1);
-          playSparkleAnimation(target);
-          renderGrowHint(target);
-          saveGarden();
-        }
-        setTimeout(() => {
-          if (!wormState) return;
-          const exitLeft = wormState.x < 120;
-          wormFlyTo(beePageEdgeX(exitLeft), wormState.y, () => endWorm());
-        }, 550);
-      });
+      st.target = target;
+      st.targetRow = pos.row;
+      st.targetX = Math.round(pos.left + box.left + box.w / 2 - 8);
+      if (st.targetX !== st.x) {
+        st.frameEl.style.scale = st.targetX > st.x ? '1 1' : '-1 1';
+      }
+      st.phase = 'travel';
     }
 
     // Opening the site during a bee time brings the worm —
