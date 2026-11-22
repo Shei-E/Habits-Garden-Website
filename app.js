@@ -2295,13 +2295,6 @@ body {
   z-index: 40;
 }
 
-/* A clicked worm pauses and bounces before setting off,
-   with the currency pill's own pop (and its 60ms pause
-   before the bounce, as the animation's delay). */
-.worm.is-clicked {
-  animation: dew-pill-pop 0.35s ease 0.06s;
-}
-
 .worm-frame {
   position: absolute;
   left: 0;
@@ -6212,7 +6205,8 @@ document.body.innerHTML = HG_MARKUP;
       if (st.phase === 'entry') wormEntryTick(st);
       else if (st.phase === 'crawl') wormCrawlTick(st);
       else if (st.phase === 'travel') wormTravelTick(st);
-      else if (st.phase === 'jump' || st.phase === 'drop') wormLeapTick(st);
+      else if (st.phase === 'jump') wormJumpTick(st);
+      else if (st.phase === 'drop') wormLeapTick(st);
       else if (st.phase === 'exit') wormExitTick(st);
     }
 
@@ -6274,20 +6268,40 @@ document.body.innerHTML = HG_MARKUP;
       st.leapTick = 0;
     }
 
-    // The jump plays its 49 frames once, rising a frame at
-    // a time; the drop cycles its 3 frames over a short
-    // fall. Either way the worm lands on the other shelf's
-    // ground line, back in its crawl strip.
+    // The jump plays in two parts (at his word): the whole
+    // strip runs with the worm standing still — it rears
+    // up in place — then the final frame holds while the
+    // worm rises to the shelf above.
+    function wormJumpTick(st) {
+      const strip = WORM_STRIPS.jump;
+      if (st.leapTick < strip.frames - 1) {
+        st.leapTick += 1;
+        st.frame = st.leapTick;
+        wormShowFrame(st);
+        return;
+      }
+      st.leapTick += 1;
+      const riseTicks = 20;
+      const t = Math.min(1, (st.leapTick - (strip.frames - 1)) / riseTicks);
+      st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
+      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      if (t >= 1) {
+        st.row = st.targetRow;
+        wormSetStrip(st, 'crawl');
+        st.phase = 'travel';
+      }
+    }
+
+    // The drop cycles its 3 frames over a short fall to
+    // the shelf below, landing back in the crawl strip.
     function wormLeapTick(st) {
-      const strip = WORM_STRIPS[st.phase];
-      const ticks = st.phase === 'jump' ? strip.frames : 8;
+      const strip = WORM_STRIPS.drop;
+      const ticks = 8;
       st.leapTick += 1;
       const t = Math.min(1, st.leapTick / ticks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
       st.el.style.top = `calc(${st.y}px * var(--scale))`;
-      st.frame = st.phase === 'jump'
-        ? Math.min(strip.frames - 1, st.leapTick)
-        : st.leapTick % strip.frames;
+      st.frame = st.leapTick % strip.frames;
       wormShowFrame(st);
       if (t >= 1) {
         st.row = st.targetRow;
@@ -6355,17 +6369,15 @@ document.body.innerHTML = HG_MARKUP;
       if (st.travelDir !== 0) {
         st.frameEl.style.scale = st.travelDir > 0 ? '1 1' : '-1 1';
       }
-      // A beat before it sets off (at his word): a 60ms
-      // pause, a bounce like the currency pill's, then
-      // the trip at 2x speed (wormBeginTravel).
+      // A beat before it sets off (at his word): a short
+      // 40ms pause, then the trip at 2x speed
+      // (wormBeginTravel).
       st.phase = 'clicked';
-      st.el.classList.add('is-clicked');
-      setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 410);
+      setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 40);
     }
 
     function wormBeginTravel(st) {
       if (wormState !== st || st.phase !== 'clicked') return;
-      st.el.classList.remove('is-clicked');
       st.phase = 'travel';
       // The trip runs at 2x: the same tick, twice as often.
       if (st.timer) clearInterval(st.timer);
