@@ -6407,10 +6407,9 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // Dev commands 'devwru' / 'devwrd': a worm visit on
-    // demand, starting on the bottom shelf (so it can jump
-    // up) or the top shelf (so it can drop down), at a
-    // random side. They replaced the single 'devwr' at his
-    // word, so each shelf change is easy to test.
+    // demand, spawning up on the top shelf or down on the
+    // bottom shelf (at his word), at a random side. They
+    // replaced the single 'devwr'.
     function forceWormVisit(row) {
       if (wormState) return;
       if (wormEligiblePlants().length) {
@@ -9736,10 +9735,10 @@ document.body.innerHTML = HG_MARKUP;
           forceBeeVisit();
         } else if (secretBuffer.endsWith('devwru')) {
           secretBuffer = '';
-          forceWormVisit('bottom'); // starts low, so it can jump up
+          forceWormVisit('top'); // spawns up, on the top shelf
         } else if (secretBuffer.endsWith('devwrd')) {
           secretBuffer = '';
-          forceWormVisit('top'); // starts high, so it can drop down
+          forceWormVisit('bottom'); // spawns down, on the bottom shelf
         } else if (secretBuffer.endsWith('devreset')) {
           secretBuffer = '';
           devResetDay();
