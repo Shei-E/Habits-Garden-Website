@@ -5796,13 +5796,13 @@ document.body.innerHTML = HG_MARKUP;
       const dx = x - st.x;
       const dy = y - st.y;
       const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
-      const lift = 8 + Math.min(10, Math.hypot(dx, dy) / 6);
+      // A straight line from flower to flower, no arc.
       const frames = [];
       const STEPS = 8;
       for (let s = 0; s <= STEPS; s++) {
         const t = s / STEPS;
         frames.push({
-          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${((dy * t - Math.sin(Math.PI * t) * lift) * scale).toFixed(1)}px)`,
+          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
         });
       }
       st.flying = true;
