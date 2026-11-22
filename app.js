@@ -6241,12 +6241,16 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // Travelling to the clicked pot: the same crawl, aimed
-    // at the pot. On the wrong shelf it first lines up
-    // with the pot, then jumps or drops to the pot's shelf.
+    // at the pot. On the wrong shelf it jumps or drops
+    // FIRST, where it stands (at his word), then crawls
+    // left or right along the pot's shelf to the pot.
     function wormTravelTick(st) {
+      if (st.row !== st.targetRow) {
+        wormBeginLeap(st);
+        return;
+      }
       if (st.x === st.targetX) {
-        if (st.row !== st.targetRow) wormBeginLeap(st);
-        else wormArrive(st);
+        wormArrive(st);
         return;
       }
       wormShowFrame(st);
@@ -6400,15 +6404,15 @@ document.body.innerHTML = HG_MARKUP;
       maybeShowWormAt(Date.now());
     }
 
-    // Dev command 'devwr': a worm visit on demand
-    // (short, left-hand-only, at his word). Like a natural
-    // visit it picks a random one of the four shelf edges —
-    // it used to always come from the bottom left, which
-    // is all he ever saw of it.
-    function forceWormVisit() {
+    // Dev commands 'devwru' / 'devwrd': a worm visit on
+    // demand, starting on the bottom shelf (so it can jump
+    // up) or the top shelf (so it can drop down), at a
+    // random side. They replaced the single 'devwr' at his
+    // word, so each shelf change is easy to test.
+    function forceWormVisit(row) {
       if (wormState) return;
       if (wormEligiblePlants().length) {
-        startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
+        startWorm(row, Math.random() < 0.5);
       }
     }
 
@@ -9728,9 +9732,12 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devbee')) {
           secretBuffer = '';
           forceBeeVisit();
-        } else if (secretBuffer.endsWith('devwr')) {
+        } else if (secretBuffer.endsWith('devwru')) {
           secretBuffer = '';
-          forceWormVisit();
+          forceWormVisit('bottom'); // starts low, so it can jump up
+        } else if (secretBuffer.endsWith('devwrd')) {
+          secretBuffer = '';
+          forceWormVisit('top'); // starts high, so it can drop down
         } else if (secretBuffer.endsWith('devreset')) {
           secretBuffer = '';
           devResetDay();
