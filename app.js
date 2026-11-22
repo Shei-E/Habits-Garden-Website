@@ -2451,6 +2451,12 @@ body {
   padding: 0;
   cursor: pointer;
   transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* The button is 32x62 but the jar's ink is only 8x18 of its
+     32x48 sprite (at x 11..19, y 30..48), which renders at the
+     button's bottom — so clicks count only on the visible
+     flower: the clip window ends on the ink's outer edges
+     (x 11..19 of 32; y 44..62 of the 62-tall button). */
+  clip-path: inset(70.97% 40.625% 0% 34.375%);
 }
 
 .af-flower.is-selected {
