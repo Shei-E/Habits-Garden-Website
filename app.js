@@ -6333,7 +6333,7 @@ document.body.innerHTML = HG_MARKUP;
       // against the way it travelled (at his word), so
       // the worm rolls up toward the side it was heading.
       st.frameEl.style.scale = st.frameEl.style.scale === '-1 1' ? '1 1' : '-1 1';
-      // The trip ran at 2x speed; the exit plays at the
+      // The trip ran at 3x speed; the exit plays at the
       // usual pace.
       if (st.timer) clearInterval(st.timer);
       st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS);
@@ -6376,7 +6376,7 @@ document.body.innerHTML = HG_MARKUP;
         st.frameEl.style.scale = st.travelDir > 0 ? '1 1' : '-1 1';
       }
       // A beat before it sets off (at his word): a short
-      // 40ms pause, then the trip at 2x speed
+      // 40ms pause, then the trip at 3x speed
       // (wormBeginTravel).
       st.phase = 'clicked';
       setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 40);
@@ -6385,9 +6385,10 @@ document.body.innerHTML = HG_MARKUP;
     function wormBeginTravel(st) {
       if (wormState !== st || st.phase !== 'clicked') return;
       st.phase = 'travel';
-      // The trip runs at 2x: the same tick, twice as often.
+      // The trip runs at 3x: the same tick, three times
+      // as often.
       if (st.timer) clearInterval(st.timer);
-      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS / 2);
+      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS / 3);
     }
 
     // Opening the site during a bee time brings the worm —
