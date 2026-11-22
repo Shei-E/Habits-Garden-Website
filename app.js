@@ -6218,14 +6218,16 @@ document.body.innerHTML = HG_MARKUP;
     // The free crawl: show the frame, move if it is one of
     // the moving frames (18-21 counting from 1: indexes
     // 17-19 and 0 here), then advance. Reaching the
-    // opposite edge ends the visit with nothing delivered.
+    // opposite edge ends the visit with nothing delivered —
+    // the worm plays its exit animation there (at his
+    // word) and is gone.
     function wormCrawlTick(st) {
       wormShowFrame(st);
       if (st.frame >= 17 || st.frame === 0) {
         st.x += st.dir;
         st.el.style.left = `calc(${st.x}px * var(--scale))`;
         if ((st.dir > 0 && st.x >= WORM_EDGE_RIGHT) || (st.dir < 0 && st.x <= WORM_EDGE_LEFT)) {
-          endWorm();
+          wormBeginExit(st);
           return;
         }
       }
@@ -6343,12 +6345,17 @@ document.body.innerHTML = HG_MARKUP;
         renderGrowHint(pot);
         saveGarden();
       }
-      // The exit plays the entry backwards, flipped
-      // against the way it travelled (at his word), so
-      // the worm rolls up toward the side it was heading.
+      wormBeginExit(st);
+    }
+
+    // The exit: the entry strip played backwards, flipped
+    // against the way the worm was heading (at his word),
+    // so it rolls up toward the side it was heading, at
+    // the usual pace. A worm that delivers in front of a
+    // pot leaves this way, and so does one that crawls
+    // the whole shelf without being clicked.
+    function wormBeginExit(st) {
       st.frameEl.style.scale = st.frameEl.style.scale === '-1 1' ? '1 1' : '-1 1';
-      // The trip's crawls ran at 3x speed; the exit plays
-      // at the usual pace.
       wormSetTickRate(st, 1);
       wormSetStrip(st, 'entry');
       st.frame = WORM_STRIPS.entry.frames - 1;
