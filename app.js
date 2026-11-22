@@ -5791,7 +5791,7 @@ document.body.innerHTML = HG_MARKUP;
       };
     }
 
-    function beeFlyTo(x, y, done) {
+    function beeFlyTo(x, y, done, fixedMs) {
       const st = beeState;
       if (!st) return;
       const el = st.el;
@@ -5808,12 +5808,12 @@ document.body.innerHTML = HG_MARKUP;
         });
       }
       // Face the way it is flying (the sprite is drawn
-      // facing right — the dark head column leads). The
-      // flip rides the standalone scale property, so it
+      // facing left, so flying right flips it). The flip
+      // rides the standalone scale property, so it
       // composes with the img's bobbing transform instead
       // of fighting it.
       const img = el.querySelector('img');
-      if (img && dx !== 0) img.style.scale = dx < 0 ? '-1 1' : '1 1';
+      if (img && dx !== 0) img.style.scale = dx < 0 ? '1 1' : '-1 1';
       st.flying = true;
       let landed = false;
       const land = () => {
@@ -5828,13 +5828,14 @@ document.body.innerHTML = HG_MARKUP;
       };
       if (typeof el.animate === 'function') {
         const dist = Math.hypot(dx, dy);
-        // Flight speed x0.8 (at his word): every flight
-        // takes 1/0.8 as long as the base timing.
-        const anim = el.animate(frames, { duration: Math.min(1750, (450 + dist * 9) / 0.8), easing: 'linear', fill: 'forwards' });
+        // The base distance timing — except a flight
+        // given a fixed time, which takes just that.
+        const duration = fixedMs || Math.min(1400, 450 + dist * 9);
+        const anim = el.animate(frames, { duration, easing: 'linear', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
           const once = () => { try { anim.cancel(); } catch (e) { } land(); };
           anim.finished.then(once).catch(once);
-          setTimeout(once, 1950); // sweep, in case a finish never reports
+          setTimeout(once, duration + 200); // sweep, in case a finish never reports
         } else {
           land();
         }
@@ -5876,7 +5877,9 @@ document.body.innerHTML = HG_MARKUP;
         if (!beeState || beeState.flying) return;
         advanceBee();
       });
-      beeFlyTo(waitX, waitY, null);
+      // When it first appears the bee drifts in at a fixed
+      // slow pace, not the usual distance timing.
+      beeFlyTo(waitX, waitY, null, 1800);
     }
 
     function advanceBee() {
