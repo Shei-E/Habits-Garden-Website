@@ -1491,6 +1491,13 @@ body {
   pointer-events: none;
 }
 
+/* The seamless wrap's silent jump (see the carousel JS):
+   the track repositions by exactly one set of plants with
+   no transition, onto an identical clone view. */
+.ap-carousel-track.is-jumping {
+  transition: none;
+}
+
 .ap-carousel-track>* {
   pointer-events: auto;
 }
@@ -3117,6 +3124,67 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
               <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
+            <!-- Clone sets for the seamless wrap: two more copies of
+                 the seven plants, offset by one and two set widths
+                 (252 / 504). They select the same plants as the
+                 originals; the carousel JS steps onto them and
+                 silently resets by one set. -->
+            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(252px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(288px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(324px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(360px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(396px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(432px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(468px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(504px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(540px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(576px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(612px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(648px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(684px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(720px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
           </div>
         </div>
         <button class="ap-arrow ap-arrow--next" id="ap-plant-next" type="button" aria-label="Next plants"></button>
@@ -4522,7 +4590,9 @@ document.body.innerHTML = HG_MARKUP;
         if (plantType) {
           const targetBtn = document.querySelector(`.ap-plant[data-plant="${plantType}"]`);
           if (targetBtn) {
-            targetBtn.classList.add('is-selected');
+            plantBtns.forEach(b => {
+              if (b.dataset.plant === plantType) b.classList.add('is-selected');
+            });
             const allPlants = Array.from(document.querySelectorAll('.ap-plant'));
             const idx = allPlants.indexOf(targetBtn);
             plantCarouselOffset = Math.max(0, Math.min(idx - 4, allPlants.length - 5));
@@ -8504,47 +8574,79 @@ document.body.innerHTML = HG_MARKUP;
       });
     });
 
-    // Plant choices selection
+    // Plant choices selection. The carousel track holds clone
+    // copies of every plant (for the seamless wrap); selecting
+    // one copy selects them all, so the plant reads as picked
+    // wherever it is visible.
     plantBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const wasSelected = btn.classList.contains('is-selected');
         plantBtns.forEach(b => b.classList.remove('is-selected'));
         if (!wasSelected) {
-          btn.classList.add('is-selected');
+          plantBtns.forEach(b => {
+            if (b.dataset.plant === btn.dataset.plant) b.classList.add('is-selected');
+          });
         }
         checkCommitReady();
       });
     });
 
-    // Plant choices carousel navigation
+    // Plant choices carousel navigation — a seamless loop.
+    // The track holds three copies of the plant set (originals
+    // plus two clone sets, one and two set-widths over), so a
+    // step past either end keeps sliding in the same direction
+    // onto an identical copy. When a slide lands one full set
+    // past the start, the offset silently resets by one set
+    // (the same view, with the transition switched off), so
+    // the wrap never visibly rewinds.
     let plantCarouselOffset = 0;
     const carouselTrack = document.getElementById('ap-carousel-track');
 
-    function updatePlantCarousel() {
-      if (carouselTrack) {
-        carouselTrack.style.transform = `translateX(calc(${-plantCarouselOffset * 36}px * var(--scale)))`;
+    function plantSetSize() {
+      return document.querySelectorAll('.ap-plant:not(.ap-plant--clone)').length;
+    }
+
+    function updatePlantCarousel(instant = false) {
+      if (!carouselTrack) return;
+      if (instant) carouselTrack.classList.add('is-jumping');
+      carouselTrack.style.transform = `translateX(calc(${-plantCarouselOffset * 36}px * var(--scale)))`;
+      if (instant) {
+        // Flush the no-transition jump before re-arming the
+        // transition, or the browser may animate it anyway.
+        void carouselTrack.offsetWidth;
+        carouselTrack.classList.remove('is-jumping');
       }
     }
 
+    if (carouselTrack) {
+      carouselTrack.addEventListener('transitionend', (e) => {
+        if (e.propertyName !== 'transform') return;
+        const count = plantSetSize();
+        if (count === 0) return;
+        let reset = false;
+        while (plantCarouselOffset >= count) {
+          plantCarouselOffset -= count;
+          reset = true;
+        }
+        if (reset) updatePlantCarousel(true);
+      });
+    }
+
     document.getElementById('ap-plant-prev')?.addEventListener('click', () => {
-      const allPlants = document.querySelectorAll('.ap-plant');
-      const maxOffset = Math.max(0, allPlants.length - 5);
-      if (plantCarouselOffset > 0) {
-        plantCarouselOffset--;
-      } else {
-        plantCarouselOffset = maxOffset;
+      const count = plantSetSize();
+      if (count === 0) return;
+      if (plantCarouselOffset === 0) {
+        // Silently step onto the identical copy one set over,
+        // then slide back from there: a seamless wrap.
+        plantCarouselOffset = count;
+        updatePlantCarousel(true);
       }
+      plantCarouselOffset--;
       updatePlantCarousel();
     });
 
     document.getElementById('ap-plant-next')?.addEventListener('click', () => {
-      const allPlants = document.querySelectorAll('.ap-plant');
-      const maxOffset = Math.max(0, allPlants.length - 5);
-      if (plantCarouselOffset < maxOffset) {
-        plantCarouselOffset++;
-      } else {
-        plantCarouselOffset = 0;
-      }
+      plantCarouselOffset++;
       updatePlantCarousel();
     });
 
