@@ -2295,6 +2295,13 @@ body {
   z-index: 40;
 }
 
+/* A clicked worm pauses and bounces before setting off,
+   with the currency pill's own pop (and its 60ms pause
+   before the bounce, as the animation's delay). */
+.worm.is-clicked {
+  animation: dew-pill-pop 0.35s ease 0.06s;
+}
+
 .worm-frame {
   position: absolute;
   left: 0;
@@ -6100,7 +6107,7 @@ document.body.innerHTML = HG_MARKUP;
       jump: { file: 'worm-jump.png', frames: 49, h: 32 },
       drop: { file: 'worm-drop.png', frames: 3, h: 32 },
     };
-    let wormState = null; // { el, frameEl, x, y, row, dir, frame, timer, phase, target, targetX, targetRow, leapFrom, leapTo, leapTick, delivered }
+    let wormState = null; // { el, frameEl, x, y, row, dir, frame, timer, phase, target, targetX, targetRow, travelDir, leapFrom, leapTo, leapTick, delivered }
 
     function wormEligiblePlants() {
       return pots.filter(pot => pot.classList.contains('has-plant')
@@ -6172,14 +6179,17 @@ document.body.innerHTML = HG_MARKUP;
       const frameEl = document.createElement('div');
       frameEl.className = 'worm-frame';
       el.appendChild(frameEl);
-      const x = fromLeft ? WORM_EDGE_LEFT : WORM_EDGE_RIGHT;
+      // The entry plays 10 units in from the edge it
+      // appears on (at his word), and the crawl starts
+      // from there.
+      const x = fromLeft ? WORM_EDGE_LEFT + 10 : WORM_EDGE_RIGHT - 10;
       el.style.left = `calc(${x}px * var(--scale))`;
       stageEl.appendChild(el);
       const st = {
         el, frameEl, x, y: 0, row,
         dir: fromLeft ? 1 : -1,
         frame: 0, timer: null, phase: 'entry',
-        target: null, targetX: 0, targetRow: row,
+        target: null, targetX: 0, targetRow: row, travelDir: 0,
         leapFrom: 0, leapTo: 0, leapTick: 0, delivered: false,
       };
       wormState = st;
@@ -6299,6 +6309,14 @@ document.body.innerHTML = HG_MARKUP;
         renderGrowHint(pot);
         saveGarden();
       }
+      // The exit plays the entry backwards, flipped
+      // against the way it travelled (at his word), so
+      // the worm rolls up toward the side it was heading.
+      st.frameEl.style.scale = st.frameEl.style.scale === '-1 1' ? '1 1' : '-1 1';
+      // The trip ran at 2x speed; the exit plays at the
+      // usual pace.
+      if (st.timer) clearInterval(st.timer);
+      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS);
       wormSetStrip(st, 'entry');
       st.frame = WORM_STRIPS.entry.frames - 1;
       wormShowFrame(st);
@@ -6333,10 +6351,25 @@ document.body.innerHTML = HG_MARKUP;
       st.target = target;
       st.targetRow = pos.row;
       st.targetX = Math.round(pos.left + box.left + box.w / 2 - 8);
-      if (st.targetX !== st.x) {
-        st.frameEl.style.scale = st.targetX > st.x ? '1 1' : '-1 1';
+      st.travelDir = Math.sign(st.targetX - st.x);
+      if (st.travelDir !== 0) {
+        st.frameEl.style.scale = st.travelDir > 0 ? '1 1' : '-1 1';
       }
+      // A beat before it sets off (at his word): a 60ms
+      // pause, a bounce like the currency pill's, then
+      // the trip at 2x speed (wormBeginTravel).
+      st.phase = 'clicked';
+      st.el.classList.add('is-clicked');
+      setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 410);
+    }
+
+    function wormBeginTravel(st) {
+      if (wormState !== st || st.phase !== 'clicked') return;
+      st.el.classList.remove('is-clicked');
       st.phase = 'travel';
+      // The trip runs at 2x: the same tick, twice as often.
+      if (st.timer) clearInterval(st.timer);
+      st.timer = setInterval(() => wormTick(st), WORM_FRAME_MS / 2);
     }
 
     // Opening the site during a bee time brings the worm —
@@ -6356,10 +6389,15 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // Dev command 'devwr': a worm visit on demand
-    // (short, left-hand-only, at his word).
+    // (short, left-hand-only, at his word). Like a natural
+    // visit it picks a random one of the four shelf edges —
+    // it used to always come from the bottom left, which
+    // is all he ever saw of it.
     function forceWormVisit() {
       if (wormState) return;
-      if (wormEligiblePlants().length) startWorm('bottom', true);
+      if (wormEligiblePlants().length) {
+        startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
+      }
     }
 
     function serializeGarden() {
