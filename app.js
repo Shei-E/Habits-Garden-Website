@@ -6142,6 +6142,12 @@ document.body.innerHTML = HG_MARKUP;
     const WORM_EDGE_LEFT = 37;
     const WORM_EDGE_RIGHT = 199;
 
+    // The entry strip's dot — the roll-up's first frame
+    // and the exit's last visible mark — is a single
+    // pixel at x 3, so its centre in the 16-wide frame
+    // is 3.5 (measured). Mirrored, it sits at 12.5.
+    const WORM_DOT_CENTRE = 3.5;
+
     // Point the worm's frame window at one of its strips,
     // first frame showing. A tall strip (jump/drop) rides
     // 16 units higher than the crawl box: its ink floats
@@ -6287,7 +6293,8 @@ document.body.innerHTML = HG_MARKUP;
     // The jump plays in two parts (at his word): the whole
     // strip runs with the worm standing still — it rears
     // up in place — then the final frame holds while the
-    // worm rises to the shelf above.
+    // worm rises to the shelf above. The rise itself runs
+    // at 3x (at his word); only the strip plays at 1x.
     function wormJumpTick(st) {
       const strip = WORM_STRIPS.jump;
       if (st.leapTick < strip.frames - 1) {
@@ -6297,6 +6304,7 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       st.leapTick += 1;
+      if (st.leapTick === strip.frames) wormSetTickRate(st, 3);
       const riseTicks = 20;
       const t = Math.min(1, (st.leapTick - (strip.frames - 1)) / riseTicks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
@@ -6313,7 +6321,8 @@ document.body.innerHTML = HG_MARKUP;
     // jump: its 3-frame strip runs once with the worm
     // standing still — it sags, then lets go — then the
     // final frame holds while the worm falls to the shelf
-    // below. The fall takes 30 ticks.
+    // below. The whole drop takes about 1.5 seconds at
+    // 1x (at his word): 2 strip ticks + a 17-tick fall.
     function wormDropTick(st) {
       const strip = WORM_STRIPS.drop;
       if (st.leapTick < strip.frames - 1) {
@@ -6323,7 +6332,7 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       st.leapTick += 1;
-      const fallTicks = 30;
+      const fallTicks = 17;
       const t = Math.min(1, (st.leapTick - (strip.frames - 1)) / fallTicks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
       st.el.style.top = `calc(${st.y}px * var(--scale))`;
@@ -6387,15 +6396,23 @@ document.body.innerHTML = HG_MARKUP;
       if (!pos) return;
       st.target = target;
       st.targetRow = pos.row;
-      // The trip ends with the worm centred on the POT
-      // (not on the plant's ink), so the exit animation
-      // plays centred with the pot too (at his word).
-      st.targetX = pos.left + 8;
+      // Face the pot. The exit (set up in wormArrive)
+      // flips against this facing.
+      const dirToPot = Math.sign(pos.left + 16 - (st.x + 8));
+      if (dirToPot !== 0) {
+        st.frameEl.style.scale = dirToPot > 0 ? '1 1' : '-1 1';
+      }
+      // Aim the trip's end so the exit's VISIBLE point —
+      // the dot the worm rolls up into — lands on the
+      // pot's centre (at his word): the dot sits at
+      // WORM_DOT_CENTRE in its frame, or mirrored to
+      // 12.5 when the exit runs flipped, which it does
+      // whenever the worm travelled facing right.
+      const exitMirrored = st.frameEl.style.scale !== '-1 1';
+      const dotCentre = exitMirrored ? 16 - WORM_DOT_CENTRE : WORM_DOT_CENTRE;
+      st.targetX = pos.left + 16 - dotCentre;
       st.halfX = Math.round((st.x + st.targetX) / 2);
       st.travelDir = Math.sign(st.targetX - st.x);
-      if (st.travelDir !== 0) {
-        st.frameEl.style.scale = st.travelDir > 0 ? '1 1' : '-1 1';
-      }
       // A beat before it sets off (at his word): a short
       // 40ms pause, then the trip at 3x speed
       // (wormBeginTravel).
