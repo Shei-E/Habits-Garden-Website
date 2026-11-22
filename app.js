@@ -6206,7 +6206,7 @@ document.body.innerHTML = HG_MARKUP;
       else if (st.phase === 'crawl') wormCrawlTick(st);
       else if (st.phase === 'travel') wormTravelTick(st);
       else if (st.phase === 'jump') wormJumpTick(st);
-      else if (st.phase === 'drop') wormLeapTick(st);
+      else if (st.phase === 'drop') wormDropTick(st);
       else if (st.phase === 'exit') wormExitTick(st);
     }
 
@@ -6309,18 +6309,24 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
-    // The drop cycles its 3 frames over a fall to the
-    // shelf below, landing back in the crawl strip. The
-    // fall takes 30 ticks in all (at his word).
-    function wormLeapTick(st) {
+    // The drop plays in two parts (at his word), like the
+    // jump: its 3-frame strip runs once with the worm
+    // standing still — it sags, then lets go — then the
+    // final frame holds while the worm falls to the shelf
+    // below. The fall takes 30 ticks.
+    function wormDropTick(st) {
       const strip = WORM_STRIPS.drop;
-      const ticks = 30;
+      if (st.leapTick < strip.frames - 1) {
+        st.leapTick += 1;
+        st.frame = st.leapTick;
+        wormShowFrame(st);
+        return;
+      }
       st.leapTick += 1;
-      const t = Math.min(1, st.leapTick / ticks);
+      const fallTicks = 30;
+      const t = Math.min(1, (st.leapTick - (strip.frames - 1)) / fallTicks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
       st.el.style.top = `calc(${st.y}px * var(--scale))`;
-      st.frame = st.leapTick % strip.frames;
-      wormShowFrame(st);
       if (t >= 1) {
         st.row = st.targetRow;
         wormSetStrip(st, 'crawl');
