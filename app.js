@@ -1613,7 +1613,7 @@ body {
 }
 
 /* Carousel slots, left to right in picker order: cactus, droopy,
-   tree, lily, daisy, lavender, dorado. These left offsets ARE the visible
+   tree, lily, daisy, lavender, dorado, dracaena. These left offsets ARE the visible
    order — the buttons are absolutely positioned, so rearranging
    the markup alone does not move them; swap the offsets too. */
 .ap-plant--cactus {
@@ -1630,6 +1630,12 @@ body {
 
 .ap-plant--dorado {
   left: calc(216px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
+}
+
+.ap-plant--dracaena {
+  left: calc(252px * var(--scale));
   top: calc(55px * var(--scale));
   height: calc(61px * var(--scale));
 }
@@ -3124,65 +3130,77 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
               <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
+            <button class="ap-plant ap-plant--dracaena" type="button" aria-label="Limelight dracaena" data-plant="dracaena">
+              <img class="ap-plant-sprite" src="assets/limelight-dracaena.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
             <!-- Clone sets for the seamless wrap: two more copies of
-                 the seven plants, offset by one and two set widths
-                 (252 / 504). They select the same plants as the
+                 the eight plants, offset by one and two set widths
+                 (288 / 576). They select the same plants as the
                  originals; the carousel JS steps onto them and
                  silently resets by one set. -->
-            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(252px * var(--scale))">
+            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(288px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(288px * var(--scale))">
+            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(324px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(324px * var(--scale))">
+            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(360px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(360px * var(--scale))">
+            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(396px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(396px * var(--scale))">
+            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(432px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(432px * var(--scale))">
+            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(468px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(468px * var(--scale))">
+            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(504px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(504px * var(--scale))">
+            <button class="ap-plant ap-plant--dracaena ap-plant--clone" type="button" aria-label="Limelight dracaena" data-plant="dracaena" aria-hidden="true" tabindex="-1" style="left: calc(540px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/limelight-dracaena.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--cactus ap-plant--clone" type="button" aria-label="Cactus" data-plant="cactus" aria-hidden="true" tabindex="-1" style="left: calc(576px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/cactus-1.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(540px * var(--scale))">
+            <button class="ap-plant ap-plant--droopy ap-plant--clone" type="button" aria-label="White droopy flower" data-plant="droopy" aria-hidden="true" tabindex="-1" style="left: calc(612px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/white-droopy-flower.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(576px * var(--scale))">
+            <button class="ap-plant ap-plant--tree ap-plant--clone" type="button" aria-label="White flowered tree" data-plant="tree" aria-hidden="true" tabindex="-1" style="left: calc(648px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/white-flowered-tree-2.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(612px * var(--scale))">
+            <button class="ap-plant ap-plant--lily ap-plant--clone" type="button" aria-label="Peace lily" data-plant="lily" aria-hidden="true" tabindex="-1" style="left: calc(684px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/peace-lily-3-2.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(648px * var(--scale))">
+            <button class="ap-plant ap-plant--daisy ap-plant--clone" type="button" aria-label="Daisy" data-plant="daisy" aria-hidden="true" tabindex="-1" style="left: calc(720px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/daisy-2-1.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(684px * var(--scale))">
+            <button class="ap-plant ap-plant--lavender ap-plant--clone" type="button" aria-label="Lavender" data-plant="lavender" aria-hidden="true" tabindex="-1" style="left: calc(756px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
-            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(720px * var(--scale))">
+            <button class="ap-plant ap-plant--dorado ap-plant--clone" type="button" aria-label="Dorado" data-plant="dorado" aria-hidden="true" tabindex="-1" style="left: calc(792px * var(--scale))">
               <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
+            <button class="ap-plant ap-plant--dracaena ap-plant--clone" type="button" aria-label="Limelight dracaena" data-plant="dracaena" aria-hidden="true" tabindex="-1" style="left: calc(828px * var(--scale))">
+              <img class="ap-plant-sprite" src="assets/limelight-dracaena.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
           </div>
@@ -4585,6 +4603,7 @@ document.body.innerHTML = HG_MARKUP;
             else if (src.includes('daisy')) plantType = 'daisy';
             else if (src.includes('droopy')) plantType = 'droopy';
             else if (src.includes('dorado')) plantType = 'dorado';
+            else if (src.includes('dracaena')) plantType = 'dracaena';
           }
         }
         if (plantType) {
@@ -5043,6 +5062,7 @@ document.body.innerHTML = HG_MARKUP;
       ['cactus', 16, 9, 8],
       ['daisy', 21, 14, 6],
       ['dorado', 25, 28, 3],
+      ['dracaena', 22, 18, 5],
       ['lavender', 24, 28, 3],
       ['peace-lily', 28, 24, 3],
       ['droopy', 19, 18, 6],
