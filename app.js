@@ -6461,6 +6461,20 @@ document.body.innerHTML = HG_MARKUP;
       maybeShowEncounterAt(Date.now());
     }
 
+    // Watch for a bee time arriving while the site sits
+    // open (at his word): the check runs every 15 seconds
+    // and again whenever the tab comes back into view, so
+    // an already-open tab gets its encounter when the
+    // window comes around — not only on a fresh load. A
+    // hidden tab is skipped, so a visit never plays out
+    // unseen behind another tab.
+    setInterval(() => {
+      if (document.visibilityState === 'visible') maybeShowEncounter();
+    }, 15000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') maybeShowEncounter();
+    });
+
     // Dev commands 'devwru' / 'devwrd': a worm visit on
     // demand, spawning up on the top shelf or down on the
     // bottom shelf (at his word), at a random side. They
