@@ -1537,6 +1537,16 @@ body {
   bottom: calc(11px * var(--scale));
 }
 
+/* Dorado sits 8 units lower than usual, in the picker too. */
+.ap-plant--dorado .ap-plant-sprite {
+  bottom: calc(5px * var(--scale));
+}
+
+.ap-carousel-track.is-white-pot .ap-plant--dorado .ap-plant-sprite,
+.ap-carousel-track.is-short-pot .ap-plant--dorado .ap-plant-sprite {
+  bottom: calc(3px * var(--scale));
+}
+
 .ap-carousel-track.is-small-pot .ap-plant-sprite {
   bottom: calc(7px * var(--scale));
   width: 50%;
@@ -1589,7 +1599,7 @@ body {
 }
 
 /* Carousel slots, left to right in picker order: cactus, droopy,
-   tree, lily, daisy, lavender. These left offsets ARE the visible
+   tree, lily, daisy, lavender, dorado. These left offsets ARE the visible
    order — the buttons are absolutely positioned, so rearranging
    the markup alone does not move them; swap the offsets too. */
 .ap-plant--cactus {
@@ -1600,6 +1610,12 @@ body {
 
 .ap-plant--lavender {
   left: calc(180px * var(--scale));
+  top: calc(55px * var(--scale));
+  height: calc(61px * var(--scale));
+}
+
+.ap-plant--dorado {
+  left: calc(216px * var(--scale));
   top: calc(55px * var(--scale));
   height: calc(61px * var(--scale));
 }
@@ -1676,6 +1692,14 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+/* Dorado sits 8 units lower than usual (its leaves drape
+   over the pot): a negative bottom margin drops the whole
+   sprite without touching the per-pot seat rules above or
+   the grow animation, which owns transform. */
+.pot-plant[src*="dorado"] {
+  margin-bottom: calc(-8px * var(--scale));
 }
 
 .pot.pot--white .pot-plant {
@@ -3082,6 +3106,10 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
               <img class="ap-plant-sprite" src="assets/lavender-3.png" alt="">
               <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
             </button>
+            <button class="ap-plant ap-plant--dorado" type="button" aria-label="Dorado" data-plant="dorado">
+              <img class="ap-plant-sprite" src="assets/dorado.png" alt="">
+              <img class="ap-plant-pot" src="assets/pot-template.png" alt="">
+            </button>
           </div>
         </div>
         <button class="ap-arrow ap-arrow--next" id="ap-plant-next" type="button" aria-label="Next plants"></button>
@@ -3501,9 +3529,13 @@ document.body.innerHTML = HG_MARKUP;
       let imgLeft = pScale === 0.5 ? 8 : pScale === 0.75 ? 4 : 0;
       if (src.includes('bud')) imgLeft += 0.5 * pScale;
       if (src.includes('peace-lily')) imgLeft -= 1 * pScale;
+      // Dorado renders 8 units lower than usual (see the
+      // .pot-plant[src*="dorado"] rule), so its ink box sits
+      // 8 units lower too.
+      const topShift = src.includes('dorado') ? 8 : 0;
       return {
         left: imgLeft + ink.left * pScale,
-        top: POT_SIZE - seat - ink.h * pScale,
+        top: POT_SIZE - seat - ink.h * pScale + topShift,
         w: ink.w * pScale,
         h: ink.h * pScale,
       };
@@ -4477,6 +4509,7 @@ document.body.innerHTML = HG_MARKUP;
             else if (src.includes('peace-lily')) plantType = 'lily';
             else if (src.includes('daisy')) plantType = 'daisy';
             else if (src.includes('droopy')) plantType = 'droopy';
+            else if (src.includes('dorado')) plantType = 'dorado';
           }
         }
         if (plantType) {
@@ -4485,7 +4518,7 @@ document.body.innerHTML = HG_MARKUP;
             targetBtn.classList.add('is-selected');
             const allPlants = Array.from(document.querySelectorAll('.ap-plant'));
             const idx = allPlants.indexOf(targetBtn);
-            plantCarouselOffset = idx >= 5 ? 1 : 0;
+            plantCarouselOffset = Math.max(0, Math.min(idx - 4, allPlants.length - 5));
             updatePlantCarousel();
           }
         }
@@ -4931,7 +4964,8 @@ document.body.innerHTML = HG_MARKUP;
     const PLANT_INK = [
       ['bud-4', 3, 2, 14],
       ['cactus', 16, 9, 8],
-      ['daisy', 20, 14, 6],
+      ['daisy', 21, 14, 6],
+      ['dorado', 25, 28, 3],
       ['lavender', 24, 28, 3],
       ['peace-lily', 28, 24, 3],
       ['droopy', 19, 18, 6],
