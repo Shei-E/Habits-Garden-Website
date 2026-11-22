@@ -5781,7 +5781,6 @@ document.body.innerHTML = HG_MARKUP;
     // into tomorrow (see updateDewDrops' beeBoost stamp).
     const BEE_CYCLE_MS = 22 * 60 * 1000;
     const BEE_WINDOW_MS = 60 * 1000;
-    const BEE_STAMP_KEY = 'hg.beeTime.v1';
     let beeState = null; // { el, visits, target, currentPot, phase, flying, x, y }
 
     function beeWindowIndexAt(ms) {
@@ -6047,25 +6046,6 @@ document.body.innerHTML = HG_MARKUP;
       saveGarden();
     }
 
-    // Opening the site during a bee time brings the bee —
-    // once per bee time, and only when there is a flower for
-    // it. The stamp is written only when a bee actually
-    // appears.
-    function maybeShowBeeAt(nowMs) {
-      if (beeState) return;
-      if (!isBeeTimeAt(nowMs)) return;
-      const idx = beeWindowIndexAt(nowMs);
-      if (lsGet(BEE_STAMP_KEY) === idx) return;
-      const flowers = beeFlowers();
-      if (!flowers.length) return;
-      lsSet(BEE_STAMP_KEY, idx);
-      startBee(flowers);
-    }
-
-    function maybeShowBee() {
-      maybeShowBeeAt(Date.now());
-    }
-
     // Dev command 'devbee': a bee visit on demand, ignoring
     // the bee-time window and its once-per-window stamp.
     function forceBeeVisit() {
@@ -6076,7 +6056,7 @@ document.body.innerHTML = HG_MARKUP;
 
     // ---------- The worm ----------
     // A second rare visitor on the bee's own schedule: in
-    // a bee time (its own once-per-window stamp), if the
+    // a bee time, if the
     // garden has a bud the worm could help, a worm appears
     // at one of the four shelf edges, playing worm-entry
     // (it unrolls from a dot, standing still), then crawls
@@ -6092,7 +6072,6 @@ document.body.innerHTML = HG_MARKUP;
     // backwards in front of the pot as it leaves. Eligible
     // means a living bud at least two waterings from
     // growing, so the worm never grows a plant itself.
-    const WORM_STAMP_KEY = 'hg.wormTime.v1';
     const WORM_FRAME_MS = 80;
     // The worm's strips: 16-wide frames throughout; the
     // crawl and entry frames are 16 tall, the jump and
@@ -6446,20 +6425,33 @@ document.body.innerHTML = HG_MARKUP;
       wormSetTickRate(st, 3);
     }
 
-    // Opening the site during a bee time brings the worm —
-    // once per bee time, and only when a bud could use it.
-    function maybeShowWormAt(nowMs) {
-      if (wormState) return;
+    // Opening the site during a bee time brings ONE random
+    // encounter (at his word): the bee and the worm share
+    // a single once-per-window stamp, and whichever of
+    // them can happen — the bee needs a grown flower, the
+    // worm an eligible bud — is picked at random. A window
+    // where neither can happen is not used up, and once
+    // one has appeared the other cannot follow it in the
+    // same window.
+    const ENCOUNTER_STAMP_KEY = 'hg.encounter.v1';
+    function maybeShowEncounterAt(nowMs) {
+      if (beeState || wormState) return;
       if (!isBeeTimeAt(nowMs)) return;
       const idx = beeWindowIndexAt(nowMs);
-      if (lsGet(WORM_STAMP_KEY) === idx) return;
-      if (!wormEligiblePlants().length) return;
-      lsSet(WORM_STAMP_KEY, idx);
-      startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
+      if (lsGet(ENCOUNTER_STAMP_KEY) === idx) return;
+      const options = [];
+      const flowers = beeFlowers();
+      if (flowers.length) options.push('bee');
+      if (wormEligiblePlants().length) options.push('worm');
+      if (!options.length) return;
+      const pick = options[Math.floor(Math.random() * options.length)];
+      lsSet(ENCOUNTER_STAMP_KEY, idx);
+      if (pick === 'bee') startBee(flowers);
+      else startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
     }
 
-    function maybeShowWorm() {
-      maybeShowWormAt(Date.now());
+    function maybeShowEncounter() {
+      maybeShowEncounterAt(Date.now());
     }
 
     // Dev commands 'devwru' / 'devwrd': a worm visit on
@@ -6649,10 +6641,9 @@ document.body.innerHTML = HG_MARKUP;
       // A garden restored on a new day: its bin flowers have
       // grown their petals back overnight.
       resetBinPetalsForNewDay();
-      // Opening the site during a bee time brings the bee.
-      maybeShowBee();
-      // ...and the worm, on its own stamp.
-      maybeShowWorm();
+      // Opening the site during a bee time brings one
+      // random encounter — the bee or the worm.
+      maybeShowEncounter();
     }
 
     // ---------- Bins: bad-habit flowers ----------
