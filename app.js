@@ -1549,6 +1549,16 @@ body {
   bottom: calc(5px * var(--scale));
 }
 
+/* The dracaena sits 7 units lower, in the picker too. */
+.ap-plant--dracaena .ap-plant-sprite {
+  bottom: calc(6px * var(--scale));
+}
+
+.ap-carousel-track.is-white-pot .ap-plant--dracaena .ap-plant-sprite,
+.ap-carousel-track.is-short-pot .ap-plant--dracaena .ap-plant-sprite {
+  bottom: calc(4px * var(--scale));
+}
+
 .ap-carousel-track.is-white-pot .ap-plant--dorado .ap-plant-sprite,
 .ap-carousel-track.is-short-pot .ap-plant--dorado .ap-plant-sprite {
   bottom: calc(3px * var(--scale));
@@ -1720,6 +1730,12 @@ body {
    the grow animation, which owns transform. */
 .pot-plant[src*="dorado"] {
   margin-bottom: calc(-8px * var(--scale));
+}
+
+/* The limelight dracaena sits 7 units lower than usual,
+   the same way (its rosette nestles into the pot). */
+.pot-plant[src*="dracaena"] {
+  margin-bottom: calc(-7px * var(--scale));
 }
 
 .pot.pot--white .pot-plant {
@@ -3624,8 +3640,10 @@ document.body.innerHTML = HG_MARKUP;
       if (src.includes('peace-lily')) imgLeft -= 1 * pScale;
       // Dorado renders 8 units lower than usual (see the
       // .pot-plant[src*="dorado"] rule), so its ink box sits
-      // 8 units lower too.
-      const topShift = src.includes('dorado') ? 8 : 0;
+      // 8 units lower too; the dracaena likewise sits 7 lower.
+      let topShift = 0;
+      if (src.includes('dorado')) topShift = 8;
+      else if (src.includes('dracaena')) topShift = 7;
       return {
         left: imgLeft + ink.left * pScale,
         top: POT_SIZE - seat - ink.h * pScale + topShift,
@@ -5062,7 +5080,7 @@ document.body.innerHTML = HG_MARKUP;
       ['cactus', 16, 9, 8],
       ['daisy', 21, 14, 6],
       ['dorado', 25, 28, 3],
-      ['dracaena', 22, 18, 5],
+      ['dracaena', 22, 18, 4],
       ['lavender', 24, 28, 3],
       ['peace-lily', 28, 24, 3],
       ['droopy', 19, 18, 6],
