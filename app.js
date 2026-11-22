@@ -6275,14 +6275,14 @@ document.body.innerHTML = HG_MARKUP;
       st.leapFrom = st.y;
       st.leapTo = wormGroundTop(st.targetRow) - (WORM_STRIPS[st.phase].h - 16);
       st.leapTick = 0;
-      wormSetTickRate(st, 1); // leaps play at 1x, not the trip's 3x
+      wormSetTickRate(st, 1); // leaps play at 1x, not the trip's 2x
     }
 
     // The jump plays in two parts (at his word): the whole
     // strip runs with the worm standing still — it rears
     // up in place — then the final frame holds while the
     // worm rises to the shelf above. The rise itself runs
-    // at 3x (at his word); only the strip plays at 1x.
+    // at 2x (at his word); only the strip plays at 1x.
     function wormJumpTick(st) {
       const strip = WORM_STRIPS.jump;
       if (st.leapTick < strip.frames - 1) {
@@ -6292,7 +6292,7 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       st.leapTick += 1;
-      if (st.leapTick === strip.frames) wormSetTickRate(st, 3);
+      if (st.leapTick === strip.frames) wormSetTickRate(st, 2);
       const riseTicks = 20;
       const t = Math.min(1, (st.leapTick - (strip.frames - 1)) / riseTicks);
       st.y = Math.round(st.leapFrom + (st.leapTo - st.leapFrom) * t);
@@ -6301,7 +6301,7 @@ document.body.innerHTML = HG_MARKUP;
         st.row = st.targetRow;
         wormSetStrip(st, 'crawl');
         st.phase = 'travel';
-        wormSetTickRate(st, 3); // back to the trip's 3x for the crawl
+        wormSetTickRate(st, 2); // back to the trip's 2x for the crawl
       }
     }
 
@@ -6328,7 +6328,7 @@ document.body.innerHTML = HG_MARKUP;
         st.row = st.targetRow;
         wormSetStrip(st, 'crawl');
         st.phase = 'travel';
-        wormSetTickRate(st, 3); // back to the trip's 3x for the crawl
+        wormSetTickRate(st, 2); // back to the trip's 2x for the crawl
       }
     }
 
@@ -6409,7 +6409,7 @@ document.body.innerHTML = HG_MARKUP;
       // A beat before it sets off (at his word): it
       // pauses and bounces like the currency pill — the
       // bounce runs 60ms delay + 350ms pop — then the
-      // trip at 3x speed (wormBeginTravel).
+      // trip at 2x speed (wormBeginTravel).
       st.phase = 'clicked';
       st.el.classList.add('is-clicked');
       setTimeout(() => { if (wormState === st) wormBeginTravel(st); }, 410);
@@ -6429,7 +6429,7 @@ document.body.innerHTML = HG_MARKUP;
       if (wormState !== st || st.phase !== 'clicked') return;
       st.el.classList.remove('is-clicked');
       st.phase = 'travel';
-      wormSetTickRate(st, 3);
+      wormSetTickRate(st, 2);
     }
 
     // Opening the site during a bee time brings ONE random
@@ -8804,14 +8804,17 @@ document.body.innerHTML = HG_MARKUP;
       if (pdHoverSuppressedPot && zonePot !== pdHoverSuppressedPot) {
         pdHoverSuppressedPot = null;
       }
-      if (zonePot && zonePot !== pdHoverSuppressedPot) {
+      // The popup takes precedence (at his word): a plant
+      // the open popup's card covers does nothing when
+      // hovered — that spot counts as hovering the popup.
+      if (overPopup) {
+        cancelPdHoverClose();
+      } else if (zonePot && zonePot !== pdHoverSuppressedPot) {
         cancelPdHoverClose();
         if (currentDetailsPot !== zonePot || !popupOpen) {
           playSfx('hover');
           openPlantDetailsModal(zonePot);
         }
-      } else if (overPopup) {
-        cancelPdHoverClose();
       } else if (popupOpen) {
         schedulePdHoverClose();
       }
