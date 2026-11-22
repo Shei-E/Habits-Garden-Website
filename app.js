@@ -5807,6 +5807,13 @@ document.body.innerHTML = HG_MARKUP;
           transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
         });
       }
+      // Face the way it is flying (the sprite is drawn
+      // facing right — the dark head column leads). The
+      // flip rides the standalone scale property, so it
+      // composes with the img's bobbing transform instead
+      // of fighting it.
+      const img = el.querySelector('img');
+      if (img && dx !== 0) img.style.scale = dx < 0 ? '-1 1' : '1 1';
       st.flying = true;
       let landed = false;
       const land = () => {
@@ -5821,11 +5828,13 @@ document.body.innerHTML = HG_MARKUP;
       };
       if (typeof el.animate === 'function') {
         const dist = Math.hypot(dx, dy);
-        const anim = el.animate(frames, { duration: Math.min(1400, 450 + dist * 9), easing: 'linear', fill: 'forwards' });
+        // Flight speed x0.8 (at his word): every flight
+        // takes 1/0.8 as long as the base timing.
+        const anim = el.animate(frames, { duration: Math.min(1750, (450 + dist * 9) / 0.8), easing: 'linear', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
           const once = () => { try { anim.cancel(); } catch (e) { } land(); };
           anim.finished.then(once).catch(once);
-          setTimeout(once, 1600); // sweep, in case a finish never reports
+          setTimeout(once, 1950); // sweep, in case a finish never reports
         } else {
           land();
         }
