@@ -2253,6 +2253,41 @@ body {
 }
 
 /* Sparkle Animation */
+/* The bee: a rare visitor that shows up when the site is
+   opened during a bee time (see the bee code below). It
+   hovers over a flower; clicking it sends it to the next
+   one. The bobbing lives on the img so the flight animation
+   owns the button's transform outright. */
+.bee {
+  position: absolute;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 65;
+}
+
+.bee img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: bee-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes bee-bob {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(calc(1.5px * var(--scale)), calc(-2px * var(--scale))); }
+  50% { transform: translate(0, calc(-3px * var(--scale))); }
+  75% { transform: translate(calc(-1.5px * var(--scale)), calc(-2px * var(--scale))); }
+  100% { transform: translate(0, 0); }
+}
+
 .sparkle-anim {
   position: absolute;
   inset: 0;
@@ -5082,7 +5117,16 @@ document.body.innerHTML = HG_MARKUP;
         // be assigned again until tomorrow). Plants that pay get
         // an amount to collect; a dead plant's −2 is taken at
         // once instead — no icon, no click — and wears no icon.
-        const rate = dewDropRate(pot);
+        let rate = dewDropRate(pot);
+        // A flower the bee visited yesterday carries its
+        // pollination bonus today: +3 drops on top of its
+        // usual rate. The stamp is spent once its day has
+        // come, bonus or not (a dead plant's −2 stands
+        // alone — the bee cannot help it any more).
+        if (pot.dataset.beeBoost) {
+          if (pot.dataset.beeBoost === todayStr && rate > 0) rate += 3;
+          if (pot.dataset.beeBoost <= todayStr) delete pot.dataset.beeBoost;
+        }
         if (rate > 0) {
           pot.dataset.dewToday = String(rate);
           delete pot.dataset.dewCollected;
@@ -5691,7 +5735,210 @@ document.body.innerHTML = HG_MARKUP;
     // The dataset fields that carry a plant. Streak, dead/healthy
     // state and dew drops are all worked out from these, so they
     // do not need saving of their own.
-    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay'];
+    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay', 'beeBoost'];
+
+    // ---------- The bee ----------
+    // A rare visitor. Time runs in 22-minute cycles and the
+    // first minute of each cycle is a "bee time": opening the
+    // site during one (with at least one living grown flower
+    // on the shelf) brings the bee in, at most once per bee
+    // time. It hovers over a flower; each click sends it to
+    // another flower, until it has visited about a quarter of
+    // the garden's flowers (give or take one) — the next
+    // click then sends it off the screen, the visited
+    // flowers sparkle, and each of them carries +3 drops
+    // into tomorrow (see updateDewDrops' beeBoost stamp).
+    const BEE_CYCLE_MS = 22 * 60 * 1000;
+    const BEE_WINDOW_MS = 60 * 1000;
+    const BEE_STAMP_KEY = 'hg.beeTime.v1';
+    let beeState = null; // { el, visits, target, currentPot, flying, x, y }
+
+    function beeWindowIndexAt(ms) {
+      return Math.floor(ms / BEE_CYCLE_MS);
+    }
+
+    function isBeeTimeAt(ms) {
+      return (ms % BEE_CYCLE_MS) < BEE_WINDOW_MS;
+    }
+
+    // About a quarter of the flowers, give or take one, and
+    // never fewer than one or more than there are.
+    function beeVisitCount(flowerCount) {
+      const base = Math.round(flowerCount / 4);
+      const jitter = Math.floor(Math.random() * 3) - 1;
+      return Math.max(1, Math.min(flowerCount, base + jitter));
+    }
+
+    // The flowers the bee can visit: grown and alive.
+    function beeFlowers() {
+      return pots.filter(pot => pot.classList.contains('has-plant')
+        && pot.dataset.stage === 'grown'
+        && getMissedOpportunitiesCount(pot) === 0);
+    }
+
+    // Where the bee hovers for a pot, as a stage position for
+    // the bee box's top-left corner: centred over the plant's
+    // ink, a few units above its top.
+    function beeHoverPoint(pot) {
+      const box = plantInkBox(pot);
+      const pos = getPotPos(pot);
+      if (!box || !pos) return null;
+      return {
+        x: pos.left + box.left + box.w / 2 - 8,
+        y: SLOT_ROW_TOP[pos.row] + box.top - 6 - 8,
+      };
+    }
+
+    function beeFlyTo(x, y, done) {
+      const st = beeState;
+      if (!st) return;
+      const el = st.el;
+      const dx = x - st.x;
+      const dy = y - st.y;
+      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      const lift = 8 + Math.min(10, Math.hypot(dx, dy) / 6);
+      const frames = [];
+      const STEPS = 8;
+      for (let s = 0; s <= STEPS; s++) {
+        const t = s / STEPS;
+        frames.push({
+          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${((dy * t - Math.sin(Math.PI * t) * lift) * scale).toFixed(1)}px)`,
+        });
+      }
+      st.flying = true;
+      let landed = false;
+      const land = () => {
+        if (landed) return;
+        landed = true;
+        el.style.left = `calc(${x}px * var(--scale))`;
+        el.style.top = `calc(${y}px * var(--scale))`;
+        st.x = x;
+        st.y = y;
+        st.flying = false;
+        if (done) done();
+      };
+      if (typeof el.animate === 'function') {
+        const dist = Math.hypot(dx, dy);
+        const anim = el.animate(frames, { duration: Math.min(1400, 450 + dist * 9), easing: 'linear', fill: 'forwards' });
+        if (anim && anim.finished && typeof anim.finished.then === 'function') {
+          const once = () => { try { anim.cancel(); } catch (e) { } land(); };
+          anim.finished.then(once).catch(once);
+          setTimeout(once, 1600); // sweep, in case a finish never reports
+        } else {
+          land();
+        }
+      } else {
+        land();
+      }
+    }
+
+    function startBee(flowers) {
+      const first = flowers[Math.floor(Math.random() * flowers.length)];
+      const pt = beeHoverPoint(first);
+      if (!pt) return;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'bee';
+      el.setAttribute('aria-label', 'A bee — click it');
+      const img = document.createElement('img');
+      img.src = 'assets/bee.png';
+      img.alt = '';
+      el.appendChild(img);
+      el.style.left = `calc(-24px * var(--scale))`;
+      el.style.top = `calc(${pt.y}px * var(--scale))`;
+      stageEl.appendChild(el);
+      beeState = {
+        el,
+        visits: [first],
+        target: beeVisitCount(flowers.length),
+        currentPot: first,
+        flying: false,
+        x: -24,
+        y: pt.y,
+      };
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!beeState || beeState.flying) return;
+        advanceBee();
+      });
+      beeFlyTo(pt.x, pt.y, null);
+    }
+
+    function advanceBee() {
+      const st = beeState;
+      if (!st) return;
+      if (st.visits.length >= st.target) {
+        leaveBee();
+        return;
+      }
+      const next = beeFlowers().filter(pot => !st.visits.includes(pot));
+      if (!next.length) {
+        leaveBee();
+        return;
+      }
+      const pot = next[Math.floor(Math.random() * next.length)];
+      const pt = beeHoverPoint(pot);
+      if (!pt) {
+        leaveBee();
+        return;
+      }
+      st.visits.push(pot);
+      st.currentPot = pot;
+      beeFlyTo(pt.x, pt.y, null);
+    }
+
+    function leaveBee() {
+      const st = beeState;
+      if (!st || st.flying) return;
+      const exitX = st.x < 120 ? -24 : 280;
+      beeFlyTo(exitX, st.y - 4, () => finishBee());
+    }
+
+    // The bee has left the screen: the flowers it visited
+    // sparkle, and each is stamped to pay +3 extra drops
+    // tomorrow.
+    function finishBee() {
+      const st = beeState;
+      if (!st) return;
+      beeState = null;
+      st.el.remove();
+      const tomorrow = getGameDate();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const boostDay = getLocalDateStr(tomorrow);
+      st.visits.forEach((pot, i) => {
+        if (!pot.classList.contains('has-plant')) return;
+        pot.dataset.beeBoost = boostDay;
+        setTimeout(() => playSparkleAnimation(pot), i * 150);
+      });
+      saveGarden();
+    }
+
+    // Opening the site during a bee time brings the bee —
+    // once per bee time, and only when there is a flower for
+    // it. The stamp is written only when a bee actually
+    // appears.
+    function maybeShowBeeAt(nowMs) {
+      if (beeState) return;
+      if (!isBeeTimeAt(nowMs)) return;
+      const idx = beeWindowIndexAt(nowMs);
+      if (lsGet(BEE_STAMP_KEY) === idx) return;
+      const flowers = beeFlowers();
+      if (!flowers.length) return;
+      lsSet(BEE_STAMP_KEY, idx);
+      startBee(flowers);
+    }
+
+    function maybeShowBee() {
+      maybeShowBeeAt(Date.now());
+    }
+
+    // Dev command 'devbee': a bee visit on demand, ignoring
+    // the bee-time window and its once-per-window stamp.
+    function forceBeeVisit() {
+      if (beeState) return;
+      const flowers = beeFlowers();
+      if (flowers.length) startBee(flowers);
+    }
 
     function serializeGarden() {
       const entries = pots.map(pot => {
@@ -5869,6 +6116,8 @@ document.body.innerHTML = HG_MARKUP;
       // A garden restored on a new day: its bin flowers have
       // grown their petals back overnight.
       resetBinPetalsForNewDay();
+      // Opening the site during a bee time brings the bee.
+      maybeShowBee();
     }
 
     // ---------- Bins: bad-habit flowers ----------
@@ -8986,6 +9235,9 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devdew')) {
           secretBuffer = '';
           devGiveAllDew();
+        } else if (secretBuffer.endsWith('devbee')) {
+          secretBuffer = '';
+          forceBeeVisit();
         } else if (secretBuffer.endsWith('devreset')) {
           secretBuffer = '';
           devResetDay();
