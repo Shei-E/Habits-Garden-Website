@@ -5844,11 +5844,24 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
+    // The stage sits centred on the page with page around
+    // it, so the page's own edges land at different stage
+    // positions with every window size: this is the stage x
+    // just off a page edge (the bee's full width past it),
+    // for the side asked for.
+    function beePageEdgeX(fromLeft) {
+      const rect = stageEl.getBoundingClientRect();
+      const scale = (rect.width / 256) || 1;
+      const vw = (window.visualViewport && window.visualViewport.width) || window.innerWidth || rect.width;
+      if (fromLeft) return -rect.left / scale - 18;
+      return (vw - rect.left) / scale + 2;
+    }
+
     function startBee(flowers) {
       // The bee comes in from a side of the screen and
       // floats there, waiting to be clicked.
       const fromLeft = Math.random() < 0.5;
-      const entryX = fromLeft ? -24 : 264;
+      const entryX = beePageEdgeX(fromLeft);
       const waitX = fromLeft ? 4 : 236;
       const waitY = 56;
       const el = document.createElement('button');
@@ -5927,8 +5940,10 @@ document.body.innerHTML = HG_MARKUP;
     function leaveBee() {
       const st = beeState;
       if (!st || st.flying) return;
-      const exitX = st.x < 120 ? -24 : 280;
-      beeFlyTo(exitX, st.y - 4, () => finishBee());
+      // Out through the nearer page edge, the same edges
+      // it could have come in by.
+      const exitLeft = st.x < 120;
+      beeFlyTo(beePageEdgeX(exitLeft), st.y - 4, () => finishBee());
     }
 
     // The bee has left the screen: the flowers it visited
