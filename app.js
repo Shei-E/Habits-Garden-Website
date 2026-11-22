@@ -745,6 +745,17 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 4;
+  animation: grow-hint-in 0.6s ease-out both;
+}
+
+@keyframes grow-hint-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .grow-sparkle {
@@ -5095,6 +5106,14 @@ document.body.innerHTML = HG_MARKUP;
 
       const effect = document.createElement('div');
       effect.className = 'grow-hint';
+      // If the watering sparkle burst just played on this
+      // pot (the watering that made it one-away), the hint
+      // waits for the burst to finish (1.35s) before its
+      // fade-in starts.
+      const burstAge = Date.now() - (pot._sparkleBurstAt || 0);
+      if (burstAge < 1350) {
+        effect.style.animationDelay = `${((1350 - burstAge) / 1000).toFixed(2)}s`;
+      }
       for (let i = 0; i < 5; i++) {
         const s = document.createElement('img');
         s.src = 'assets/sparkle1.png';
@@ -7855,6 +7874,7 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     function playSparkleAnimation(pot) {
+      pot._sparkleBurstAt = Date.now(); // the grow hint reads this: it fades in only once the burst has ended
       const anim = document.createElement('div');
       anim.className = 'sparkle-anim';
 
