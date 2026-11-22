@@ -5791,12 +5791,12 @@ document.body.innerHTML = HG_MARKUP;
       return (ms % BEE_CYCLE_MS) < BEE_WINDOW_MS;
     }
 
-    // About a quarter of the flowers, give or take one, and
-    // never fewer than one or more than there are.
+    // A random count between a quarter and a half of the
+    // flowers (at his word), and never fewer than one.
     function beeVisitCount(flowerCount) {
-      const base = Math.round(flowerCount / 4);
-      const jitter = Math.floor(Math.random() * 3) - 1;
-      return Math.max(1, Math.min(flowerCount, base + jitter));
+      const lo = Math.max(1, Math.round(flowerCount / 4));
+      const hi = Math.max(lo, Math.round(flowerCount / 2));
+      return lo + Math.floor(Math.random() * (hi - lo + 1));
     }
 
     // The flowers the bee can visit: grown and alive.
