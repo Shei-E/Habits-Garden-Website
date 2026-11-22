@@ -6383,12 +6383,14 @@ document.body.innerHTML = HG_MARKUP;
       if (!st || st.phase !== 'crawl') return;
       const target = wormTargetFor(st.x + 8, st.y + 8);
       if (!target) return; // nothing eligible: it crawls on
-      const box = plantInkBox(target);
       const pos = getPotPos(target);
-      if (!box || !pos) return;
+      if (!pos) return;
       st.target = target;
       st.targetRow = pos.row;
-      st.targetX = Math.round(pos.left + box.left + box.w / 2 - 8);
+      // The trip ends with the worm centred on the POT
+      // (not on the plant's ink), so the exit animation
+      // plays centred with the pot too (at his word).
+      st.targetX = pos.left + 8;
       st.halfX = Math.round((st.x + st.targetX) / 2);
       st.travelDir = Math.sign(st.targetX - st.x);
       if (st.travelDir !== 0) {
