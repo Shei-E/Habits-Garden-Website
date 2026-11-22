@@ -6264,7 +6264,8 @@ document.body.innerHTML = HG_MARKUP;
       maybeShowWormAt(Date.now());
     }
 
-    // Dev command 'devworm': a worm visit on demand.
+    // Dev command 'devwr': a worm visit on demand
+    // (short, left-hand-only, at his word).
     function forceWormVisit() {
       if (wormState) return;
       if (wormEligiblePlants().length) startWorm('bottom', true);
@@ -9586,7 +9587,7 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devbee')) {
           secretBuffer = '';
           forceBeeVisit();
-        } else if (secretBuffer.endsWith('devworm')) {
+        } else if (secretBuffer.endsWith('devwr')) {
           secretBuffer = '';
           forceWormVisit();
         } else if (secretBuffer.endsWith('devreset')) {
