@@ -4931,7 +4931,7 @@ document.body.innerHTML = HG_MARKUP;
     const PLANT_INK = [
       ['bud-4', 3, 2, 14],
       ['cactus', 16, 9, 8],
-      ['daisy', 22, 17, 5],
+      ['daisy', 20, 15, 6],
       ['lavender', 24, 28, 3],
       ['peace-lily', 28, 24, 3],
       ['droopy', 19, 18, 6],
