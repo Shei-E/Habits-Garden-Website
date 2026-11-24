@@ -1971,13 +1971,6 @@ body {
 .pd-title {
   left: calc(61px * var(--scale));
   top: calc(42px * var(--scale));
-  /* The box reaches 40 units higher than the text, so
-     the title icons — shifted up 40 (see .pd-title-icon)
-     — still paint inside it instead of being clipped by
-     the hidden overflow. The negative margin and the
-     padding cancel out, so the text itself does not move. */
-  margin-top: calc(-40px * var(--scale));
-  padding-top: calc(40px * var(--scale));
   width: calc(122px * var(--scale));
   overflow-x: auto;
   overflow-y: hidden;
@@ -2009,7 +2002,18 @@ body {
   margin-left: calc(2px * var(--scale));
 }
 
-.pd-title-icon {
+/* The stage-wide img rule (.home-screen img) makes every
+   sprite display: block, and it outranks a lone class —
+   so these icons were quietly block boxes all along:
+   each one dropped onto its own line at the title's left
+   edge instead of sitting in the text. (The first worm's
+   wide left margin happened to park it near the (bud)
+   label for short names, but a second worm landed a full
+   line lower, at the far left — his screenshot caught
+   it.) inline-block on this stronger selector puts the
+   icons back in the title line. */
+.pd-dialog .pd-title-icon {
+  display: inline-block;
   width: auto;
   image-rendering: pixelated;
 }
@@ -2020,28 +2024,22 @@ body {
    2 units right of the text before it with its bottom
    edge on the text's baseline. The bee's ink sits 6 in
    from the left and 6 up from the bottom of its canvas;
-   the worm's ink sits 5 in and 7 up. He then moved both
-   icons 20 units right and 10 up from there (the bee's
-   right margin absorbs its shift, so the (bud) text
-   stays where it was), then 30 more up and 25 back
-   down — 15 up in all. The up-shift rides a transform,
-   NOT vertical-align: the title box is top-anchored
-   with auto height, so a bigger vertical-align just
-   grows the line box downward and the icon stays put
-   (his report: "that didnt do anything"). */
+   the worm's ink sits 5 in and 7 up. The bee's right
+   margin cancels its left one, so the (bud) text after
+   it does not move. (The earlier +20-right / up-shift
+   nudges were steering the broken block layout above —
+   they are superseded by this fix.) */
 .pd-title-icon--bee {
   height: calc(16px * var(--scale));
-  margin-left: calc(16px * var(--scale));
-  margin-right: calc(-26px * var(--scale));
+  margin-left: calc(-4px * var(--scale));
+  margin-right: calc(-6px * var(--scale));
   vertical-align: calc(-6px * var(--scale));
-  transform: translateY(calc(-12px * var(--scale)));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
-  margin-left: calc(27px * var(--scale));
+  margin-left: calc(-3px * var(--scale));
   vertical-align: calc(-7px * var(--scale));
-  transform: translateY(calc(-12px * var(--scale)));
 }
 
 /* A stacked worm after the first sits with its visible
