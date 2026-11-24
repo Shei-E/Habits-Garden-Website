@@ -8835,7 +8835,9 @@ document.body.innerHTML = HG_MARKUP;
       }
       let zonePot = null;
       const t = potAtPoint(clientX, clientY, isInPlantZone);
-      if (t && t.classList.contains('has-plant')) zonePot = t;
+      // A plant with dew waiting shows no popup (at his
+      // word): its hover is saved for collecting.
+      if (t && t.classList.contains('has-plant') && !potHasDew(t)) zonePot = t;
       if (pdHoverSuppressedPot && zonePot !== pdHoverSuppressedPot) {
         pdHoverSuppressedPot = null;
       }
