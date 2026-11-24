@@ -5157,18 +5157,14 @@ document.body.innerHTML = HG_MARKUP;
         let rate = dewDropRate(pot);
         // A flower the bee visited yesterday carries its
         // pollination bonus today: +3 drops on top of its
-        // usual rate. When the bonus pays, the stamp STAYS
-        // while the boosted dew waits — it is the popup's
-        // bee marker, and collecting the dew spends it
-        // (see collectDew). Otherwise the stamp is spent
-        // once its day has come (a dead plant's −2 stands
-        // alone — the bee cannot help it any more).
+        // usual rate. The stamp is spent once its day has
+        // come, bonus or not (a dead plant's −2 stands
+        // alone — the bee cannot help it any more) — so the
+        // popup's bee marker, which reads this stamp, goes
+        // away at the start of the payout day (at his word).
         if (pot.dataset.beeBoost) {
-          if (pot.dataset.beeBoost === todayStr && rate > 0) {
-            rate += 3;
-          } else if (pot.dataset.beeBoost <= todayStr) {
-            delete pot.dataset.beeBoost;
-          }
+          if (pot.dataset.beeBoost === todayStr && rate > 0) rate += 3;
+          if (pot.dataset.beeBoost <= todayStr) delete pot.dataset.beeBoost;
         }
         if (rate > 0) {
           pot.dataset.dewToday = String(rate);
@@ -5527,10 +5523,6 @@ document.body.innerHTML = HG_MARKUP;
         animateDewScatterOut(pot, effect);
       }
       pot.dataset.dewCollected = 'true';
-      // Collecting spends the bee's stamp once its day has
-      // come — the popup's bee marker goes with the dew. A
-      // stamp still pointing at tomorrow is not spent yet.
-      if (pot.dataset.beeBoost && pot.dataset.beeBoost <= getGameDayStr()) delete pot.dataset.beeBoost;
       renderDew(pot);
       saveGarden();
 
