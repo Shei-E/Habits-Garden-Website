@@ -1971,6 +1971,13 @@ body {
 .pd-title {
   left: calc(61px * var(--scale));
   top: calc(42px * var(--scale));
+  /* The box reaches 40 units higher than the text, so
+     the title icons — shifted up 40 (see .pd-title-icon)
+     — still paint inside it instead of being clipped by
+     the hidden overflow. The negative margin and the
+     padding cancel out, so the text itself does not move. */
+  margin-top: calc(-40px * var(--scale));
+  padding-top: calc(40px * var(--scale));
   width: calc(122px * var(--scale));
   overflow-x: auto;
   overflow-y: hidden;
@@ -2016,18 +2023,25 @@ body {
    the worm's ink sits 5 in and 7 up. He then moved both
    icons 20 units right and 10 up from there (the bee's
    right margin absorbs its shift, so the (bud) text
-   stays where it was). */
+   stays where it was), then 30 more up. The up-shift
+   rides a transform, NOT vertical-align: the title box
+   is top-anchored with auto height, so a bigger
+   vertical-align just grows the line box downward and
+   the icon stays put (his report: "that didnt do
+   anything"). */
 .pd-title-icon--bee {
   height: calc(16px * var(--scale));
   margin-left: calc(16px * var(--scale));
   margin-right: calc(-26px * var(--scale));
-  vertical-align: calc(34px * var(--scale));
+  vertical-align: calc(-6px * var(--scale));
+  transform: translateY(calc(-40px * var(--scale)));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
   margin-left: calc(17px * var(--scale));
-  vertical-align: calc(33px * var(--scale));
+  vertical-align: calc(-7px * var(--scale));
+  transform: translateY(calc(-40px * var(--scale)));
 }
 
 .pd-repeat {
