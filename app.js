@@ -2023,25 +2023,25 @@ body {
    the worm's ink sits 5 in and 7 up. He then moved both
    icons 20 units right and 10 up from there (the bee's
    right margin absorbs its shift, so the (bud) text
-   stays where it was), then 30 more up. The up-shift
-   rides a transform, NOT vertical-align: the title box
-   is top-anchored with auto height, so a bigger
-   vertical-align just grows the line box downward and
-   the icon stays put (his report: "that didnt do
-   anything"). */
+   stays where it was), then 30 more up and 25 back
+   down — 15 up in all. The up-shift rides a transform,
+   NOT vertical-align: the title box is top-anchored
+   with auto height, so a bigger vertical-align just
+   grows the line box downward and the icon stays put
+   (his report: "that didnt do anything"). */
 .pd-title-icon--bee {
   height: calc(16px * var(--scale));
   margin-left: calc(16px * var(--scale));
   margin-right: calc(-26px * var(--scale));
   vertical-align: calc(-6px * var(--scale));
-  transform: translateY(calc(-40px * var(--scale)));
+  transform: translateY(calc(-15px * var(--scale)));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
   margin-left: calc(17px * var(--scale));
   vertical-align: calc(-7px * var(--scale));
-  transform: translateY(calc(-40px * var(--scale)));
+  transform: translateY(calc(-15px * var(--scale)));
 }
 
 .pd-repeat {
