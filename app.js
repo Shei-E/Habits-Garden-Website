@@ -2034,14 +2034,14 @@ body {
   margin-left: calc(16px * var(--scale));
   margin-right: calc(-26px * var(--scale));
   vertical-align: calc(-6px * var(--scale));
-  transform: translateY(calc(-13px * var(--scale)));
+  transform: translateY(calc(-12px * var(--scale)));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
   margin-left: calc(27px * var(--scale));
   vertical-align: calc(-7px * var(--scale));
-  transform: translateY(calc(-13px * var(--scale)));
+  transform: translateY(calc(-12px * var(--scale)));
 }
 
 .pd-repeat {
