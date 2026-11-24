@@ -2011,20 +2011,23 @@ body {
    their margins cancel the transparent padding inside
    the sprite canvas, so the VISIBLE ink lands exactly
    2 units right of the text before it with its bottom
-   edge on the text's baseline (at his word). The bee's
-   ink sits 6 in from the left and 6 up from the bottom
-   of its canvas; the worm's ink sits 5 in and 7 up. */
+   edge on the text's baseline. The bee's ink sits 6 in
+   from the left and 6 up from the bottom of its canvas;
+   the worm's ink sits 5 in and 7 up. He then moved both
+   icons 20 units right and 10 up from there (the bee's
+   right margin absorbs its shift, so the (bud) text
+   stays where it was). */
 .pd-title-icon--bee {
   height: calc(16px * var(--scale));
-  margin-left: calc(-4px * var(--scale));
-  margin-right: calc(-6px * var(--scale));
-  vertical-align: calc(-6px * var(--scale));
+  margin-left: calc(16px * var(--scale));
+  margin-right: calc(-26px * var(--scale));
+  vertical-align: calc(4px * var(--scale));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
-  margin-left: calc(-3px * var(--scale));
-  vertical-align: calc(-7px * var(--scale));
+  margin-left: calc(17px * var(--scale));
+  vertical-align: calc(3px * var(--scale));
 }
 
 .pd-repeat {
