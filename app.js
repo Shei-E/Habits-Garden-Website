@@ -2039,7 +2039,7 @@ body {
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
-  margin-left: calc(17px * var(--scale));
+  margin-left: calc(27px * var(--scale));
   vertical-align: calc(-7px * var(--scale));
   transform: translateY(calc(-15px * var(--scale)));
 }
