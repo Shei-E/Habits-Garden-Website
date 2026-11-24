@@ -2003,11 +2003,28 @@ body {
 }
 
 .pd-title-icon {
-  height: calc(10px * var(--scale));
   width: auto;
   image-rendering: pixelated;
-  vertical-align: calc(-1px * var(--scale));
-  margin-left: calc(2px * var(--scale));
+}
+
+/* Both icons render at their natural 16-unit size, and
+   their margins cancel the transparent padding inside
+   the sprite canvas, so the VISIBLE ink lands exactly
+   2 units right of the text before it with its bottom
+   edge on the text's baseline (at his word). The bee's
+   ink sits 6 in from the left and 6 up from the bottom
+   of its canvas; the worm's ink sits 5 in and 7 up. */
+.pd-title-icon--bee {
+  height: calc(16px * var(--scale));
+  margin-left: calc(-4px * var(--scale));
+  margin-right: calc(-6px * var(--scale));
+  vertical-align: calc(-6px * var(--scale));
+}
+
+.pd-title-icon--worm {
+  height: calc(16px * var(--scale));
+  margin-left: calc(-3px * var(--scale));
+  vertical-align: calc(-7px * var(--scale));
 }
 
 .pd-repeat {
@@ -8624,7 +8641,7 @@ document.body.innerHTML = HG_MARKUP;
       // word).
       if (pot.dataset.beeBoost) {
         const beeIcon = document.createElement('img');
-        beeIcon.className = 'pd-title-icon';
+        beeIcon.className = 'pd-title-icon pd-title-icon--bee';
         beeIcon.src = 'assets/bee.png';
         beeIcon.alt = '';
         titleLine.appendChild(beeIcon);
@@ -8643,7 +8660,7 @@ document.body.innerHTML = HG_MARKUP;
         // (bud) label until it grows (at his word).
         if (pot.dataset.wormBoost) {
           const wormIcon = document.createElement('img');
-          wormIcon.className = 'pd-title-icon';
+          wormIcon.className = 'pd-title-icon pd-title-icon--worm';
           wormIcon.src = 'assets/worm-icon.png';
           wormIcon.alt = '';
           wormIcon.addEventListener('error', () => { wormIcon.style.display = 'none'; });
