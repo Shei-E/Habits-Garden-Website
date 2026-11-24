@@ -2044,12 +2044,11 @@ body {
   transform: translateY(calc(-12px * var(--scale)));
 }
 
-/* Stacked icons after the first sit 2 units of visible
-   ink apart, like the first sits from its text. */
-.pd-title-icon--bee.pd-title-icon--stack {
-  margin-left: calc(-10px * var(--scale));
-}
-
+/* A stacked worm after the first sits with its visible
+   ink exactly 2 units right of the previous worm's ink
+   (at his word): the pitch is 8 — the 16-wide box minus
+   this 8 — and the ink runs 5..11 inside the box, so
+   8 + 5 − 11 = 2. */
 .pd-title-icon--worm.pd-title-icon--stack {
   margin-left: calc(-8px * var(--scale));
 }
@@ -5208,10 +5207,7 @@ document.body.innerHTML = HG_MARKUP;
         // away at the start of the payout day (at his word).
         if (pot.dataset.beeBoost) {
           if (pot.dataset.beeBoost === todayStr && rate > 0) rate += 3;
-          if (pot.dataset.beeBoost <= todayStr) {
-            delete pot.dataset.beeBoost;
-            delete pot.dataset.beeVisits;
-          }
+          if (pot.dataset.beeBoost <= todayStr) delete pot.dataset.beeBoost;
         }
         if (rate > 0) {
           pot.dataset.dewToday = String(rate);
@@ -5821,7 +5817,7 @@ document.body.innerHTML = HG_MARKUP;
     // The dataset fields that carry a plant. Streak, dead/healthy
     // state and dew drops are all worked out from these, so they
     // do not need saving of their own.
-    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay', 'beeBoost', 'beeVisits', 'wormBoost'];
+    const PLANT_DATA_KEYS = ['plantName', 'plantType', 'grownPlantImg', 'repeatType', 'repeatDays', 'repeatDayNum', 'repeatMonth', 'repeat', 'stage', 'waterCount', 'growThreshold', 'wateredToday', 'lastWateredDate', 'createdDate', 'waterHistory', 'dewToday', 'dewCollected', 'dewDay', 'beeBoost', 'wormBoost'];
 
     // ---------- The bee ----------
     // A rare visitor. Time runs in 22-minute cycles and the
@@ -6101,10 +6097,6 @@ document.body.innerHTML = HG_MARKUP;
       st.visits.forEach((pot, i) => {
         if (!pot.classList.contains('has-plant')) return;
         pot.dataset.beeBoost = boostDay;
-        // Each visit adds a bee to the flower's popup
-        // marker (at his word: several visits, several
-        // bees). The count is spent with the stamp.
-        pot.dataset.beeVisits = String((parseInt(pot.dataset.beeVisits || '0', 10) || 0) + 1);
         setTimeout(() => playSparkleAnimation(pot), i * 150);
       });
       saveGarden();
@@ -8673,17 +8665,14 @@ document.body.innerHTML = HG_MARKUP;
       titleLine.appendChild(document.createTextNode(plantName));
       // A flower the bee visited wears the bee next to its
       // name until the boosted dew is collected (at his
-      // word) — one bee per visit, so a flower the bee
-      // kept coming back to wears them all.
+      // word). Always ONE bee: the bonus does not stack,
+      // so the icon does not either (at his word).
       if (pot.dataset.beeBoost) {
-        const beeCount = parseInt(pot.dataset.beeVisits || '1', 10) || 1;
-        for (let bi = 0; bi < beeCount; bi++) {
-          const beeIcon = document.createElement('img');
-          beeIcon.className = 'pd-title-icon pd-title-icon--bee' + (bi > 0 ? ' pd-title-icon--stack' : '');
-          beeIcon.src = 'assets/bee.png';
-          beeIcon.alt = '';
-          titleLine.appendChild(beeIcon);
-        }
+        const beeIcon = document.createElement('img');
+        beeIcon.className = 'pd-title-icon pd-title-icon--bee';
+        beeIcon.src = 'assets/bee.png';
+        beeIcon.alt = '';
+        titleLine.appendChild(beeIcon);
       }
       if (isDead) {
         const span = document.createElement('span');
