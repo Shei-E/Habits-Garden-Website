@@ -2021,13 +2021,13 @@ body {
   height: calc(16px * var(--scale));
   margin-left: calc(16px * var(--scale));
   margin-right: calc(-26px * var(--scale));
-  vertical-align: calc(4px * var(--scale));
+  vertical-align: calc(34px * var(--scale));
 }
 
 .pd-title-icon--worm {
   height: calc(16px * var(--scale));
   margin-left: calc(17px * var(--scale));
-  vertical-align: calc(3px * var(--scale));
+  vertical-align: calc(33px * var(--scale));
 }
 
 .pd-repeat {
