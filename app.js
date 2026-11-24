@@ -5978,12 +5978,15 @@ document.body.innerHTML = HG_MARKUP;
       const st = beeState;
       if (!st) return;
       if (st.phase === 'waiting') {
-        // The first click sends the bee in to a flower.
+        // The first click sends the bee in to a flower,
+        // and counts as one of the day's two clicked
+        // encounters.
         const flowers = beeFlowers();
         if (!flowers.length) {
           leaveBee();
           return;
         }
+        noteEncounterClicked();
         const pot = flowers[Math.floor(Math.random() * flowers.length)];
         const pt = beeHoverPoint(pot);
         if (!pt) {
@@ -6406,6 +6409,9 @@ document.body.innerHTML = HG_MARKUP;
       st.targetX = pos.left + 16 - dotCentre;
       st.halfX = Math.round((st.x + st.targetX) / 2);
       st.travelDir = Math.sign(st.targetX - st.x);
+      // The click counts as one of the day's two clicked
+      // encounters.
+      noteEncounterClicked();
       // A beat before it sets off (at his word): it
       // pauses and bounces like the currency pill — the
       // bounce runs 60ms delay + 350ms pop — then the
@@ -6441,11 +6447,26 @@ document.body.innerHTML = HG_MARKUP;
     // one has appeared the other cannot follow it in the
     // same window.
     const ENCOUNTER_STAMP_KEY = 'hg.encounter.v1';
+    // The day's clicked encounters, as 'game-day:count':
+    // once he has clicked two encounters in a day, no
+    // more can happen that day (at his word). An encounter
+    // that appears but is never clicked does not count.
+    const ENCOUNTER_CLICKS_KEY = 'hg.encounterClicks.v1';
+    function encounterClicksToday() {
+      const raw = lsGet(ENCOUNTER_CLICKS_KEY);
+      if (typeof raw !== 'string') return 0;
+      const parts = raw.split(':');
+      return parts[0] === getLocalDateStr(getGameDate()) ? (parseInt(parts[1], 10) || 0) : 0;
+    }
+    function noteEncounterClicked() {
+      lsSet(ENCOUNTER_CLICKS_KEY, getLocalDateStr(getGameDate()) + ':' + (encounterClicksToday() + 1));
+    }
     function maybeShowEncounterAt(nowMs) {
       if (beeState || wormState) return;
       if (!isBeeTimeAt(nowMs)) return;
       const idx = beeWindowIndexAt(nowMs);
       if (lsGet(ENCOUNTER_STAMP_KEY) === idx) return;
+      if (encounterClicksToday() >= 2) return;
       const options = [];
       const flowers = beeFlowers();
       if (flowers.length) options.push('bee');
