@@ -6340,10 +6340,26 @@ document.body.innerHTML = HG_MARKUP;
         // The meander: the point it chases runs along a
         // Lissajous — layered sine waves — so the flight
         // swoops up and down and loops back over itself
-        // like a ribbon (his sketch), no jitter. The
-        // figure's centre is picked when the meander
-        // starts and stays put for the whole meander.
-        st.lisT += BF_TICK_MS / 1000;
+        // like a ribbon (his sketch), no jitter.
+        // Every 5 seconds or so the meander's centre
+        // shifts to a different point on the screen (at
+        // his word): it wanders one area for a while, then
+        // flies on and wanders another. And each time the
+        // point jumps, it stays still for 2 seconds (at
+        // his word) before setting off along the new
+        // figure — while it holds, lisT and the shift
+        // timer both wait.
+        if (st.lisHoldMs > 0) {
+          st.lisHoldMs -= BF_TICK_MS;
+        } else {
+          st.lisT += BF_TICK_MS / 1000;
+          st.lisShiftMs -= BF_TICK_MS;
+          if (st.lisShiftMs <= 0) {
+            bfPickLisCentre(st);
+            st.lisShiftMs = 4000 + Math.random() * 2000;
+            st.lisHoldMs = 2000;
+          }
+        }
         st.tx = Math.max(16, Math.min(224, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
         st.ty = Math.max(8, Math.min(98, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
         bfMove(st, 0.45);
@@ -6416,15 +6432,33 @@ document.body.innerHTML = HG_MARKUP;
       st.lisP2 = Math.random() * Math.PI * 2;
       st.lisW = 0.5 + Math.random() * 0.15;
       st.lisT = 0;
+      st.lisShiftMs = 4000 + Math.random() * 2000; // the centre moves on every ~5 seconds
+      st.lisHoldMs = 0;
       st.tx = st.lisCx;
       st.ty = st.lisCy;
     }
 
     // Pick a centre for the meander that keeps the whole
-    // figure on the stage, wherever it lands.
+    // figure on the stage, wherever it lands. When there
+    // is a current centre, the pick is weighted to land
+    // FAR from it (at his word): a handful of candidates
+    // are drawn and the farthest one wins, so the point's
+    // jumps cross the garden instead of hopping next door.
     function bfPickLisCentre(st) {
-      st.lisCx = 16 + st.lisAx + Math.random() * (208 - 2 * st.lisAx);
-      st.lisCy = 8 + st.lisAy + Math.random() * (90 - 2 * st.lisAy);
+      const spanX = 208 - 2 * st.lisAx;
+      const spanY = 90 - 2 * st.lisAy;
+      const tries = (typeof st.lisCx === 'number') ? 6 : 1;
+      let bestX = 0;
+      let bestY = 0;
+      let bestD = -1;
+      for (let i = 0; i < tries; i++) {
+        const cx = 16 + st.lisAx + Math.random() * spanX;
+        const cy = 8 + st.lisAy + Math.random() * spanY;
+        const d = (bestD < 0) ? 0 : Math.hypot(cx - st.lisCx, cy - st.lisCy);
+        if (d > bestD) { bestX = cx; bestY = cy; bestD = d; }
+      }
+      st.lisCx = bestX;
+      st.lisCy = bestY;
     }
 
     function startBfApproach(st) {
