@@ -6160,7 +6160,7 @@ document.body.innerHTML = HG_MARKUP;
     // curve instead of running in straight lines. (The
     // first flight design was removed whole on 2026-11-26
     // at his word; this is the replacement he specified.)
-    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseMs, wanderMs, restMs, hoverPhase, facing, leaving, rewarded }
+    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseMs, wanderMs, restMs, hoverPhase, lisCx, lisCy, lisAx, lisAy, lisA, lisB, lisP1, lisP2, lisW, lisT, facing, leaving, rewarded }
     const BUTTERFLY_DEW_KEY = 'hg.butterflyDew.v1';
     const BF_TICK_MS = 16; // ~60 ticks a second, so the flight runs smooth
     function butterflyDewToday() {
@@ -6229,19 +6229,6 @@ document.body.innerHTML = HG_MARKUP;
       const d = Math.hypot(dx, dy) || 1;
       st.vx += ((dx / d) * speed - st.vx) * 0.07;
       st.vy += ((dy / d) * speed - st.vy) * 0.07;
-      // A little sporadic life (at his word): a small
-      // random jitter every tick, and now and then a
-      // sudden dart in a random direction — a butterfly
-      // never holds a line for long. The steering above
-      // still wins overall, so it always gets where it is
-      // going, just not in a tidy arc.
-      st.vx += (Math.random() - 0.5) * 0.08;
-      st.vy += (Math.random() - 0.5) * 0.08;
-      if (Math.random() < 0.012) {
-        const a = Math.random() * Math.PI * 2;
-        st.vx += Math.cos(a) * 0.55;
-        st.vy += Math.sin(a) * 0.55;
-      }
       st.x += st.vx;
       st.y += st.vy;
       st.el.style.left = `calc(${st.x}px * var(--scale))`;
@@ -6297,7 +6284,14 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       if (st.phase === 'wander') {
-        if (bfMove(st, 0.45) < 6) bfWaypoint(st);
+        // The meander: the point it chases runs along a
+        // Lissajous — layered sine waves — so the flight
+        // swoops up and down and loops back over itself
+        // like a ribbon (his sketch), no jitter.
+        st.lisT += BF_TICK_MS / 1000;
+        st.tx = Math.max(16, Math.min(224, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
+        st.ty = Math.max(8, Math.min(98, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
+        bfMove(st, 0.45);
         if (st.phaseMs >= st.wanderMs) startBfApproach(st);
         return;
       }
@@ -6320,16 +6314,28 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
-    function bfWaypoint(st) {
-      st.tx = 24 + Math.random() * 192;
-      st.ty = 10 + Math.random() * 82;
-    }
-
     function startBfWander(st) {
       st.phase = 'wander';
       st.phaseMs = 0;
       st.wanderMs = 2500 + Math.random() * 2000; // 2.5–4.5 seconds
-      bfWaypoint(st);
+      // Set up the meander's Lissajous: a centre, a size,
+      // a wave ratio (2:3 and its kin draw the loopy
+      // figures), and random phases so no two meanders
+      // draw the same ribbon.
+      const patterns = [[1, 2], [2, 1], [1, 3], [2, 3], [3, 2], [3, 4]];
+      const pat = patterns[Math.floor(Math.random() * patterns.length)];
+      st.lisCx = 80 + Math.random() * 96;
+      st.lisCy = 34 + Math.random() * 34;
+      st.lisAx = 24 + Math.random() * 20;
+      st.lisAy = 12 + Math.random() * 12;
+      st.lisA = pat[0];
+      st.lisB = pat[1];
+      st.lisP1 = Math.random() * Math.PI * 2;
+      st.lisP2 = Math.random() * Math.PI * 2;
+      st.lisW = 0.5 + Math.random() * 0.15;
+      st.lisT = 0;
+      st.tx = st.lisCx;
+      st.ty = st.lisCy;
     }
 
     function startBfApproach(st) {
