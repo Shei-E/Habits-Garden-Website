@@ -2329,6 +2329,32 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* The butterfly: a third rare visitor on the bee's
+   schedule (see the butterfly code below). It flits from
+   flower to flower on its own; clicking it pays 5 dew
+   drops and sends it away. Its drift and flights are
+   driven from JS, like the bee's. */
+.butterfly {
+  position: absolute;
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 65;
+}
+
+.butterfly img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 /* The worm: a second rare visitor (see the worm code).
    Its crawl is a 20-frame strip shown through a one-frame
    window; the frame step and the movement are driven
@@ -5171,13 +5197,16 @@ document.body.innerHTML = HG_MARKUP;
     function collectedDewTotal() {
       // The total can go below 0: a dead plant's −2 is collected
       // automatically (see updateDewDrops), so it counts here
-      // alongside the drops collected by hand.
+      // alongside the drops collected by hand. The butterfly's
+      // gift counts too: it is part of today's tally and is
+      // gone tomorrow, like everything else here.
       let total = 0;
       pots.forEach(pot => {
         if (pot.dataset.dewCollected === 'true') {
           total += parseInt(pot.dataset.dewToday || '0', 10) || 0;
         }
       });
+      total += butterflyDewToday();
       return total;
     }
 
@@ -6108,6 +6137,346 @@ document.body.innerHTML = HG_MARKUP;
       if (flowers.length) startBee(flowers);
     }
 
+    // ---------- The butterfly ----------
+    // A third rare visitor on the shared encounter schedule
+    // (at his word): in a bee time it is one of the options
+    // picked at random alongside the bee and the worm, and
+    // it only comes when the garden has a grown flower to
+    // fly around. It comes in from a side of the screen and
+    // flits from flower to flower on its own — fly to one,
+    // float there a few seconds, fly to another — for a
+    // handful of flowers, then leaves. Clicking it pays 5
+    // dew drops: the drops fly to the currency pill like a
+    // plant's own drops, the count ticking up as each one
+    // lands, and the butterfly flies away. The gift is part
+    // of today's dew tally (see collectedDewTotal) and is
+    // kept in local storage by game day, like the day's
+    // clicked-encounter count.
+    let butterflyState = null; // { el, hops, maxHops, currentPot, flying, leaving, clicked, rewarded, x, y, hopTimer, hoverTimer, hoverPhase, hoverOx, hoverOy, facing }
+    const BUTTERFLY_DEW_KEY = 'hg.butterflyDew.v1';
+    const BUTTERFLY_MAX_HOPS = 6;
+    function butterflyDewToday() {
+      const raw = lsGet(BUTTERFLY_DEW_KEY);
+      if (typeof raw !== 'string') return 0;
+      const parts = raw.split(':');
+      return parts[0] === getLocalDateStr(getGameDate()) ? (parseInt(parts[1], 10) || 0) : 0;
+    }
+    function addButterflyDew(n) {
+      lsSet(BUTTERFLY_DEW_KEY, getLocalDateStr(getGameDate()) + ':' + (butterflyDewToday() + n));
+    }
+
+    function startButterfly(flowers) {
+      const fromLeft = Math.random() < 0.5;
+      const entryX = beePageEdgeX(fromLeft);
+      const entryY = 36 + Math.random() * 24;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'butterfly';
+      el.setAttribute('aria-label', 'A butterfly — click it');
+      const img = document.createElement('img');
+      img.src = 'assets/butterfly.png';
+      img.alt = '';
+      el.appendChild(img);
+      el.style.left = `calc(${entryX}px * var(--scale))`;
+      el.style.top = `calc(${entryY}px * var(--scale))`;
+      stageEl.appendChild(el);
+      butterflyState = {
+        el,
+        hops: 0,
+        maxHops: BUTTERFLY_MAX_HOPS,
+        currentPot: null,
+        flying: false,
+        leaving: false,
+        clicked: false,
+        rewarded: false,
+        x: entryX,
+        y: entryY,
+        hopTimer: null,
+        hoverTimer: null,
+        hoverPhase: 0,
+        hoverOx: 0,
+        hoverOy: 0,
+        facing: '1 1',
+      };
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clickButterfly();
+      });
+      bfAdvance();
+    }
+
+    // One step of the visit: fly to the next flower, or
+    // leave once it has been to enough of them. The hop
+    // timer calls this after each float, and the harness
+    // can call it directly.
+    function bfAdvance() {
+      const st = butterflyState;
+      if (!st || st.leaving) return;
+      if (st.hops >= st.maxHops) {
+        leaveButterfly();
+        return;
+      }
+      const flowers = beeFlowers();
+      if (!flowers.length) {
+        leaveButterfly();
+        return;
+      }
+      let choices = flowers;
+      if (st.currentPot && flowers.length > 1) {
+        choices = flowers.filter(pot => pot !== st.currentPot);
+      }
+      const pot = choices[Math.floor(Math.random() * choices.length)];
+      const pt = beeHoverPoint(pot);
+      if (!pt) {
+        leaveButterfly();
+        return;
+      }
+      st.currentPot = pot;
+      st.hops += 1;
+      bfFlyTo(pt.x, pt.y, null);
+    }
+
+    function bfFlyTo(x, y, done) {
+      const st = butterflyState;
+      if (!st) return;
+      const el = st.el;
+      // Like the bee: a flight leaves from wherever the
+      // hover drift has carried the butterfly.
+      if (st.hoverTimer) {
+        st.x += st.hoverOx || 0;
+        st.y += st.hoverOy || 0;
+        stopBfHover(st);
+      }
+      if (st.hopTimer) {
+        clearTimeout(st.hopTimer);
+        st.hopTimer = null;
+      }
+      const dx = x - st.x;
+      const dy = y - st.y;
+      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      const frames = [];
+      const STEPS = 8;
+      for (let s = 0; s <= STEPS; s++) {
+        const t = s / STEPS;
+        frames.push({
+          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
+        });
+      }
+      // Face the way it is flying (the sprite is drawn
+      // facing left, like the bee's, so flying right flips
+      // it) — the flip rides the standalone scale property.
+      const img = el.querySelector('img');
+      if (img && dx !== 0) {
+        st.facing = dx < 0 ? '1 1' : '-1 1';
+        img.style.scale = st.facing;
+      }
+      st.flying = true;
+      let landed = false;
+      const land = () => {
+        if (landed) return;
+        landed = true;
+        el.style.left = `calc(${x}px * var(--scale))`;
+        el.style.top = `calc(${y}px * var(--scale))`;
+        st.x = x;
+        st.y = y;
+        st.flying = false;
+        if (butterflyState === st && !st.leaving) {
+          if (st.clicked) {
+            rewardButterfly();
+          } else {
+            startBfHover(st);
+            st.hopTimer = setTimeout(() => bfAdvance(), 1600 + Math.random() * 1800);
+          }
+        }
+        if (done) done();
+      };
+      if (typeof el.animate === 'function') {
+        const dist = Math.hypot(dx, dy);
+        const duration = Math.min(1400, 450 + dist * 9);
+        const anim = el.animate(frames, { duration, easing: 'linear', fill: 'forwards' });
+        if (anim && anim.finished && typeof anim.finished.then === 'function') {
+          const once = () => { try { anim.cancel(); } catch (e) { } land(); };
+          anim.finished.then(once).catch(once);
+          setTimeout(once, duration + 200); // sweep, in case a finish never reports
+        } else {
+          land();
+        }
+      } else {
+        land();
+      }
+    }
+
+    // The float between flights: the same small drift loop
+    // as the bee's, turning at each end to face the way it
+    // drifts.
+    function bfHoverTick(st) {
+      if (butterflyState !== st) { stopBfHover(st); return; }
+      if (st.flying) return;
+      st.hoverPhase = (st.hoverPhase || 0) + Math.PI / 24;
+      const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      st.hoverOx = Math.sin(st.hoverPhase) * 3;
+      st.hoverOy = -Math.cos(st.hoverPhase) * 1.2;
+      st.el.style.transform = `translate(${(st.hoverOx * scale).toFixed(1)}px, ${(st.hoverOy * scale).toFixed(1)}px)`;
+      const want = Math.cos(st.hoverPhase) >= 0 ? '-1 1' : '1 1';
+      if (st.facing !== want) {
+        st.facing = want;
+        const img = st.el.querySelector('img');
+        if (img) img.style.scale = want;
+      }
+    }
+
+    function startBfHover(st) {
+      stopBfHover(st);
+      st.hoverTimer = setInterval(() => bfHoverTick(st), 50);
+    }
+
+    function stopBfHover(st) {
+      if (st.hoverTimer) {
+        clearInterval(st.hoverTimer);
+        st.hoverTimer = null;
+      }
+      st.hoverOx = 0;
+      st.hoverOy = 0;
+      if (st.el) st.el.style.transform = '';
+    }
+
+    function clickButterfly() {
+      const st = butterflyState;
+      if (!st || st.leaving || st.rewarded) return;
+      st.rewarded = true;
+      // A clicked encounter counts toward the day's two,
+      // like the bee's first click and the worm's click.
+      noteEncounterClicked();
+      if (st.flying) {
+        // The gift is paid when it lands, then it leaves.
+        st.clicked = true;
+        return;
+      }
+      rewardButterfly();
+    }
+
+    function rewardButterfly() {
+      const st = butterflyState;
+      if (!st) return;
+      const rect = st.el && typeof st.el.getBoundingClientRect === 'function'
+        ? st.el.getBoundingClientRect() : null;
+      grantButterflyDew(rect && rect.width ? rect : null);
+      leaveButterfly();
+    }
+
+    // The 5 drops fly to the currency pill like a plant's
+    // own drops (see collectDew): each on its own curved
+    // path, the tally ticking up by 1 as each one lands,
+    // and a sweep settling any that never report, so the
+    // gift is always paid in full.
+    function grantButterflyDew(fromRect) {
+      const pill = document.getElementById('ui-currency');
+      const to = pill && pill.getBoundingClientRect ? pill.getBoundingClientRect() : null;
+      let granted = 0;
+      let settled = false;
+      const grantOne = () => {
+        if (granted >= 5) return;
+        granted += 1;
+        addButterflyDew(1);
+        updateDewDrops();
+        const pillEl = document.getElementById('ui-currency');
+        if (pillEl) {
+          pillEl.classList.remove('is-pop');
+          void pillEl.offsetWidth;
+          pillEl.classList.add('is-pop');
+        }
+      };
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        while (granted < 5) grantOne();
+      };
+      setTimeout(settle, 1800);
+      if (!fromRect || !to || !to.width) { settle(); return; }
+      const host = document.body || document.querySelector('.home-screen');
+      if (!host) { settle(); return; }
+      const pillCx = to.left + to.width / 2;
+      const pillCy = to.top + to.height / 2;
+      const fromCx = fromRect.left + fromRect.width / 2;
+      const fromCy = fromRect.top + fromRect.height / 2;
+      for (let i = 0; i < 5; i++) {
+        const drop = document.createElement('img');
+        drop.src = 'assets/drop1.png';
+        drop.className = 'dew-flyer';
+        drop.alt = '';
+        const jx = (Math.random() - 0.5) * 6;
+        const jy = (Math.random() - 0.5) * 6;
+        drop.style.left = `${fromRect.left + jx}px`;
+        drop.style.top = `${fromRect.top + jy}px`;
+        drop.style.width = `${fromRect.width}px`;
+        drop.style.height = `${fromRect.height}px`;
+        host.appendChild(drop);
+        setTimeout(() => { drop.remove(); }, 1700); // sweep, in case a finish never reports
+        const dx = pillCx - (fromCx + jx);
+        const dy = pillCy - (fromCy + jy);
+        const len = Math.hypot(dx, dy) || 1;
+        const bow = (Math.random() - 0.5) * 90;
+        const mx = dx * (0.4 + Math.random() * 0.2) + (-dy / len) * bow;
+        const my = dy * (0.4 + Math.random() * 0.2) + (dx / len) * bow - (20 + Math.random() * 50);
+        const qx = 2 * mx - dx / 2;
+        const qy = 2 * my - dy / 2;
+        const quadAt = (p0, p1, p2, t) => {
+          const u = 1 - t;
+          return u * u * p0 + 2 * u * t * p1 + t * t * p2;
+        };
+        const frames = [];
+        for (let s = 0; s <= 4; s++) {
+          const t = s / 4;
+          frames.push({
+            transform: `translate(${quadAt(0, qx, dx, t).toFixed(1)}px, ${quadAt(0, qy, dy, t).toFixed(1)}px) scale(${(1 - 0.7 * Math.pow(t, 1.5)).toFixed(2)})`,
+          });
+        }
+        const land = () => { drop.remove(); grantOne(); if (granted >= 5) settle(); };
+        if (typeof drop.animate === 'function') {
+          const anim = drop.animate(frames, { duration: Math.max(850 + Math.random() * 300, len * 0.7), easing: 'cubic-bezier(.45,.02,.65,.6)', fill: 'forwards' });
+          if (anim && anim.finished && typeof anim.finished.then === 'function') {
+            anim.finished.then(land).catch(land);
+          } else {
+            setTimeout(land, 1250);
+          }
+        } else {
+          land();
+        }
+      }
+    }
+
+    function leaveButterfly() {
+      const st = butterflyState;
+      if (!st || st.leaving) return;
+      st.leaving = true;
+      if (st.hopTimer) {
+        clearTimeout(st.hopTimer);
+        st.hopTimer = null;
+      }
+      // Out through the nearer page edge, the same edges
+      // it could have come in by.
+      const exitLeft = st.x < 120;
+      bfFlyTo(beePageEdgeX(exitLeft), st.y - 4, () => finishButterfly());
+    }
+
+    function finishButterfly() {
+      const st = butterflyState;
+      if (!st) return;
+      butterflyState = null;
+      stopBfHover(st);
+      if (st.hopTimer) clearTimeout(st.hopTimer);
+      st.el.remove();
+    }
+
+    // Dev command 'devbutter': a butterfly visit on demand,
+    // ignoring the bee-time window and its once-per-window
+    // stamp.
+    function forceButterflyVisit() {
+      if (butterflyState) return;
+      const flowers = beeFlowers();
+      if (flowers.length) startButterfly(flowers);
+    }
+
     // ---------- The worm ----------
     // A second rare visitor on the bee's own schedule: in
     // a bee time, if the
@@ -6517,7 +6886,7 @@ document.body.innerHTML = HG_MARKUP;
       lsSet(ENCOUNTER_CLICKS_KEY, getLocalDateStr(getGameDate()) + ':' + (encounterClicksToday() + 1));
     }
     function maybeShowEncounterAt(nowMs) {
-      if (beeState || wormState) return;
+      if (beeState || wormState || butterflyState) return;
       if (!isBeeTimeAt(nowMs)) return;
       const idx = beeWindowIndexAt(nowMs);
       if (lsGet(ENCOUNTER_STAMP_KEY) === idx) return;
@@ -6526,10 +6895,12 @@ document.body.innerHTML = HG_MARKUP;
       const flowers = beeFlowers();
       if (flowers.length) options.push('bee');
       if (wormEligiblePlants().length) options.push('worm');
+      if (flowers.length) options.push('butterfly');
       if (!options.length) return;
       const pick = options[Math.floor(Math.random() * options.length)];
       lsSet(ENCOUNTER_STAMP_KEY, idx);
       if (pick === 'bee') startBee(flowers);
+      else if (pick === 'butterfly') startButterfly(flowers);
       else startWorm(Math.random() < 0.5 ? 'top' : 'bottom', Math.random() < 0.5);
     }
 
@@ -9909,6 +10280,9 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devbee')) {
           secretBuffer = '';
           forceBeeVisit();
+        } else if (secretBuffer.endsWith('devbutter')) {
+          secretBuffer = '';
+          forceButterflyVisit();
         } else if (secretBuffer.endsWith('devwru')) {
           secretBuffer = '';
           forceWormVisit('top'); // spawns up, on the top shelf
