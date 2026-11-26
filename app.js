@@ -6236,6 +6236,9 @@ document.body.innerHTML = HG_MARKUP;
         shiftY: 0,
         shiftTarget: 0,
         shiftMs: 500 + Math.random() * 1000,
+        speedMul: 1,
+        speedTarget: 1,
+        speedMs: 0,
         facing: '1 1',
         leaving: false,
         rewarded: false,
@@ -6257,8 +6260,21 @@ document.body.innerHTML = HG_MARKUP;
       const dx = st.tx - st.x;
       const dy = st.ty - st.y;
       const d = Math.hypot(dx, dy) || 1;
-      st.vx += ((dx / d) * speed - st.vx) * 0.07;
-      st.vy += ((dy / d) * speed - st.vy) * 0.07;
+      // The speed itself wanders (at his word): every
+      // 0.6–2 seconds a new pace is picked — between 0.6x
+      // and 1.5x of the phase's usual speed — and the
+      // actual speed eases toward it over about half a
+      // second, so it surges and drifts instead of
+      // snapping between speeds.
+      st.speedMs -= BF_TICK_MS;
+      if (st.speedMs <= 0) {
+        st.speedTarget = 0.6 + Math.random() * 0.9;
+        st.speedMs = 600 + Math.random() * 1400;
+      }
+      st.speedMul += (st.speedTarget - st.speedMul) * 0.03;
+      const effSpeed = speed * st.speedMul;
+      st.vx += ((dx / d) * effSpeed - st.vx) * 0.07;
+      st.vy += ((dy / d) * effSpeed - st.vy) * 0.07;
       st.x += st.vx;
       st.y += st.vy;
       // The up-and-down shifts (at his word): every so
@@ -6491,13 +6507,13 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // The butterfly reaches a flower: before it settles,
-    // it flies around it for 5–8 seconds (at his word).
+    // it flies around it for 1–4 seconds (at his word).
     function startBfOrbit(st) {
       st.orbited = true;
       st.orbCx = st.tx;
       st.orbCy = st.ty;
       st.orbitPhase = Math.random() * Math.PI * 2;
-      st.orbitMs = 5000 + Math.random() * 3000; // 5–8 seconds
+      st.orbitMs = 1000 + Math.random() * 3000; // 1–4 seconds
       st.phase = 'orbit';
       st.phaseMs = 0;
     }
