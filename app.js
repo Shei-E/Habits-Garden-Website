@@ -6308,9 +6308,9 @@ document.body.innerHTML = HG_MARKUP;
         // swoops up and down and loops back over itself
         // like a ribbon (his sketch), no jitter.
         st.lisT += BF_TICK_MS / 1000;
-        st.tx = Math.max(16, Math.min(224, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
-        st.ty = Math.max(8, Math.min(98, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
-        bfMove(st, 0.45);
+        st.tx = Math.max(8, Math.min(232, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
+        st.ty = Math.max(6, Math.min(116, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
+        bfMove(st, 0.7);
         if (st.phaseMs >= st.wanderMs) startBfApproach(st);
         return;
       }
@@ -6345,15 +6345,21 @@ document.body.innerHTML = HG_MARKUP;
       // draw the same ribbon.
       const patterns = [[1, 2], [2, 1], [1, 3], [2, 3], [3, 2], [3, 4]];
       const pat = patterns[Math.floor(Math.random() * patterns.length)];
-      st.lisCx = 80 + Math.random() * 96;
-      st.lisCy = 34 + Math.random() * 34;
-      st.lisAx = 24 + Math.random() * 20;
-      st.lisAy = 12 + Math.random() * 12;
+      // The figure spans the whole screen (at his word):
+      // wide, tall swings, with the centre picked after
+      // the size so the whole ribbon stays on the stage.
+      // It runs slower than before — a figure this big
+      // takes time to draw, and the butterfly has to be
+      // able to keep up with the point it chases.
+      st.lisAx = 55 + Math.random() * 40;
+      st.lisAy = 30 + Math.random() * 22;
+      st.lisCx = (8 + st.lisAx) + Math.random() * (224 - 2 * st.lisAx);
+      st.lisCy = (6 + st.lisAy) + Math.random() * (110 - 2 * st.lisAy);
       st.lisA = pat[0];
       st.lisB = pat[1];
       st.lisP1 = Math.random() * Math.PI * 2;
       st.lisP2 = Math.random() * Math.PI * 2;
-      st.lisW = 0.5 + Math.random() * 0.15;
+      st.lisW = 0.22 + Math.random() * 0.13;
       st.lisT = 0;
       st.tx = st.lisCx;
       st.ty = st.lisCy;
