@@ -2355,6 +2355,18 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* The devshowpoint marker: a plain red dot on the point
+   the butterfly is chasing (see toggleBfPoint). */
+.bf-point {
+  position: absolute;
+  width: calc(3px * var(--scale));
+  height: calc(3px * var(--scale));
+  background: #ff3b30;
+  border-radius: 50%;
+  z-index: 66;
+  pointer-events: none;
+}
+
 /* The worm: a second rare visitor (see the worm code).
    Its crawl is a 20-frame strip shown through a one-frame
    window; the frame step and the movement are driven
@@ -6268,6 +6280,7 @@ document.body.innerHTML = HG_MARKUP;
     function bfTick() {
       const st = butterflyState;
       if (!st) return;
+      updateBfPoint(st);
       st.phaseMs += BF_TICK_MS;
       if (st.phase === 'rest') {
         // On a flower it hovers: the old hover drift from
@@ -6526,6 +6539,31 @@ document.body.innerHTML = HG_MARKUP;
       butterflyState = null;
       if (st.tickTimer) clearInterval(st.tickTimer);
       st.el.remove();
+      if (bfPointEl) bfPointEl.style.display = 'none';
+    }
+
+    // Dev command 'devshowpoint': a toggle that draws a
+    // dot on the point the butterfly is chasing — during
+    // the meander, the Lissajous point running ahead of
+    // it — so the flight's workings can be watched. The
+    // dot sits where the butterfly's centre is heading
+    // (its target plus half its 16-unit body).
+    let bfPointEl = null;
+    let bfShowPoint = false;
+    function toggleBfPoint() {
+      bfShowPoint = !bfShowPoint;
+      if (!bfShowPoint && bfPointEl) bfPointEl.style.display = 'none';
+    }
+    function updateBfPoint(st) {
+      if (!bfShowPoint) return;
+      if (!bfPointEl) {
+        bfPointEl = document.createElement('div');
+        bfPointEl.className = 'bf-point';
+        stageEl.appendChild(bfPointEl);
+      }
+      bfPointEl.style.display = 'block';
+      bfPointEl.style.left = `calc(${st.tx + 6.5}px * var(--scale))`;
+      bfPointEl.style.top = `calc(${st.ty + 6.5}px * var(--scale))`;
     }
 
     // Dev command 'devbutter': a butterfly visit on demand,
@@ -10175,7 +10213,7 @@ document.body.innerHTML = HG_MARKUP;
     // - type 'devdew' to give every plant its dew drops
     // - type 'devreset' to reset the garden to the start of today
     let secretBuffer = '';
-    const MAX_BUFFER_LEN = 10;
+    const MAX_BUFFER_LEN = 12;
 
     function devGrowAllPlants() {
       const pots = document.querySelectorAll('.pot.has-plant');
@@ -10343,6 +10381,9 @@ document.body.innerHTML = HG_MARKUP;
         } else if (secretBuffer.endsWith('devbutter')) {
           secretBuffer = '';
           forceButterflyVisit();
+        } else if (secretBuffer.endsWith('devshowpoint')) {
+          secretBuffer = '';
+          toggleBfPoint();
         } else if (secretBuffer.endsWith('devwru')) {
           secretBuffer = '';
           forceWormVisit('top'); // spawns up, on the top shelf
