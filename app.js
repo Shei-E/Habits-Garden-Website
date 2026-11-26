@@ -6254,12 +6254,23 @@ document.body.innerHTML = HG_MARKUP;
       const dx = x - st.x;
       const dy = y - st.y;
       const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+      // The flight bobs like a real butterfly's: each flap
+      // is a hump of lift — the absolute value of a sine
+      // wave, at his word, so it only ever rises above the
+      // straight path and settles back onto it, and never
+      // dips below it. A whole number of humps keeps the
+      // lift at 0 at both ends, so it still lands exactly
+      // on its flower. More steps than the bee's flights,
+      // so the humps stay smooth.
+      const dist = Math.hypot(dx, dy);
+      const humps = Math.max(2, Math.min(4, Math.round(dist / 55)));
       const frames = [];
-      const STEPS = 8;
+      const STEPS = 24;
       for (let s = 0; s <= STEPS; s++) {
         const t = s / STEPS;
+        const lift = -3 * Math.abs(Math.sin(Math.PI * humps * t));
         frames.push({
-          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${(dy * t * scale).toFixed(1)}px)`,
+          transform: `translate(${(dx * t * scale).toFixed(1)}px, ${((dy * t + lift) * scale).toFixed(1)}px)`,
         });
       }
       // Face the way it is flying (the sprite is drawn
@@ -6291,7 +6302,6 @@ document.body.innerHTML = HG_MARKUP;
         if (done) done();
       };
       if (typeof el.animate === 'function') {
-        const dist = Math.hypot(dx, dy);
         const duration = Math.min(1400, 450 + dist * 9);
         const anim = el.animate(frames, { duration, easing: 'linear', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
