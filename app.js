@@ -6340,26 +6340,10 @@ document.body.innerHTML = HG_MARKUP;
         // The meander: the point it chases runs along a
         // Lissajous — layered sine waves — so the flight
         // swoops up and down and loops back over itself
-        // like a ribbon (his sketch), no jitter.
-        // Every 5 seconds or so the meander's centre
-        // shifts to a different point on the screen (at
-        // his word): it wanders one area for a while, then
-        // flies on and wanders another. And each time the
-        // point jumps, it stays still for 2 seconds (at
-        // his word) before setting off along the new
-        // figure — while it holds, lisT and the shift
-        // timer both wait.
-        if (st.lisHoldMs > 0) {
-          st.lisHoldMs -= BF_TICK_MS;
-        } else {
-          st.lisT += BF_TICK_MS / 1000;
-          st.lisShiftMs -= BF_TICK_MS;
-          if (st.lisShiftMs <= 0) {
-            bfPickLisCentre(st);
-            st.lisShiftMs = 4000 + Math.random() * 2000;
-            st.lisHoldMs = 2000;
-          }
-        }
+        // like a ribbon (his sketch), no jitter. The
+        // figure's centre is picked when the meander
+        // starts and stays put for the whole meander.
+        st.lisT += BF_TICK_MS / 1000;
         st.tx = Math.max(16, Math.min(224, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
         st.ty = Math.max(8, Math.min(98, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
         bfMove(st, 0.45);
@@ -6432,8 +6416,6 @@ document.body.innerHTML = HG_MARKUP;
       st.lisP2 = Math.random() * Math.PI * 2;
       st.lisW = 0.5 + Math.random() * 0.15;
       st.lisT = 0;
-      st.lisShiftMs = 4000 + Math.random() * 2000; // the centre moves on every ~5 seconds
-      st.lisHoldMs = 0;
       st.tx = st.lisCx;
       st.ty = st.lisCy;
     }
