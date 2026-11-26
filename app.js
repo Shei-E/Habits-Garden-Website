@@ -6226,6 +6226,16 @@ document.body.innerHTML = HG_MARKUP;
         choices = flowers.filter(pot => pot !== st.currentPot);
       }
       const pot = choices[Math.floor(Math.random() * choices.length)];
+      if (pot === st.currentPot) {
+        // The only flower it can visit is the one it is
+        // already at (a one-flower garden, or the others
+        // are overdue): stay floating there for the beat
+        // instead of flying to where it already is — a
+        // flight to the same spot just bobs in place.
+        st.hops += 1;
+        st.hopTimer = setTimeout(() => bfAdvance(), 1600 + Math.random() * 1800);
+        return;
+      }
       const pt = beeHoverPoint(pot);
       if (!pt) {
         leaveButterfly();
@@ -6263,9 +6273,9 @@ document.body.innerHTML = HG_MARKUP;
       // on its flower. More steps than the bee's flights,
       // so the humps stay smooth.
       const dist = Math.hypot(dx, dy);
-      const humps = Math.max(2, Math.min(4, Math.round(dist / 55)));
+      const humps = Math.max(3, Math.min(6, Math.round(dist / 35)));
       const frames = [];
-      const STEPS = 24;
+      const STEPS = 36;
       for (let s = 0; s <= STEPS; s++) {
         const t = s / STEPS;
         const lift = -3 * Math.abs(Math.sin(Math.PI * humps * t));
@@ -6302,7 +6312,9 @@ document.body.innerHTML = HG_MARKUP;
         if (done) done();
       };
       if (typeof el.animate === 'function') {
-        const duration = Math.min(1400, 450 + dist * 9);
+        // Half again slower than the bee's flights — a
+        // butterfly drifts where the bee darts.
+        const duration = Math.min(2100, (450 + dist * 9) * 1.5);
         const anim = el.animate(frames, { duration, easing: 'linear', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
           const once = () => { try { anim.cancel(); } catch (e) { } land(); };
