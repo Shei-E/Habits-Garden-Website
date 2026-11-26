@@ -6201,6 +6201,7 @@ document.body.innerHTML = HG_MARKUP;
         ty: 30 + Math.random() * 30,
         visits: 0,
         visitTarget: 3 + Math.floor(Math.random() * 2), // 3–4 flowers
+        visitedPots: [],
         currentPot: null,
         tickTimer: null,
         phaseMs: 0,
@@ -6308,9 +6309,18 @@ document.body.innerHTML = HG_MARKUP;
         // swoops up and down and loops back over itself
         // like a ribbon (his sketch), no jitter.
         st.lisT += BF_TICK_MS / 1000;
-        st.tx = Math.max(8, Math.min(232, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
-        st.ty = Math.max(6, Math.min(116, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
-        bfMove(st, 0.7);
+        // Every 5 seconds or so the meander's centre
+        // shifts to a different point on the screen (at
+        // his word): it wanders one area for a while, then
+        // flies on and wanders another.
+        st.lisShiftMs -= BF_TICK_MS;
+        if (st.lisShiftMs <= 0) {
+          bfPickLisCentre(st);
+          st.lisShiftMs = 4000 + Math.random() * 2000;
+        }
+        st.tx = Math.max(16, Math.min(224, st.lisCx + st.lisAx * Math.sin(st.lisA * st.lisW * st.lisT + st.lisP1)));
+        st.ty = Math.max(8, Math.min(98, st.lisCy + st.lisAy * Math.sin(st.lisB * st.lisW * st.lisT + st.lisP2)));
+        bfMove(st, 0.45);
         if (st.phaseMs >= st.wanderMs) startBfApproach(st);
         return;
       }
@@ -6326,6 +6336,7 @@ document.body.innerHTML = HG_MARKUP;
           st.el.style.left = `calc(${st.x}px * var(--scale))`;
           st.el.style.top = `calc(${st.y}px * var(--scale))`;
           st.visits += 1;
+          if (st.currentPot) st.visitedPots.push(st.currentPot);
           st.phase = 'rest';
           st.phaseMs = 0;
           st.hoverPhase = 0;
@@ -6345,37 +6356,39 @@ document.body.innerHTML = HG_MARKUP;
       // draw the same ribbon.
       const patterns = [[1, 2], [2, 1], [1, 3], [2, 3], [3, 2], [3, 4]];
       const pat = patterns[Math.floor(Math.random() * patterns.length)];
-      // The figure spans the whole screen (at his word):
-      // wide, tall swings, with the centre picked after
-      // the size so the whole ribbon stays on the stage.
-      // It runs slower than before — a figure this big
-      // takes time to draw, and the butterfly has to be
-      // able to keep up with the point it chases.
-      st.lisAx = 55 + Math.random() * 40;
-      st.lisAy = 30 + Math.random() * 22;
-      st.lisCx = (8 + st.lisAx) + Math.random() * (224 - 2 * st.lisAx);
-      st.lisCy = (6 + st.lisAy) + Math.random() * (110 - 2 * st.lisAy);
+      st.lisAx = 24 + Math.random() * 20;
+      st.lisAy = 12 + Math.random() * 12;
+      bfPickLisCentre(st);
       st.lisA = pat[0];
       st.lisB = pat[1];
       st.lisP1 = Math.random() * Math.PI * 2;
       st.lisP2 = Math.random() * Math.PI * 2;
-      st.lisW = 0.22 + Math.random() * 0.13;
+      st.lisW = 0.5 + Math.random() * 0.15;
       st.lisT = 0;
+      st.lisShiftMs = 4000 + Math.random() * 2000; // the centre moves on every ~5 seconds
       st.tx = st.lisCx;
       st.ty = st.lisCy;
     }
 
+    // Pick a centre for the meander that keeps the whole
+    // figure on the stage, wherever it lands.
+    function bfPickLisCentre(st) {
+      st.lisCx = 16 + st.lisAx + Math.random() * (208 - 2 * st.lisAx);
+      st.lisCy = 8 + st.lisAy + Math.random() * (90 - 2 * st.lisAy);
+    }
+
     function startBfApproach(st) {
-      const flowers = beeFlowers();
+      // Each flower at most once per visit (at his word):
+      // only flowers it hasn't rested on yet are
+      // candidates — the one it just left included — and
+      // when no unvisited flower remains it flies away,
+      // however many visits it had planned.
+      const flowers = beeFlowers().filter(pot => !st.visitedPots.includes(pot));
       if (!flowers.length) {
         startLeaveButterfly();
         return;
       }
-      let choices = flowers;
-      if (st.currentPot && flowers.length > 1) {
-        choices = flowers.filter(pot => pot !== st.currentPot);
-      }
-      const pot = choices[Math.floor(Math.random() * choices.length)];
+      const pot = flowers[Math.floor(Math.random() * flowers.length)];
       const pt = pot && beeHoverPoint(pot);
       if (!pt) {
         startLeaveButterfly();
