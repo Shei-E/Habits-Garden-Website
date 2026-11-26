@@ -6244,7 +6244,7 @@ document.body.innerHTML = HG_MARKUP;
       // is zeroed when it settles onto a flower.
       st.shiftMs -= BF_TICK_MS;
       if (st.shiftMs <= 0) {
-        st.shiftTarget = (Math.random() * 2 - 1) * 6;
+        st.shiftTarget = (Math.random() * 2 - 1) * 10;
         st.shiftMs = 700 + Math.random() * 1800;
       }
       const sd = st.shiftTarget - st.shiftY;
