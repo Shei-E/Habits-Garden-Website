@@ -6160,7 +6160,7 @@ document.body.innerHTML = HG_MARKUP;
     // curve instead of running in straight lines. (The
     // first flight design was removed whole on 2026-11-26
     // at his word; this is the replacement he specified.)
-    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseMs, wanderMs, restMs, hoverPhase, lisCx, lisCy, lisAx, lisAy, lisA, lisB, lisP1, lisP2, lisW, lisT, facing, leaving, rewarded }
+    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseMs, wanderMs, restMs, hoverPhase, shiftY, shiftTarget, shiftMs, lisCx, lisCy, lisAx, lisAy, lisA, lisB, lisP1, lisP2, lisW, lisT, facing, leaving, rewarded }
     const BUTTERFLY_DEW_KEY = 'hg.butterflyDew.v1';
     const BF_TICK_MS = 16; // ~60 ticks a second, so the flight runs smooth
     function butterflyDewToday() {
@@ -6207,6 +6207,9 @@ document.body.innerHTML = HG_MARKUP;
         wanderMs: 0,
         restMs: 0,
         hoverPhase: 0,
+        shiftY: 0,
+        shiftTarget: 0,
+        shiftMs: 500 + Math.random() * 1000,
         facing: '1 1',
         leaving: false,
         rewarded: false,
@@ -6231,8 +6234,24 @@ document.body.innerHTML = HG_MARKUP;
       st.vy += ((dy / d) * speed - st.vy) * 0.07;
       st.x += st.vx;
       st.y += st.vy;
+      // The up-and-down shifts (at his word): every so
+      // often — a random interval — the butterfly hops to
+      // a new height, a random amount up or down, riding
+      // on top of wherever the steering has it. The shift
+      // moves fast but not instantly, so it reads as a
+      // hop, not a jump cut. It is only a display offset:
+      // the steering position is untouched, and the shift
+      // is zeroed when it settles onto a flower.
+      st.shiftMs -= BF_TICK_MS;
+      if (st.shiftMs <= 0) {
+        st.shiftTarget = (Math.random() * 2 - 1) * 6;
+        st.shiftMs = 700 + Math.random() * 1800;
+      }
+      const sd = st.shiftTarget - st.shiftY;
+      const step = Math.max(-0.3, Math.min(0.3, sd));
+      st.shiftY += step;
       st.el.style.left = `calc(${st.x}px * var(--scale))`;
-      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      st.el.style.top = `calc(${st.y + st.shiftY}px * var(--scale))`;
       // Face the way it is moving (the sprite is drawn
       // facing left, like the bee's, so moving right flips
       // it) — the flip rides the standalone scale property.
@@ -6302,6 +6321,8 @@ document.body.innerHTML = HG_MARKUP;
           st.y = st.ty;
           st.vx = 0;
           st.vy = 0;
+          st.shiftY = 0;
+          st.shiftTarget = 0;
           st.el.style.left = `calc(${st.x}px * var(--scale))`;
           st.el.style.top = `calc(${st.y}px * var(--scale))`;
           st.visits += 1;
