@@ -2390,6 +2390,12 @@ body {
   animation: dew-pill-pop 0.35s ease 0.06s;
 }
 
+/* The butterfly's click bounce: the same pop as the
+   worm's, during its click pause (see clickButterfly). */
+.butterfly.is-clicked {
+  animation: dew-pill-pop 0.35s ease 0.06s;
+}
+
 .worm-frame {
   position: absolute;
   left: 0;
@@ -6229,6 +6235,7 @@ document.body.innerHTML = HG_MARKUP;
         facing: '1 1',
         leaving: false,
         rewarded: false,
+        clickedMs: 0,
       };
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -6284,6 +6291,16 @@ document.body.innerHTML = HG_MARKUP;
       const st = butterflyState;
       if (!st) return;
       updateBfPoint(st);
+      if (st.clickedMs > 0) {
+        // The click pause: the butterfly hangs where it
+        // was clicked, bouncing, until the pause runs out.
+        st.clickedMs -= BF_TICK_MS;
+        if (st.clickedMs <= 0) {
+          st.el.classList.remove('is-clicked');
+          rewardButterfly();
+        }
+        return;
+      }
       st.phaseMs += BF_TICK_MS;
       if (st.phase === 'rest') {
         // On a flower it hovers: the old hover drift from
@@ -6484,7 +6501,13 @@ document.body.innerHTML = HG_MARKUP;
       // A clicked encounter counts toward the day's two,
       // like the bee's first click and the worm's click.
       noteEncounterClicked();
-      rewardButterfly();
+      // The bounce and pause, like the worm's (at his
+      // word): it bounces where it is for a beat, and only
+      // when the pause runs out does it pay and fly away —
+      // bfTick counts the pause down and calls
+      // rewardButterfly at the end of it.
+      st.clickedMs = 410;
+      st.el.classList.add('is-clicked');
     }
 
     function rewardButterfly() {
