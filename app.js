@@ -6160,9 +6160,9 @@ document.body.innerHTML = HG_MARKUP;
     // curve instead of running in straight lines. (The
     // first flight design was removed whole on 2026-11-26
     // at his word; this is the replacement he specified.)
-    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseTicks, wanderTicks, restTicks, facing, leaving, rewarded }
+    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseMs, wanderMs, restMs, hoverPhase, facing, leaving, rewarded }
     const BUTTERFLY_DEW_KEY = 'hg.butterflyDew.v1';
-    const BF_TICK_MS = 50;
+    const BF_TICK_MS = 16; // ~60 ticks a second, so the flight runs smooth
     function butterflyDewToday() {
       const raw = lsGet(BUTTERFLY_DEW_KEY);
       if (typeof raw !== 'string') return 0;
@@ -6203,9 +6203,10 @@ document.body.innerHTML = HG_MARKUP;
         visitTarget: 4 + Math.floor(Math.random() * 3), // 4–6 flowers
         currentPot: null,
         tickTimer: null,
-        phaseTicks: 0,
-        wanderTicks: 0,
-        restTicks: 0,
+        phaseMs: 0,
+        wanderMs: 0,
+        restMs: 0,
+        hoverPhase: 0,
         facing: '1 1',
         leaving: false,
         rewarded: false,
@@ -6220,13 +6221,27 @@ document.body.innerHTML = HG_MARKUP;
     // Steer toward the current target and move: the
     // velocity leans toward the target a little more each
     // tick, so turns are wide curves, not corners. Returns
-    // the distance to the target before the move.
+    // the distance to the target before the move. Speeds
+    // are units per tick at the ~60fps tick above.
     function bfMove(st, speed) {
       const dx = st.tx - st.x;
       const dy = st.ty - st.y;
       const d = Math.hypot(dx, dy) || 1;
-      st.vx += ((dx / d) * speed - st.vx) * 0.2;
-      st.vy += ((dy / d) * speed - st.vy) * 0.2;
+      st.vx += ((dx / d) * speed - st.vx) * 0.07;
+      st.vy += ((dy / d) * speed - st.vy) * 0.07;
+      // A little sporadic life (at his word): a small
+      // random jitter every tick, and now and then a
+      // sudden dart in a random direction — a butterfly
+      // never holds a line for long. The steering above
+      // still wins overall, so it always gets where it is
+      // going, just not in a tidy arc.
+      st.vx += (Math.random() - 0.5) * 0.08;
+      st.vy += (Math.random() - 0.5) * 0.08;
+      if (Math.random() < 0.012) {
+        const a = Math.random() * Math.PI * 2;
+        st.vx += Math.cos(a) * 0.55;
+        st.vy += Math.sin(a) * 0.55;
+      }
       st.x += st.vx;
       st.y += st.vy;
       st.el.style.left = `calc(${st.x}px * var(--scale))`;
@@ -6246,32 +6261,48 @@ document.body.innerHTML = HG_MARKUP;
     function bfTick() {
       const st = butterflyState;
       if (!st) return;
-      st.phaseTicks += 1;
+      st.phaseMs += BF_TICK_MS;
       if (st.phase === 'rest') {
-        if (st.phaseTicks >= st.restTicks) {
+        // On a flower it hovers: the old hover drift from
+        // the first flight design, re-added at his word —
+        // a small slow loop (about 2.4 seconds around),
+        // turning at each end to face the way it drifts.
+        st.hoverPhase = (st.hoverPhase || 0) + Math.PI / 72;
+        const scale = (stageEl.getBoundingClientRect().width / 256) || 1;
+        const ox = Math.sin(st.hoverPhase) * 3;
+        const oy = -Math.cos(st.hoverPhase) * 1.2;
+        st.el.style.transform = `translate(${(ox * scale).toFixed(1)}px, ${(oy * scale).toFixed(1)}px)`;
+        const want = Math.cos(st.hoverPhase) >= 0 ? '-1 1' : '1 1';
+        if (st.facing !== want) {
+          st.facing = want;
+          const img = st.el.querySelector('img');
+          if (img) img.style.scale = want;
+        }
+        if (st.phaseMs >= st.restMs) {
+          st.el.style.transform = '';
           if (st.visits >= st.visitTarget) startLeaveButterfly();
           else startBfWander(st);
         }
         return;
       }
       if (st.phase === 'leave') {
-        const d = bfMove(st, 3);
+        const d = bfMove(st, 1);
         // Gone once it is fully past the stage's edge, or
         // has reached the edge of the screen it aimed for.
         if (st.x < -18 || st.x > 258 || d < 4) finishButterfly();
         return;
       }
       if (st.phase === 'enter') {
-        if (bfMove(st, 3) < 5 || st.phaseTicks > 600) startBfWander(st);
+        if (bfMove(st, 1) < 5 || st.phaseMs > 60000) startBfWander(st);
         return;
       }
       if (st.phase === 'wander') {
-        if (bfMove(st, 1.3) < 6) bfWaypoint(st);
-        if (st.phaseTicks >= st.wanderTicks) startBfApproach(st);
+        if (bfMove(st, 0.45) < 6) bfWaypoint(st);
+        if (st.phaseMs >= st.wanderMs) startBfApproach(st);
         return;
       }
       if (st.phase === 'approach') {
-        if (bfMove(st, 1.8) < 2.5 || st.phaseTicks > 600) {
+        if (bfMove(st, 0.6) < 2.5 || st.phaseMs > 30000) {
           // Arrived: settle onto the flower and rest.
           st.x = st.tx;
           st.y = st.ty;
@@ -6281,8 +6312,9 @@ document.body.innerHTML = HG_MARKUP;
           st.el.style.top = `calc(${st.y}px * var(--scale))`;
           st.visits += 1;
           st.phase = 'rest';
-          st.phaseTicks = 0;
-          st.restTicks = 40 + Math.floor(Math.random() * 20); // 2–3 seconds
+          st.phaseMs = 0;
+          st.hoverPhase = 0;
+          st.restMs = 2000 + Math.random() * 1000; // 2–3 seconds
         }
         return;
       }
@@ -6295,8 +6327,8 @@ document.body.innerHTML = HG_MARKUP;
 
     function startBfWander(st) {
       st.phase = 'wander';
-      st.phaseTicks = 0;
-      st.wanderTicks = 50 + Math.floor(Math.random() * 40); // 2.5–4.5 seconds
+      st.phaseMs = 0;
+      st.wanderMs = 2500 + Math.random() * 2000; // 2.5–4.5 seconds
       bfWaypoint(st);
     }
 
@@ -6320,7 +6352,7 @@ document.body.innerHTML = HG_MARKUP;
       st.tx = pt.x;
       st.ty = pt.y;
       st.phase = 'approach';
-      st.phaseTicks = 0;
+      st.phaseMs = 0;
     }
 
     function startLeaveButterfly() {
@@ -6328,7 +6360,8 @@ document.body.innerHTML = HG_MARKUP;
       if (!st || st.leaving) return;
       st.leaving = true;
       st.phase = 'leave';
-      st.phaseTicks = 0;
+      st.phaseMs = 0;
+      st.el.style.transform = '';
       // Out through the nearer edge of the screen.
       st.tx = beePageEdgeX(st.x < 128);
       st.ty = st.y - 6;
