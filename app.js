@@ -2331,8 +2331,9 @@ body {
 
 /* The butterfly: a third rare visitor on the bee's
    schedule (see the butterfly code below). It flits from
-   flower to flower on its own; clicking it pays 5 dew
-   drops and sends it away. Its drift and flights are
+   flower to flower on its own; clicking it pays dew
+   drops — 3, plus 3 more for every flower it has flown
+   around — and sends it away. Its drift and flights are
    driven from JS, like the bee's. */
 .butterfly {
   position: absolute;
@@ -6154,7 +6155,9 @@ document.body.innerHTML = HG_MARKUP;
     // (at his word): in a bee time it is one of the options
     // picked at random alongside the bee and the worm, and
     // it only comes when the garden has a grown flower.
-    // Clicking it pays 5 dew drops: the drops fly to the
+    // Clicking it pays dew drops — 3 to start with, and
+    // +3 for every flower it has flown around so far this
+    // visit (at his word): the drops fly to the
     // currency pill like a plant's own drops, the count
     // ticking up as each one lands, and the butterfly flies
     // away. The gift is part of today's dew tally (see
@@ -6489,22 +6492,28 @@ document.body.innerHTML = HG_MARKUP;
       if (!st) return;
       const rect = st.el && typeof st.el.getBoundingClientRect === 'function'
         ? st.el.getBoundingClientRect() : null;
-      grantButterflyDew(rect && rect.width ? rect : null);
+      // The gift grows as it works (at his word): 3 drops
+      // to start with, +3 for every flower flown around so
+      // far — and every settle follows one completed flight
+      // around a flower, so st.visits is that count. An
+      // orbit still in progress hasn't earned its +3 yet.
+      const amount = 3 + 3 * (st.visits || 0);
+      grantButterflyDew(rect && rect.width ? rect : null, amount);
       startLeaveButterfly();
     }
 
-    // The 5 drops fly to the currency pill like a plant's
+    // The drops fly to the currency pill like a plant's
     // own drops (see collectDew): each on its own curved
     // path, the tally ticking up by 1 as each one lands,
     // and a sweep settling any that never report, so the
     // gift is always paid in full.
-    function grantButterflyDew(fromRect) {
+    function grantButterflyDew(fromRect, amount) {
       const pill = document.getElementById('ui-currency');
       const to = pill && pill.getBoundingClientRect ? pill.getBoundingClientRect() : null;
       let granted = 0;
       let settled = false;
       const grantOne = () => {
-        if (granted >= 5) return;
+        if (granted >= amount) return;
         granted += 1;
         addButterflyDew(1);
         updateDewDrops();
@@ -6518,7 +6527,7 @@ document.body.innerHTML = HG_MARKUP;
       const settle = () => {
         if (settled) return;
         settled = true;
-        while (granted < 5) grantOne();
+        while (granted < amount) grantOne();
       };
       setTimeout(settle, 1800);
       if (!fromRect || !to || !to.width) { settle(); return; }
@@ -6528,7 +6537,7 @@ document.body.innerHTML = HG_MARKUP;
       const pillCy = to.top + to.height / 2;
       const fromCx = fromRect.left + fromRect.width / 2;
       const fromCy = fromRect.top + fromRect.height / 2;
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < amount; i++) {
         const drop = document.createElement('img');
         drop.src = 'assets/drop1.png';
         drop.className = 'dew-flyer';
