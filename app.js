@@ -2391,9 +2391,13 @@ body {
 }
 
 /* The butterfly's click bounce: the same pop as the
-   worm's, during its click pause (see clickButterfly). */
+   worm's, during its click pause (see clickButterfly).
+   The pop scales around the visible sprite's centre,
+   not the box's: the ink sits at (3,2)-(11,12) of the
+   16x16 canvas, so its centre is 7.5/16 across and down. */
 .butterfly.is-clicked {
   animation: dew-pill-pop 0.35s ease 0.06s;
+  transform-origin: 46.875% 46.875%;
 }
 
 .worm-frame {
