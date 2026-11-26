@@ -6312,9 +6312,13 @@ document.body.innerHTML = HG_MARKUP;
         if (done) done();
       };
       if (typeof el.animate === 'function') {
-        // Half again slower than the bee's flights — a
-        // butterfly drifts where the bee darts.
-        const duration = Math.min(2100, (450 + dist * 9) * 1.5);
+        // A consistent speed, and a slow one (at his word):
+        // the same time per unit of distance on every
+        // flight — 40ms a unit, well under the bee's pace —
+        // so a short hop and a long crossing move at one
+        // speed. Only the longest flights (the way in from
+        // off the side of the screen) are capped, at 4.2s.
+        const duration = Math.min(4200, dist * 40);
         const anim = el.animate(frames, { duration, easing: 'linear', fill: 'forwards' });
         if (anim && anim.finished && typeof anim.finished.then === 'function') {
           const once = () => { try { anim.cancel(); } catch (e) { } land(); };
