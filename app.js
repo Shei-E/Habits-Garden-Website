@@ -6308,7 +6308,7 @@ document.body.innerHTML = HG_MARKUP;
           st.phase = 'rest';
           st.phaseMs = 0;
           st.hoverPhase = 0;
-          st.restMs = 2000 + Math.random() * 1000; // 2–3 seconds
+          st.restMs = 3000 + Math.random() * 1000; // 3–4 seconds
         }
         return;
       }
@@ -6317,7 +6317,7 @@ document.body.innerHTML = HG_MARKUP;
     function startBfWander(st) {
       st.phase = 'wander';
       st.phaseMs = 0;
-      st.wanderMs = 2500 + Math.random() * 2000; // 2.5–4.5 seconds
+      st.wanderMs = 3500 + Math.random() * 2000; // 3.5–5.5 seconds
       // Set up the meander's Lissajous: a centre, a size,
       // a wave ratio (2:3 and its kin draw the loopy
       // figures), and random phases so no two meanders
