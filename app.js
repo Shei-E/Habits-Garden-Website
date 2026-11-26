@@ -6153,7 +6153,7 @@ document.body.innerHTML = HG_MARKUP;
     // the screen, flies around randomly for a few seconds,
     // then locks onto a flower and flies to it, rests there
     // a couple of seconds, and meanders off again to pick
-    // another flower — 4 to 6 flowers in all, then it flies
+    // another flower — 3 to 4 flowers in all, then it flies
     // away. The movement is a steering tick (bfTick): the
     // butterfly carries a velocity that leans toward its
     // current target a little more each tick, so its paths
@@ -6200,7 +6200,7 @@ document.body.innerHTML = HG_MARKUP;
         tx: 70 + Math.random() * 116,
         ty: 30 + Math.random() * 30,
         visits: 0,
-        visitTarget: 4 + Math.floor(Math.random() * 3), // 4–6 flowers
+        visitTarget: 3 + Math.floor(Math.random() * 2), // 3–4 flowers
         currentPot: null,
         tickTimer: null,
         phaseMs: 0,
@@ -6308,7 +6308,7 @@ document.body.innerHTML = HG_MARKUP;
           st.phase = 'rest';
           st.phaseMs = 0;
           st.hoverPhase = 0;
-          st.restMs = 3000 + Math.random() * 1000; // 3–4 seconds
+          st.restMs = 15000 + Math.random() * 5000; // 15–20 seconds
         }
         return;
       }
@@ -6317,7 +6317,7 @@ document.body.innerHTML = HG_MARKUP;
     function startBfWander(st) {
       st.phase = 'wander';
       st.phaseMs = 0;
-      st.wanderMs = 3500 + Math.random() * 2000; // 3.5–5.5 seconds
+      st.wanderMs = 15000 + Math.random() * 5000; // 15–20 seconds
       // Set up the meander's Lissajous: a centre, a size,
       // a wave ratio (2:3 and its kin draw the loopy
       // figures), and random phases so no two meanders
