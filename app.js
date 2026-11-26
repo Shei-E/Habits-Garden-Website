@@ -6416,7 +6416,7 @@ document.body.innerHTML = HG_MARKUP;
     function startBfWander(st) {
       st.phase = 'wander';
       st.phaseMs = 0;
-      st.wanderMs = 15000 + Math.random() * 5000; // 15–20 seconds
+      st.wanderMs = 10000 + Math.random() * 5000; // 10–15 seconds
       // Set up the meander's Lissajous: a centre, a size,
       // a wave ratio (2:3 and its kin draw the loopy
       // figures), and random phases so no two meanders
@@ -6471,13 +6471,13 @@ document.body.innerHTML = HG_MARKUP;
     }
 
     // The butterfly reaches a flower: before it settles,
-    // it flies around it for 8–10 seconds (at his word).
+    // it flies around it for 5–8 seconds (at his word).
     function startBfOrbit(st) {
       st.orbited = true;
       st.orbCx = st.tx;
       st.orbCy = st.ty;
       st.orbitPhase = Math.random() * Math.PI * 2;
-      st.orbitMs = 8000 + Math.random() * 2000; // 8–10 seconds
+      st.orbitMs = 5000 + Math.random() * 3000; // 5–8 seconds
       st.phase = 'orbit';
       st.phaseMs = 0;
     }
