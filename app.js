@@ -6144,21 +6144,25 @@ document.body.innerHTML = HG_MARKUP;
     // it only comes when the garden has a grown flower.
     // Clicking it pays 5 dew drops: the drops fly to the
     // currency pill like a plant's own drops, the count
-    // ticking up as each one lands. The gift is part of
-    // today's dew tally (see collectedDewTotal) and is
-    // kept in local storage by game day, like the day's
-    // clicked-encounter count.
+    // ticking up as each one lands, and the butterfly flies
+    // away. The gift is part of today's dew tally (see
+    // collectedDewTotal) and is kept in local storage by
+    // game day, like the day's clicked-encounter count.
     //
-    // The butterfly's FLIGHT is not written yet: the first
-    // version's flight code (the flower-to-flower flights
-    // with their bobbing path, the hover drift, the flights
-    // in and out) was removed whole on 2026-11-26 at his
-    // word, to start over. For now the butterfly simply
-    // appears at a flower and sits there until it is
-    // clicked or its visit runs out.
-    let butterflyState = null; // { el, currentPot, leaving, rewarded, visitTimer }
+    // How it flies (his spec): it flies in from the edge of
+    // the screen, flies around randomly for a few seconds,
+    // then locks onto a flower and flies to it, rests there
+    // a couple of seconds, and meanders off again to pick
+    // another flower — 4 to 6 flowers in all, then it flies
+    // away. The movement is a steering tick (bfTick): the
+    // butterfly carries a velocity that leans toward its
+    // current target a little more each tick, so its paths
+    // curve instead of running in straight lines. (The
+    // first flight design was removed whole on 2026-11-26
+    // at his word; this is the replacement he specified.)
+    let butterflyState = null; // { el, phase, x, y, vx, vy, tx, ty, visits, visitTarget, currentPot, tickTimer, phaseTicks, wanderTicks, restTicks, facing, leaving, rewarded }
     const BUTTERFLY_DEW_KEY = 'hg.butterflyDew.v1';
-    const BUTTERFLY_VISIT_MS = 20000; // an unclicked visit's length, for now
+    const BF_TICK_MS = 50;
     function butterflyDewToday() {
       const raw = lsGet(BUTTERFLY_DEW_KEY);
       if (typeof raw !== 'string') return 0;
@@ -6170,10 +6174,11 @@ document.body.innerHTML = HG_MARKUP;
     }
 
 
+
     function startButterfly(flowers) {
-      const pot = flowers[Math.floor(Math.random() * flowers.length)];
-      const pt = pot && beeHoverPoint(pot);
-      if (!pt) return;
+      const fromLeft = Math.random() < 0.5;
+      const entryX = beePageEdgeX(fromLeft);
+      const entryY = 20 + Math.random() * 40;
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'butterfly';
@@ -6182,20 +6187,151 @@ document.body.innerHTML = HG_MARKUP;
       img.src = 'assets/butterfly.png';
       img.alt = '';
       el.appendChild(img);
-      el.style.left = `calc(${pt.x}px * var(--scale))`;
-      el.style.top = `calc(${pt.y}px * var(--scale))`;
+      el.style.left = `calc(${entryX}px * var(--scale))`;
+      el.style.top = `calc(${entryY}px * var(--scale))`;
       stageEl.appendChild(el);
       butterflyState = {
         el,
-        currentPot: pot,
+        phase: 'enter',
+        x: entryX,
+        y: entryY,
+        vx: 0,
+        vy: 0,
+        tx: 70 + Math.random() * 116,
+        ty: 30 + Math.random() * 30,
+        visits: 0,
+        visitTarget: 4 + Math.floor(Math.random() * 3), // 4–6 flowers
+        currentPot: null,
+        tickTimer: null,
+        phaseTicks: 0,
+        wanderTicks: 0,
+        restTicks: 0,
+        facing: '1 1',
         leaving: false,
         rewarded: false,
-        visitTimer: setTimeout(() => leaveButterfly(), BUTTERFLY_VISIT_MS),
       };
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         clickButterfly();
       });
+      butterflyState.tickTimer = setInterval(() => bfTick(), BF_TICK_MS);
+    }
+
+    // Steer toward the current target and move: the
+    // velocity leans toward the target a little more each
+    // tick, so turns are wide curves, not corners. Returns
+    // the distance to the target before the move.
+    function bfMove(st, speed) {
+      const dx = st.tx - st.x;
+      const dy = st.ty - st.y;
+      const d = Math.hypot(dx, dy) || 1;
+      st.vx += ((dx / d) * speed - st.vx) * 0.2;
+      st.vy += ((dy / d) * speed - st.vy) * 0.2;
+      st.x += st.vx;
+      st.y += st.vy;
+      st.el.style.left = `calc(${st.x}px * var(--scale))`;
+      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      // Face the way it is moving (the sprite is drawn
+      // facing left, like the bee's, so moving right flips
+      // it) — the flip rides the standalone scale property.
+      const want = st.vx > 0.2 ? '-1 1' : (st.vx < -0.2 ? '1 1' : st.facing);
+      if (want !== st.facing) {
+        st.facing = want;
+        const img = st.el.querySelector('img');
+        if (img) img.style.scale = want;
+      }
+      return d;
+    }
+
+    function bfTick() {
+      const st = butterflyState;
+      if (!st) return;
+      st.phaseTicks += 1;
+      if (st.phase === 'rest') {
+        if (st.phaseTicks >= st.restTicks) {
+          if (st.visits >= st.visitTarget) startLeaveButterfly();
+          else startBfWander(st);
+        }
+        return;
+      }
+      if (st.phase === 'leave') {
+        const d = bfMove(st, 3);
+        // Gone once it is fully past the stage's edge, or
+        // has reached the edge of the screen it aimed for.
+        if (st.x < -18 || st.x > 258 || d < 4) finishButterfly();
+        return;
+      }
+      if (st.phase === 'enter') {
+        if (bfMove(st, 3) < 5 || st.phaseTicks > 600) startBfWander(st);
+        return;
+      }
+      if (st.phase === 'wander') {
+        if (bfMove(st, 1.3) < 6) bfWaypoint(st);
+        if (st.phaseTicks >= st.wanderTicks) startBfApproach(st);
+        return;
+      }
+      if (st.phase === 'approach') {
+        if (bfMove(st, 1.8) < 2.5 || st.phaseTicks > 600) {
+          // Arrived: settle onto the flower and rest.
+          st.x = st.tx;
+          st.y = st.ty;
+          st.vx = 0;
+          st.vy = 0;
+          st.el.style.left = `calc(${st.x}px * var(--scale))`;
+          st.el.style.top = `calc(${st.y}px * var(--scale))`;
+          st.visits += 1;
+          st.phase = 'rest';
+          st.phaseTicks = 0;
+          st.restTicks = 40 + Math.floor(Math.random() * 20); // 2–3 seconds
+        }
+        return;
+      }
+    }
+
+    function bfWaypoint(st) {
+      st.tx = 24 + Math.random() * 192;
+      st.ty = 10 + Math.random() * 82;
+    }
+
+    function startBfWander(st) {
+      st.phase = 'wander';
+      st.phaseTicks = 0;
+      st.wanderTicks = 50 + Math.floor(Math.random() * 40); // 2.5–4.5 seconds
+      bfWaypoint(st);
+    }
+
+    function startBfApproach(st) {
+      const flowers = beeFlowers();
+      if (!flowers.length) {
+        startLeaveButterfly();
+        return;
+      }
+      let choices = flowers;
+      if (st.currentPot && flowers.length > 1) {
+        choices = flowers.filter(pot => pot !== st.currentPot);
+      }
+      const pot = choices[Math.floor(Math.random() * choices.length)];
+      const pt = pot && beeHoverPoint(pot);
+      if (!pt) {
+        startLeaveButterfly();
+        return;
+      }
+      st.currentPot = pot;
+      st.tx = pt.x;
+      st.ty = pt.y;
+      st.phase = 'approach';
+      st.phaseTicks = 0;
+    }
+
+    function startLeaveButterfly() {
+      const st = butterflyState;
+      if (!st || st.leaving) return;
+      st.leaving = true;
+      st.phase = 'leave';
+      st.phaseTicks = 0;
+      // Out through the nearer edge of the screen.
+      st.tx = beePageEdgeX(st.x < 128);
+      st.ty = st.y - 6;
     }
 
     function clickButterfly() {
@@ -6214,7 +6350,7 @@ document.body.innerHTML = HG_MARKUP;
       const rect = st.el && typeof st.el.getBoundingClientRect === 'function'
         ? st.el.getBoundingClientRect() : null;
       grantButterflyDew(rect && rect.width ? rect : null);
-      leaveButterfly();
+      startLeaveButterfly();
     }
 
     // The 5 drops fly to the currency pill like a plant's
@@ -6298,18 +6434,18 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
+    // End the visit now: the butterfly flies away. (The
+    // harness calls this to stand in for the visit playing
+    // out on its own.)
     function leaveButterfly() {
-      const st = butterflyState;
-      if (!st || st.leaving) return;
-      st.leaving = true;
-      finishButterfly();
+      startLeaveButterfly();
     }
 
     function finishButterfly() {
       const st = butterflyState;
       if (!st) return;
       butterflyState = null;
-      if (st.visitTimer) clearTimeout(st.visitTimer);
+      if (st.tickTimer) clearInterval(st.tickTimer);
       st.el.remove();
     }
 
