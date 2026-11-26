@@ -6273,12 +6273,12 @@ document.body.innerHTML = HG_MARKUP;
       // on its flower. More steps than the bee's flights,
       // so the humps stay smooth.
       const dist = Math.hypot(dx, dy);
-      const humps = Math.max(3, Math.min(6, Math.round(dist / 35)));
+      const humps = Math.max(4, Math.min(8, Math.round(dist / 28)));
       const frames = [];
-      const STEPS = 36;
+      const STEPS = 48;
       for (let s = 0; s <= STEPS; s++) {
         const t = s / STEPS;
-        const lift = -3 * Math.abs(Math.sin(Math.PI * humps * t));
+        const lift = -4.5 * Math.abs(Math.sin(Math.PI * humps * t));
         frames.push({
           transform: `translate(${(dx * t * scale).toFixed(1)}px, ${((dy * t + lift) * scale).toFixed(1)}px)`,
         });
