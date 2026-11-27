@@ -6394,33 +6394,8 @@ document.body.innerHTML = HG_MARKUP;
         if (st.phaseMs >= st.wanderMs) startBfApproach(st);
         return;
       }
-      if (st.phase === 'orbit') {
-        // Flying around the flower: the chase point runs
-        // a flat ellipse around the flower's hover point
-        // (about 2.8 seconds a loop) and the butterfly
-        // follows it round. When the time is up it heads
-        // back to the point itself ('approach' again) and
-        // settles onto the flower.
-        st.orbitPhase += Math.PI / 88;
-        st.tx = st.orbCx + Math.cos(st.orbitPhase) * 10;
-        st.ty = st.orbCy + Math.sin(st.orbitPhase) * 5;
-        bfMove(st, 0.6);
-        if (st.phaseMs >= st.orbitMs) {
-          st.tx = st.orbCx;
-          st.ty = st.orbCy;
-          st.phase = 'approach';
-          st.phaseMs = 0;
-        }
-        return;
-      }
       if (st.phase === 'approach') {
         if (bfMove(st, 0.6) < 2.5 || st.phaseMs > 30000) {
-          if (!st.orbited) {
-            // First arrival: before settling, it flies
-            // around the flower for a while (startBfOrbit).
-            startBfOrbit(st);
-            return;
-          }
           // Arrived: settle onto the flower and rest.
           st.x = st.tx;
           st.y = st.ty;
@@ -6509,20 +6484,7 @@ document.body.innerHTML = HG_MARKUP;
       st.currentPot = pot;
       st.tx = pt.x;
       st.ty = pt.y;
-      st.orbited = false;
       st.phase = 'approach';
-      st.phaseMs = 0;
-    }
-
-    // The butterfly reaches a flower: before it settles,
-    // it flies around it for 1–4 seconds (at his word).
-    function startBfOrbit(st) {
-      st.orbited = true;
-      st.orbCx = st.tx;
-      st.orbCy = st.ty;
-      st.orbitPhase = Math.random() * Math.PI * 2;
-      st.orbitMs = 1000 + Math.random() * 3000; // 1–4 seconds
-      st.phase = 'orbit';
       st.phaseMs = 0;
     }
 
@@ -6560,10 +6522,8 @@ document.body.innerHTML = HG_MARKUP;
       const rect = st.el && typeof st.el.getBoundingClientRect === 'function'
         ? st.el.getBoundingClientRect() : null;
       // The gift grows as it works (at his word): 3 drops
-      // to start with, +3 for every flower flown around so
-      // far — and every settle follows one completed flight
-      // around a flower, so st.visits is that count. An
-      // orbit still in progress hasn't earned its +3 yet.
+      // to start with, +3 for every flower it has settled
+      // on so far — st.visits is that count.
       const amount = 3 + 3 * (st.visits || 0);
       grantButterflyDew(rect && rect.width ? rect : null, amount);
       startLeaveButterfly();
