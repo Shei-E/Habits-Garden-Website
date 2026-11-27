@@ -5217,6 +5217,15 @@ document.body.innerHTML = HG_MARKUP;
     // ISO date string). null = not decided yet this session, so
     // the first updateDewDrops() of a day decides that day.
     let dewRewardDayStr = null;
+    // Drops whose flight to the pill is still in the air.
+    // A plant's drops count as collected the moment it is
+    // clicked (that is what gets saved), but the pill's
+    // DISPLAY only gains each drop when its flight lands:
+    // updateDewDrops shows the collected total minus what
+    // is still flying, and each landing releases one — so
+    // no re-render mid-flight can jump the count early
+    // (at his word).
+    let dewInFlight = 0;
 
     function dewDropRate(pot) {
       if (!pot.classList.contains('has-plant')) return 0;
@@ -5315,7 +5324,9 @@ document.body.innerHTML = HG_MARKUP;
       if (assigned) saveGarden();
       const el = document.getElementById('ui-currency-count');
       if (el) {
-        el.textContent = String(collectedDewTotal());
+        // The collected total minus any drops still flying
+        // to the pill: the count rises as the flights land.
+        el.textContent = String(collectedDewTotal() - dewInFlight);
         // While a dead plant's −2 is part of today's total, the
         // count wears the penalty colour.
         if (pots.some(pot => (parseInt(pot.dataset.dewToday || '0', 10) || 0) < 0)) {
@@ -5643,6 +5654,18 @@ document.body.innerHTML = HG_MARKUP;
       if (!pot || !pot.dataset.dewToday || pot.dataset.dewCollected === 'true') return;
       lastDewCollectPot = pot;
       lastDewCollectAt = Date.now();
+      const amount = parseInt(pot.dataset.dewToday || '1', 10) || 1;
+      // The drops are collected on paper from this moment
+      // (and saved that way), but the pill only gains each
+      // one when its flight lands: hold the amount back
+      // from the display until then (see dewInFlight).
+      dewInFlight += amount;
+      let unlanded = amount;
+      const releaseDrops = (n) => {
+        const back = Math.min(n, unlanded);
+        unlanded -= back;
+        dewInFlight -= back;
+      };
       // The drops shoot from the floating drop icon above the
       // plant (its rect, captured before collecting removes it).
       const iconEl = pot._dewIconEl;
@@ -5660,6 +5683,7 @@ document.body.innerHTML = HG_MARKUP;
       saveGarden();
 
       const finish = () => {
+        releaseDrops(unlanded);
         updateDewDrops();
         const pill = document.getElementById('ui-currency');
         if (pill) {
@@ -5680,20 +5704,19 @@ document.body.innerHTML = HG_MARKUP;
       // bow, lift and timing — all converging on the pill.
       // The count ticks up by one as each drop lands. (One
       // drop keeps the single flight below.)
-      const amount = parseInt(pot.dataset.dewToday || '1', 10) || 1;
       if (amount > 1) {
-        const totalBefore = collectedDewTotal() - amount;
         const pillCx = to.left + to.width / 2;
         const pillCy = to.top + to.height / 2;
         const fromCx = from.left + from.width / 2;
         const fromCy = from.top + from.height / 2;
         let landed = 0;
         let settled = false;
-        const settle = () => { if (settled) return; settled = true; updateDewDrops(); };
+        const settle = () => { if (settled) return; settled = true; releaseDrops(unlanded); updateDewDrops(); };
         const onLand = () => {
           landed += 1;
+          releaseDrops(1);
           const el = document.getElementById('ui-currency-count');
-          if (el) el.textContent = String(totalBefore + landed);
+          if (el) el.textContent = String(collectedDewTotal() - dewInFlight);
           const pillEl = document.getElementById('ui-currency');
           if (pillEl) {
             pillEl.classList.remove('is-pop');
