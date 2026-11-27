@@ -6563,7 +6563,7 @@ document.body.innerHTML = HG_MARKUP;
       st.phase = 'rest';
       st.phaseMs = 0;
       st.hoverPhase = 0;
-      st.restMs = 15000 + Math.random() * 5000; // 15–20 seconds
+      st.restMs = 5000 + Math.random() * 3000; // 5–8 seconds
     }
 
     function startLeaveButterfly() {
@@ -6605,10 +6605,11 @@ document.body.innerHTML = HG_MARKUP;
       if (!st) return;
       const rect = st.el && typeof st.el.getBoundingClientRect === 'function'
         ? st.el.getBoundingClientRect() : null;
-      // The gift grows as it works (at his word): 3 drops
-      // to start with, +3 for every flower it has settled
-      // on so far — st.visits is that count.
-      const amount = 3 + 3 * (st.visits || 0);
+      // The gift is 3 drops per flower it has settled on
+      // (at his word): since a click is only possible
+      // after the first visit, the earliest click pays
+      // 3, the next visit makes it 6, and so on.
+      const amount = 3 * (st.visits || 0);
       grantButterflyDew(rect && rect.width ? rect : null, amount);
       startLeaveButterfly();
     }
