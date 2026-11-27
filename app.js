@@ -6395,23 +6395,38 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       if (st.phase === 'approach') {
-        if (bfMove(st, 0.6) < 2.5 || st.phaseMs > 30000) {
-          // Arrived: settle onto the flower and rest.
-          st.x = st.tx;
-          st.y = st.ty;
+        if (bfMove(st, 0.6) < 2.5) {
+          // Arrived (within a couple of units): glide the
+          // last stretch onto the flower instead of
+          // snapping to it (at his word) — the 'settle'
+          // phase eases the position, and the up/down
+          // shift with it, onto the point.
+          st.phase = 'settle';
+          st.phaseMs = 0;
+          st.settleMs = 260;
+          st.settleFromX = st.x;
+          st.settleFromY = st.y;
+          st.settleFromShift = st.shiftY;
           st.vx = 0;
           st.vy = 0;
-          st.shiftY = 0;
-          st.shiftTarget = 0;
-          st.el.style.left = `calc(${st.x}px * var(--scale))`;
-          st.el.style.top = `calc(${st.y}px * var(--scale))`;
-          st.visits += 1;
-          if (st.currentPot) st.visitedPots.push(st.currentPot);
-          st.phase = 'rest';
-          st.phaseMs = 0;
-          st.hoverPhase = 0;
-          st.restMs = 15000 + Math.random() * 5000; // 15–20 seconds
+        } else if (st.phaseMs > 30000) {
+          // The steering never got it there (it should not
+          // happen): land at once rather than glide from
+          // far away.
+          finishBfSettle(st);
         }
+        return;
+      }
+      if (st.phase === 'settle') {
+        st.settleMs -= BF_TICK_MS;
+        const q = 1 - Math.max(0, st.settleMs) / 260;
+        const ease = 1 - (1 - q) * (1 - q);
+        st.x = st.settleFromX + (st.tx - st.settleFromX) * ease;
+        st.y = st.settleFromY + (st.ty - st.settleFromY) * ease;
+        st.shiftY = st.settleFromShift * (1 - ease);
+        st.el.style.left = `calc(${st.x}px * var(--scale))`;
+        st.el.style.top = `calc(${st.y + st.shiftY}px * var(--scale))`;
+        if (st.settleMs <= 0) finishBfSettle(st);
         return;
       }
     }
@@ -6486,6 +6501,26 @@ document.body.innerHTML = HG_MARKUP;
       st.ty = pt.y;
       st.phase = 'approach';
       st.phaseMs = 0;
+    }
+
+    // Land on the flower and rest there: the visit
+    // counts, the flower joins the visited list, and the
+    // rest timer is rolled.
+    function finishBfSettle(st) {
+      st.x = st.tx;
+      st.y = st.ty;
+      st.vx = 0;
+      st.vy = 0;
+      st.shiftY = 0;
+      st.shiftTarget = 0;
+      st.el.style.left = `calc(${st.x}px * var(--scale))`;
+      st.el.style.top = `calc(${st.y}px * var(--scale))`;
+      st.visits += 1;
+      if (st.currentPot) st.visitedPots.push(st.currentPot);
+      st.phase = 'rest';
+      st.phaseMs = 0;
+      st.hoverPhase = 0;
+      st.restMs = 15000 + Math.random() * 5000; // 15–20 seconds
     }
 
     function startLeaveButterfly() {
