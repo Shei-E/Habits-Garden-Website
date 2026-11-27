@@ -1971,7 +1971,7 @@ body {
 .pd-title {
   left: calc(61px * var(--scale));
   top: calc(42px * var(--scale));
-  width: calc(122px * var(--scale));
+  width: calc(107px * var(--scale));
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -9242,7 +9242,7 @@ document.body.innerHTML = HG_MARKUP;
       pdInkBox = pdInk;
       // At the shelf's right edge the popup's art flips, and
       // the plant name box runs 5 units shorter there.
-      pdTitle.style.width = cfg.flipX ? 'calc(117px * var(--scale))' : '';
+      pdTitle.style.width = cfg.flipX ? 'calc(104px * var(--scale))' : '';
       pdContent.style.transform = cfg.flipY ? 'translateY(calc(-20px * var(--scale)))' : 'none';
 
       pdRepeat.textContent = pot.dataset.repeat || 'daily';
