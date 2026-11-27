@@ -2228,6 +2228,29 @@ body {
   transition: color 0.12s ease;
 }
 
+/* The popup's close x: grey, at the card's top-left
+   corner (the visible ink starts at 52, 31 of the
+   dialog; the title starts at 61, 42, so the corner
+   spot is clear of it). */
+.pd-close {
+  position: absolute;
+  left: calc(55px * var(--scale));
+  top: calc(34px * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: "Tiny5", monospace;
+  font-size: calc(8px * var(--scale));
+  line-height: 1;
+  color: #8c8c8c;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.pd-close:hover {
+  color: #000;
+}
+
 .pd-edit:hover {
   color: #000;
 }
@@ -3442,6 +3465,7 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
       aria-labelledby="pd-title">
       <div class="pd-dialog" id="pd-dialog">
         <img class="pd-bg" id="pd-bg" src="assets/ui-popup-left.png" alt="">
+        <button class="pd-close" id="pd-close" type="button" aria-label="Close">x</button>
         <div class="pd-content" id="pd-content">
           <img class="pd-bar" src="assets/ui-streak-bar.png" alt="">
 
@@ -3665,6 +3689,7 @@ document.body.innerHTML = HG_MARKUP;
     const pdStreak = document.getElementById('pd-streak');
     const pdWater = document.getElementById('pd-water');
     const pdUnwater = document.getElementById('pd-unwater');
+    const pdClose = document.getElementById('pd-close');
     const pdEdit = document.getElementById('pd-edit');
     const pdRemove = document.getElementById('pd-remove');
 
@@ -4569,6 +4594,9 @@ document.body.innerHTML = HG_MARKUP;
     let yearMonthIndex = 0;
     let activePot = null;
     let currentDetailsPot = null;
+    // The open popup's visible-ink box, as fractions of
+    // the dialog box (set by openPlantDetailsModal).
+    let pdInkBox = null;
 
     // Plant details popup artwork + position, computed from the pot's
     // live position so the popup follows the pot after dragging.
@@ -6232,9 +6260,6 @@ document.body.innerHTML = HG_MARKUP;
         shiftY: 0,
         shiftTarget: 0,
         shiftMs: 500 + Math.random() * 1000,
-        speedMul: 1,
-        speedTarget: 1,
-        speedMs: 0,
         facing: '1 1',
         leaving: false,
         rewarded: false,
@@ -6256,21 +6281,8 @@ document.body.innerHTML = HG_MARKUP;
       const dx = st.tx - st.x;
       const dy = st.ty - st.y;
       const d = Math.hypot(dx, dy) || 1;
-      // The speed itself wanders (at his word): every
-      // 0.6–2 seconds a new pace is picked — between 0.6x
-      // and 1.5x of the phase's usual speed — and the
-      // actual speed eases toward it over about half a
-      // second, so it surges and drifts instead of
-      // snapping between speeds.
-      st.speedMs -= BF_TICK_MS;
-      if (st.speedMs <= 0) {
-        st.speedTarget = 0.6 + Math.random() * 0.9;
-        st.speedMs = 600 + Math.random() * 1400;
-      }
-      st.speedMul += (st.speedTarget - st.speedMul) * 0.03;
-      const effSpeed = speed * st.speedMul;
-      st.vx += ((dx / d) * effSpeed - st.vx) * 0.07;
-      st.vy += ((dy / d) * effSpeed - st.vy) * 0.07;
+      st.vx += ((dx / d) * speed - st.vx) * 0.07;
+      st.vy += ((dy / d) * speed - st.vy) * 0.07;
       st.x += st.vx;
       st.y += st.vy;
       // The up-and-down shifts (at his word): every so
@@ -9204,6 +9216,16 @@ document.body.innerHTML = HG_MARKUP;
 
       pdDialog.style.left = `calc(${cfg.left}px * var(--scale))`;
       pdDialog.style.top = `calc(${cfg.top}px * var(--scale))`;
+      // Where the card's visible ink sits inside the 236x124
+      // dialog, measured from the ui-popup sprites: the ink
+      // runs 52..187 across and 31..109 down, and the rest of
+      // the box is transparent margin. The click-away test
+      // (handlePdDocumentClick) counts only inside the ink,
+      // mirrored when the card is flipped.
+      const pdInk = { x0: 52 / 236, y0: 31 / 124, x1: 187 / 236, y1: 109 / 124 };
+      if (cfg.flipX) { const t = pdInk.x0; pdInk.x0 = 1 - pdInk.x1; pdInk.x1 = 1 - t; }
+      if (cfg.flipY) { const t = pdInk.y0; pdInk.y0 = 1 - pdInk.y1; pdInk.y1 = 1 - t; }
+      pdInkBox = pdInk;
       // At the shelf's right edge the popup's art flips, and
       // the plant name box runs 5 units shorter there.
       pdTitle.style.width = cfg.flipX ? 'calc(117px * var(--scale))' : '';
@@ -9423,9 +9445,34 @@ document.body.innerHTML = HG_MARKUP;
     // handlePotClick): a click on a plant opens its popup,
     // and it stays open until something closes it — a
     // watering, a drag, the Edit Plant page opening over
-    // it, Escape. (For a while it opened on hover instead,
+    // it, Escape, its own x, or a click away from it (at
+    // his word). (For a while it opened on hover instead,
     // at his word; it went back to clicks, also at his
     // word.)
+
+    // Clicking away from the popup closes it: a click
+    // that lands neither on the card's visible ink nor on
+    // a plant counts as away. Clicks on a plant are the
+    // popup's own business (they open or switch it — the
+    // pot's click handler runs first), and the popup's
+    // buttons live inside the ink. Keyboard clicks have
+    // no point to judge by, so they never count as away.
+    function handlePdDocumentClick(e) {
+      if (!pdModal.classList.contains('is-open')) return;
+      if (e.clientX === 0 && e.clientY === 0) return;
+      if (pdInkBox) {
+        const r = pdDialog.getBoundingClientRect();
+        if (r.width > 0
+          && e.clientX >= r.left + pdInkBox.x0 * r.width
+          && e.clientX <= r.left + pdInkBox.x1 * r.width
+          && e.clientY >= r.top + pdInkBox.y0 * r.height
+          && e.clientY <= r.top + pdInkBox.y1 * r.height) return;
+      }
+      if (potAtPoint(e.clientX, e.clientY, isInPlantZone)) return;
+      closePlantDetailsModal();
+    }
+
+    document.addEventListener('click', handlePdDocumentClick);
 
     // The pointer is busy elsewhere: a pot or bin drag,
     // or another page or modal open over the shelf. The
@@ -9978,6 +10025,10 @@ document.body.innerHTML = HG_MARKUP;
       }
       updateDewDrops();
       saveGarden();
+    });
+
+    pdClose?.addEventListener('click', () => {
+      closePlantDetailsModal();
     });
 
     pdEdit?.addEventListener('click', () => {
