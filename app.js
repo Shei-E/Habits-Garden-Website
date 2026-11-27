@@ -2232,14 +2232,15 @@ body {
    card's top-right corner (the visible ink runs
    52..187 across and starts at 31 down in the 236x124
    dialog). The sprite's canvas is 55x55 with its ink
-   centred at 25x25, so a 12-unit box shows the x
-   itself at about 5.5 units across. */
+   centred at 25x25, so an 8.4-unit box (the original
+   12 units at 0.7x, at his word) shows the x itself
+   at about 3.7 units across. */
 .pd-close {
   position: absolute;
   right: calc(56px * var(--scale));
-  top: calc(37px * var(--scale));
-  width: calc(12px * var(--scale));
-  height: calc(12px * var(--scale));
+  top: calc(42px * var(--scale));
+  width: calc(8.4px * var(--scale));
+  height: calc(8.4px * var(--scale));
   padding: 0;
   border: 0;
   background: url("assets/ui-tiny-x.png") center / contain no-repeat;
@@ -2262,7 +2263,7 @@ body {
 }
 
 .pd-dialog.pd-flip-y .pd-close {
-  top: calc(15px * var(--scale));
+  top: calc(20px * var(--scale));
 }
 
 .pd-edit:hover {
