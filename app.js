@@ -3987,17 +3987,20 @@ document.body.innerHTML = HG_MARKUP;
       lastDraggedByTier[tier] = pot;
       if (prev && prev !== pot) updatePotZOrder(prev);
     }
-    const ROW_MID_Y = 67; // pot centre above this -> top shelf, else bottom
-    // Dragging up from the bottom shelf is stricter: the top
-    // shelf only takes the item once the grab point (where the
-    // pointer is holding it) has been dragged to 4 units below
-    // the top shelf row's top edge (21 + 4 = 25). Applies to
-    // pots and bins alike; drags that start on the top shelf
-    // keep the midpoint rule above.
+    // Shelf switching while dragging follows the cursor
+    // (at his word): the item takes the top shelf once the
+    // grab point (where the pointer is holding it) reaches
+    // 4 units below the top shelf row's top edge
+    // (21 + 4 = 25), and the bottom shelf once it reaches
+    // 4 units above the bottom shelf row's top edge
+    // (81 − 4 = 77). Between the two lines it keeps the
+    // row it is on. Applies to pots and bins alike.
     const TOP_SNAP_POINTER_Y = SLOT_ROW_TOP.top + 4; // 25
-    function dragRow(origRow, centreY, pointerY) {
-      if (origRow === 'bottom') return pointerY <= TOP_SNAP_POINTER_Y ? 'top' : 'bottom';
-      return centreY < ROW_MID_Y ? 'top' : 'bottom';
+    const BOTTOM_SNAP_POINTER_Y = SLOT_ROW_TOP.bottom - 4; // 77
+    function dragRow(currentRow, pointerY) {
+      if (pointerY <= TOP_SNAP_POINTER_Y) return 'top';
+      if (pointerY >= BOTTOM_SNAP_POINTER_Y) return 'bottom';
+      return currentRow;
     }
 
     // The pot's starting slot, from its pot--cN/pot--hN + row classes.
@@ -4440,11 +4443,9 @@ document.body.innerHTML = HG_MARKUP;
       const pot = dragState.pot;
       const orig = dragState.origPos;
       const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
-      // Row from the drag (see dragRow): the centre/midpoint
-      // rule, except a bottom-shelf drag needs the grab point
-      // dragged to 4 below the top row's top edge first.
-      const centreY = SLOT_ROW_TOP[orig.row] + POT_SIZE / 2 + dy;
-      const row = dragRow(orig.row, centreY, dragState.startDesignY + dy);
+      // Row from the drag (see dragRow): the cursor's two
+      // shelf lines decide, against the row the pot is on.
+      const row = dragRow(getPotPos(pot).row, dragState.startDesignY + dy);
       setPotPos(pot, left, row);
       // Blocked feedback while the drop point is occupied.
       pot.classList.toggle('is-blocked', !posIsFree(left, row, pot));
@@ -7571,11 +7572,9 @@ document.body.innerHTML = HG_MARKUP;
       }
       e.preventDefault();
       const left = Math.max(POT_MIN_LEFT, Math.min(POT_MAX_LEFT, Math.round(orig.left + dx)));
-      // Row from the drag (see dragRow): the centre/midpoint
-      // rule, except a bottom-shelf drag needs the grab point
-      // dragged to 4 below the top row's top edge first.
-      const centreY = SLOT_ROW_TOP[orig.row] - 16 + 24 + dy;
-      const row = dragRow(orig.row, centreY, binDragState.startDesignY + dy);
+      // Row from the drag (see dragRow): the cursor's two
+      // shelf lines decide, against the row the bin is on.
+      const row = dragRow(getBinPos(bin).row, binDragState.startDesignY + dy);
       setBinPos(bin, left, row);
       bin.style.zIndex = 50; // setBinPos restores the row z; keep the drag lift
       bin.classList.toggle('is-blocked', !binSpotFree(left, row, bin));
