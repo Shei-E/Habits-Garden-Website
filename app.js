@@ -6388,7 +6388,7 @@ document.body.innerHTML = HG_MARKUP;
         if (st.phaseMs >= st.restMs) {
           st.el.style.transform = '';
           if (st.visits >= st.visitTarget) startLeaveButterfly();
-          else startBfWander(st);
+          else startBfWander(st, false);
         }
         return;
       }
@@ -6400,7 +6400,7 @@ document.body.innerHTML = HG_MARKUP;
         return;
       }
       if (st.phase === 'enter') {
-        if (bfMove(st, 1) < 5 || st.phaseMs > 60000) startBfWander(st);
+        if (bfMove(st, 1) < 5 || st.phaseMs > 60000) startBfWander(st, true);
         return;
       }
       if (st.phase === 'wander') {
@@ -6470,10 +6470,14 @@ document.body.innerHTML = HG_MARKUP;
       }
     }
 
-    function startBfWander(st) {
+    function startBfWander(st, first) {
       st.phase = 'wander';
       st.phaseMs = 0;
-      st.wanderMs = 10000 + Math.random() * 5000; // 10–15 seconds
+      // The first meander of a visit is a flat 5 seconds
+      // (at his word): the butterfly always heads to its
+      // first flower 5 seconds after it appears. Later
+      // meanders run 10–15 seconds.
+      st.wanderMs = first ? 5000 : 10000 + Math.random() * 5000;
       // Set up the meander's Lissajous: a centre, a size,
       // a wave ratio (2:3 and its kin draw the loopy
       // figures), and random phases so no two meanders
@@ -6577,6 +6581,12 @@ document.body.innerHTML = HG_MARKUP;
     function clickButterfly() {
       const st = butterflyState;
       if (!st || st.leaving || st.rewarded) return;
+      // Not clickable until it has visited a flower (at
+      // his word) — a visit being a settle onto one,
+      // where it starts flying in place above the plant.
+      // Clicks before the first visit do nothing at all:
+      // no bounce, no gift, no count toward the day's two.
+      if ((st.visits || 0) < 1) return;
       st.rewarded = true;
       // A clicked encounter counts toward the day's two,
       // like the bee's first click and the worm's click.
