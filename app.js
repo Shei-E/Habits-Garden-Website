@@ -2251,6 +2251,20 @@ body {
   filter: brightness(0.55);
 }
 
+/* The x follows the card's top-right corner in every
+   orientation (measured from the popup sprites): flipped
+   sideways, the body's right edge sits at 184 instead of
+   187, so the x moves 3 units left with it; flipped
+   vertically, the body's top edge sits at about 15
+   instead of 37, so the x moves up 22. */
+.pd-dialog.pd-flip-x .pd-close {
+  right: calc(59px * var(--scale));
+}
+
+.pd-dialog.pd-flip-y .pd-close {
+  top: calc(15px * var(--scale));
+}
+
 .pd-edit:hover {
   color: #000;
 }
@@ -9211,6 +9225,11 @@ document.body.innerHTML = HG_MARKUP;
 
       pdDialog.style.left = `calc(${cfg.left}px * var(--scale))`;
       pdDialog.style.top = `calc(${cfg.top}px * var(--scale))`;
+      // The card art mirrors with the orientation, and
+      // the close x follows its top-right corner (see the
+      // .pd-flip-x / .pd-flip-y rules in the stylesheet).
+      pdDialog.classList.toggle('pd-flip-x', !!cfg.flipX);
+      pdDialog.classList.toggle('pd-flip-y', !!cfg.flipY);
       // Where the card's visible ink sits inside the 236x124
       // dialog, measured from the ui-popup sprites: the ink
       // runs 52..187 across and 31..109 down, and the rest of
