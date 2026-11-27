@@ -2228,27 +2228,27 @@ body {
   transition: color 0.12s ease;
 }
 
-/* The popup's close x: grey, at the card's top-right
-   corner (the visible ink runs 52..187 across and
-   starts at 31 down in the 236x124 dialog, so the
-   corner spot sits just inside the ink's top right). */
+/* The popup's close x: his tiny-x sprite, at the
+   card's top-right corner (the visible ink runs
+   52..187 across and starts at 31 down in the 236x124
+   dialog). The sprite's canvas is 55x55 with its ink
+   centred at 25x25, so a 12-unit box shows the x
+   itself at about 5.5 units across. */
 .pd-close {
   position: absolute;
-  right: calc(53px * var(--scale));
-  top: calc(34px * var(--scale));
+  right: calc(56px * var(--scale));
+  top: calc(37px * var(--scale));
+  width: calc(12px * var(--scale));
+  height: calc(12px * var(--scale));
   padding: 0;
   border: 0;
-  background: none;
-  font-family: "Tiny5", monospace;
-  font-size: calc(8px * var(--scale));
-  line-height: 1;
-  color: #8c8c8c;
+  background: url("assets/ui-tiny-x.png") center / contain no-repeat;
   cursor: pointer;
-  transition: color 0.12s ease;
+  transition: filter 0.12s ease;
 }
 
 .pd-close:hover {
-  color: #000;
+  filter: brightness(0.55);
 }
 
 .pd-edit:hover {
@@ -3465,7 +3465,7 @@ const HG_MARKUP = `  <!-- DEV OPTION: Date Setter (Remove anytime - type 'devdat
       aria-labelledby="pd-title">
       <div class="pd-dialog" id="pd-dialog">
         <img class="pd-bg" id="pd-bg" src="assets/ui-popup-left.png" alt="">
-        <button class="pd-close" id="pd-close" type="button" aria-label="Close">x</button>
+        <button class="pd-close" id="pd-close" type="button" aria-label="Close"></button>
         <div class="pd-content" id="pd-content">
           <img class="pd-bar" src="assets/ui-streak-bar.png" alt="">
 
