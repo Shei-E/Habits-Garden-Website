@@ -2228,13 +2228,13 @@ body {
   transition: color 0.12s ease;
 }
 
-/* The popup's close x: grey, at the card's top-left
-   corner (the visible ink starts at 52, 31 of the
-   dialog; the title starts at 61, 42, so the corner
-   spot is clear of it). */
+/* The popup's close x: grey, at the card's top-right
+   corner (the visible ink runs 52..187 across and
+   starts at 31 down in the 236x124 dialog, so the
+   corner spot sits just inside the ink's top right). */
 .pd-close {
   position: absolute;
-  left: calc(55px * var(--scale));
+  right: calc(53px * var(--scale));
   top: calc(34px * var(--scale));
   padding: 0;
   border: 0;
